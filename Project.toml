@@ -1,0 +1,13 @@
+name = "VimBindings"
+uuid = "51b3953f-5e5d-4a6b-bd62-c64b6fa1518a"
+authors = ["Caleb Allen <mail@caleb.dev> and contributors"]
+version = "0.1.0"
+
+[compat]
+julia = "1"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
