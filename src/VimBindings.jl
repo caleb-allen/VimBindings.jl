@@ -1,4 +1,4 @@
-#= module VimBindings =#
+module VimBindings
 
 # Write your package code here.
 using REPL
@@ -7,11 +7,13 @@ using REPL.LineEdit
 
 const LE = LineEdit
 
-repl = Base.active_repl
-juliamode = repl.interface.modes[1]
-juliamode.prompt = "julia[i]> "
 
 function init()
+  repl = Base.active_repl
+  global juliamode = repl.interface.modes[1]
+  juliamode.prompt = "julia[i]> "
+  juliamode.keymap_dict['`'] = trigger_normal_mode
+
   # remove normal mode if it's already added
   normalindex = 0
   for (i, m) in enumerate(repl.interface.modes)
@@ -53,6 +55,7 @@ function init()
   normalmode.keymap_dict = keymap
 
   push!(repl.interface.modes, normalmode)
+  return
 end
 
 
@@ -110,7 +113,6 @@ function trigger_normal_mode(state::LineEdit.MIState, repl::LineEditREPL, char::
   end
 end
 
-juliamode.keymap_dict['`'] = trigger_normal_mode
 
 function key_press(state::REPL.LineEdit.MIState, repl::LineEditREPL, char::String)
 end
@@ -155,6 +157,6 @@ function funcdump(args...)
   end
 end
 
-init()
+#= init() =#
 return nothing
-#= end =#
+end
