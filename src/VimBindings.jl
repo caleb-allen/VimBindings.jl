@@ -1,9 +1,9 @@
-module VimBindings
+#= module VimBindings =#
 
 # Write your package code here.
 using REPL
 using REPL.LineEdit
-using Sockets
+#= using Sockets =#
 
 const LE = LineEdit
 
@@ -144,7 +144,7 @@ function debug_mode(state::REPL.LineEdit.MIState, repl::LineEditREPL, char::Stri
   println(socket, "character: ", char)
 end
 
-juliamode.keymap_dict['9'] = debug_mode
+#= juliamode.keymap_dict['9'] = debug_mode =#
 
 
 function funcdump(args...)
@@ -156,5 +156,5 @@ function funcdump(args...)
 end
 
 init()
-#= return nothing =#
-end
+return nothing
+#= end =#
