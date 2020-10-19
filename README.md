@@ -1,4 +1,4 @@
-# VimBindings
+# Intro
 
 VimBindings is a Julia package which brings vim keybindings and modal editing to the Julia REPL.
 

@@ -1,18 +1,16 @@
 module VimBindings
 
-# Write your package code here.
 using REPL
 using REPL.LineEdit
-#= using Sockets =#
 
 const LE = LineEdit
-
 
 function init()
   repl = Base.active_repl
   global juliamode = repl.interface.modes[1]
   juliamode.prompt = "julia[i]> "
   juliamode.keymap_dict['`'] = trigger_normal_mode
+  #= juliamode.keymap_dict['\e'] = trigger_normal_mode =#
 
   # remove normal mode if it's already added
   normalindex = 0
@@ -36,8 +34,9 @@ function init()
               'h' => (s::LineEdit.MIState, o...)->LE.edit_move_left(s),
               'l' => (s::LineEdit.MIState, o...)->LE.edit_move_right(s),
               'e' => (s::LineEdit.MIState, o...)->LE.edit_move_word_right(s),
-              'E' => (s::LineEdit.MIState, o...)->LE.char_move_word_right(s),
+              'E' => (s::LineEdit.MIState, o...)->edit_move_phrase_right(s),
               'b' => (s::LineEdit.MIState, o...)->LE.edit_move_word_left(s),
+              'B' => (s::LineEdit.MIState, o...)->edit_move_phrase_left(s),
               'a' => (s::LineEdit.MIState, o...)->begin
                 LE.edit_move_right(s)
                 trigger_insert_mode(s, o...)
@@ -49,7 +48,7 @@ function init()
               'i' => trigger_insert_mode,
               '$' => (s::LineEdit.MIState, o...)->edit_move_end(s),
               '^' => (s::LineEdit.MIState, o...)->edit_move_start(s),
-              #= 'E' => =# 
+              'x' => (s::LineEdit.MIState, o...)->LE.edit_delete(s),
            )
 
   normalmode.keymap_dict = keymap
@@ -81,19 +80,25 @@ function edit_move_start(s::LE.MIState)
   return true
 end
 
-function edit_move_phrase_end(s::LE.MIState)
+
+is_non_phrase_char(c::Char) = c in """ \t\n"""
+
+function edit_move_phrase_right(s::LE.MIState)
   buf = LE.buffer(s)
-  while !eof(buf)
-    LE.char_move_right(buf)
-    nextc = read(buf, Char)
-    if nextc == ' '
-      break
-   end
+  if !eof(buf)
+    LE.char_move_word_right(buf, is_non_phrase_char)
+    return LE.refresh_line(s)
   end
-  pos = position(buf)
-  seek(buf,pos)
-  LE.refresh_line(s)
-  return true
+  return nothing
+end
+
+function edit_move_phrase_left(s::LE.MIState)
+  buf = LE.buffer(s)
+  if position(buf) > 0
+    LE.char_move_word_left(buf, is_non_phrase_char)
+    return LE.refresh_line(s)
+  end
+  return nothing
 end
 
 
@@ -157,6 +162,4 @@ function funcdump(args...)
   end
 end
 
-#= init() =#
-return nothing
 end
