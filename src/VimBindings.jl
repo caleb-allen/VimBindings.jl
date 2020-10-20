@@ -5,7 +5,7 @@ using REPL.LineEdit
 import REPL.LineEdit.KeyAlias
 import Base: AnyDict, show_unquoted
 using Sockets
-include("types.jl")
+include("textobject.jl")
 
 const LE = LineEdit
 
@@ -27,7 +27,6 @@ function init()
         deleteat!(repl.interface.modes, normalindex)
     end
 
-        # normalmode.on_enter = funcdump
     keymap = AnyDict(
         # backspace
         '\b' => (s::LE.MIState, o...)->LE.edit_move_left(s),
@@ -88,8 +87,7 @@ function init()
                     # on_done = REPL.respond(split, repl, juliamode),
                     # on_enter = juliamode.on_enter,
                     )
-    # `juliaprompt` here is used to go back to julia mode after the command
-    normalmode.on_done = REPL.respond(split, repl, juliamode)
+    normalmode.on_done = juliamode.on_done
     normalmode.on_enter = juliamode.on_enter
 
     push!(repl.interface.modes, normalmode)
@@ -131,7 +129,6 @@ is_line_break_char(c::Char) = c in """\n"""
 is_whitespace_char(c::Char) = c in """ \t\n"""
 is_non_word_char(c::Char) = LE.is_non_word_char(c)
 is_word_char(c::Char) = !LE.is_non_word_char(c)
-
 is_punct_char(c::Char) = LE.is_non_word_char(c) && !is_non_phrase_char(c)
 
 function edit_move_phrase_right(s::LE.MIState)

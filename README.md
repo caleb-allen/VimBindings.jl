@@ -21,6 +21,6 @@ VimBindings begins in `insert` mode, and the Julia REPL can be used in its origi
 
 A user switches to `normal` mode by using the backtic, where they can navigate with `h`, `j`, `k`, `l`, etc.
 ```julia
-julia[i]> println("Hello world!") # user presses `
-julia[n]> println("Hello world!")
+julia[i]> println("Hello world!") # user presses backtic "`"
+julia[n]> println("Hello world!") # normal mode!
 ```
