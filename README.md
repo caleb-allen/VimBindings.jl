@@ -24,3 +24,4 @@ A user switches to `normal` mode by using the backtic, where they can navigate w
 julia[i]> println("Hello world!") # user presses backtic "`"
 julia[n]> println("Hello world!") # normal mode!
 ```
+![gif of usage](https://raw.githubusercontent.com/caleb-allen/VimBindings.jl/master/vimbindings.gif)]
