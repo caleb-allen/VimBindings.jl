@@ -4,6 +4,7 @@ authors = ["Caleb Allen <mail@caleb.dev> and contributors"]
 version = "0.1.0"
 
 [deps]
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 REPL = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
 Sockets = "6462fe0b-24de-5631-8697-dd941f90decc"
 
