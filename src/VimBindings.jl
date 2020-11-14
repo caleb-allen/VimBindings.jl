@@ -40,6 +40,7 @@ function init()
     # safe to convert to symbols
     alpha_keys = [
         'd',
+        'c',
         'w',
         'h',
         'j',
@@ -55,7 +56,7 @@ function init()
         'x'
     ]
 
-    # binds = [ @bindkey(c) for c in alpha_keys ]
+    # call the function with the name of the char
     binds = [ @eval ($c => (s::LE.MIState, o...)->
                      eval(Expr(:call, Symbol($c), VB.mode, s)))
               for c in alpha_keys ]
@@ -64,6 +65,9 @@ function init()
     keymap = AnyDict(
         # backspace
         '\b' => (s::LE.MIState, o...)->LE.edit_move_left(s),
+        # 'i' => (s::LE.MIState, o...)->i(VB.mode, s, o...),
+        # 'a' => (s::LE.MIState, o...)->i(VB.mode, s, o...),
+        # 'A' => (s::LE.MIState, o...)->i(VB.mode, s, o...),
         # 'h' => (s::LE.MIState, o...)->LE.edit_move_left(s),
         # 'l' => (s::LE.MIState, o...)->LE.edit_move_right(s),
         # 'k' => (s::LE.MIState, o...)->LE.edit_move_up(s),
@@ -192,7 +196,7 @@ function edit_move_phrase_left(s::LE.MIState)
     return true
 end
 
-function trigger_insert_mode(state::LineEdit.MIState, repl::Any, char::AbstractString)
+function trigger_insert_mode(state::LineEdit.MIState)
     iobuffer = LineEdit.buffer(state)
     LineEdit.transition(state, juliamode) do
         prompt_state = LineEdit.state(state, juliamode)
@@ -200,7 +204,7 @@ function trigger_insert_mode(state::LineEdit.MIState, repl::Any, char::AbstractS
     end
 end
 
-function trigger_normal_mode(state::LineEdit.MIState, repl::LineEditREPL, char::AbstractString)
+function trigger_normal_mode(state::LineEdit.MIState, o...)
     iobuffer = LineEdit.buffer(state)
     VB.mode = NormalMode()
     LineEdit.transition(state, normalmode) do

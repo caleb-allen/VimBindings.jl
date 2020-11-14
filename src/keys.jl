@@ -4,8 +4,24 @@ Normal Mode
 -----------
 =#
 
-function i(state :: NormalMode)
-    trigger_insert_mode(state, repl, char)
+function i(mode :: NormalMode, s::LE.MIState)
+    trigger_insert_mode(s)
+end
+
+function a(mode :: NormalMode, s::LE.MIState)
+    buf = LE.buffer(s)
+    motion = Motion(position(buf), position(buf) + 1)
+    execute(mode, s, motion)
+    trigger_insert_mode(s)
+    return true
+end
+
+function x(mode :: NormalMode, s::LE.MIState)
+    buf = LE.buffer(s)
+    motion = Motion(position(buf), position(buf) + 1)
+    execute(MotionMode{Delete}(), s, motion)
+    LE.refresh_line(s)
+    return true
 end
 
 function d(mode::NormalMode, s::LE.MIState)
@@ -13,48 +29,42 @@ function d(mode::NormalMode, s::LE.MIState)
 end
 
 function c(mode::NormalMode, s::LE.MIState)
-    VB.mode = MotionMode{Change}()
+    @log VB.mode = MotionMode{Change}()
 end
 
-# example for `f` find command, e.g.
-# `dfi`
-# function i(state::FindCharState) :: Motion
-
-# end
-
-function w(mode::MotionMode{T} where T, s::LE.MIState)
-    buf = LE.buffer(s)
-    motion = word(buf)
-    execute(mode, buf, motion)
-    LE.refresh_line(s)
-    vim_reset()
-    return true
+macro motion(k, fn)
+    return quote
+        function $(esc(k))(mode::MotionMode{T} where T, s::LE.MIState)
+            buf = LE.buffer(s)
+            motion = $fn(buf)
+            execute(mode, s, motion)
+            LE.refresh_line(s)
+            vim_reset()
+            return true
+        end
+    end
 end
 
-function b(mode::MotionMode{T} where T, s::LE.MIState)
-    buf = LE.buffer(s)
-    motion = word_back(buf)
-    execute(mode, buf, motion)
-    LE.refresh_line(s)
-    vim_reset()
-    return true
-end
+@motion(h, (buf) -> Motion(position(buf), position(buf) - 1))
+@motion(l, (buf) -> Motion(position(buf), position(buf) + 1))
+@motion(w, word)
+@motion(b, word_back)
 
 
 function execute(::AbstractSelectMode{Delete},
-                 buf :: IOBuffer,
+                 s :: LE.MIState,
                  motion::Motion)
-    delete(buf, motion)
+    delete(s, motion)
 end
 
 function execute(::AbstractSelectMode{Change},
-                 buf :: IOBuffer,
+                 s :: LE.MIState,
                  motion::Motion)
-    change(buf, motion)
+    change(s, motion)
 end
 
 function execute(::AbstractSelectMode{Move},
-                 buf :: IOBuffer,
+                 s :: LE.MIState,
                  motion::Motion)
-    move(buf, motion)
+    move(s, motion)
 end
