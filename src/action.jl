@@ -4,16 +4,6 @@
 
 # struct Delete <: Action end
 
-# struct Move <: Action end
-
-# TODO - use multiple dispatch to hold action state
-# struct Change <: Action
-# state :: LE.MIState,
-# end
-
-
-global action = :move
-
 for a in Symbol[:delete, :move]
     @eval function ($a)()
         global action = Symbol($a)
@@ -23,7 +13,7 @@ end
 
 function change(s :: LE.MIState, motion :: Motion)
     delete(buf, motion)
-    trigger_insert_mode()
+    # trigger_insert_mode()
     return true
 end
 

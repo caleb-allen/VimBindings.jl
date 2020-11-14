@@ -36,6 +36,7 @@ function line(s::LE.MIState)
 end
 
 
+
 """
     The motion to the next word
 

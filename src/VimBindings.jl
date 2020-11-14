@@ -8,11 +8,47 @@ using Sockets
 
 const LE = LineEdit
 
+abstract type Action end
+struct Move <: Action end
+struct Delete <: Action end
+
+abstract type VimMode end
+# InsertMode is the standard Julia REPL
+struct InsertMode end
+struct NormalMode end
+
+# A mode in which the user selects the motion which will
+# be used for `Action`
+abstract type AbstractSelectMode{T <: Action} <: VimMode end
+
+"""
+A mode in which the user selects the motion
+to apply the Action to. For example, this mode
+will be enabled after `d` in the command `diw`
+"""
+struct SelectMotion{T <: Action} <: AbstractSelectMode{T} end
+
+"""
+A mode which requires the char value
+of the pressed key
+"""
+abstract type SelectCharMode{T <: Action} <: AbstractSelectMode{T} end
+struct SelectRegister{T <: Action} <: SelectCharMode{T} end
+# struct FindChar <: SelectCharMode end
+# struct ToChar <: SelectCharMode end
+
+
+
+
 include("textobject.jl")
 include("motion.jl")
 include("action.jl")
+include("keys.jl")
 
-
+global vim_mode = InsertMode()
+global action = :move
+#               :delete
+#               :change
 function init()
     repl = Base.active_repl
     global juliamode = repl.interface.modes[1]
@@ -30,7 +66,9 @@ function init()
     if normalindex != 0
         deleteat!(repl.interface.modes, normalindex)
     end
-
+    # keymap = AnyDict(
+    #     'c' => c
+    # )
     keymap = AnyDict(
         # backspace
         '\b' => (s::LE.MIState, o...)->LE.edit_move_left(s),
@@ -40,8 +78,8 @@ function init()
         'j' => (s::LE.MIState, o...)->LE.edit_move_down(s),
         # 'e' => (s::LE.MIState, o...)->LE.edit_move_word_right(s),
         'c' => (s::LE.MIState, o...)->change(),
-        'd' => (s::LE.MIState, o...)->delete(),
-        'w' => (s::LE.MIState, o...)->word(s),
+        'd' => (s::LE.MIState, o...)->d(vim_mode, s),
+        'w' => (s::LE.MIState, o...)->w(vim_mode, s),
         'E' => (s::LE.MIState, o...)->edit_move_phrase_right(s),
         'b' => (s::LE.MIState, o...)->LE.edit_move_word_left(s),
         'B' => (s::LE.MIState, o...)->edit_move_phrase_left(s),
@@ -170,6 +208,7 @@ end
 
 function trigger_normal_mode(state::LineEdit.MIState, repl::LineEditREPL, char::AbstractString)
     iobuffer = LineEdit.buffer(state)
+    @log global vim_mode = NormalMode()
     LineEdit.transition(state, normalmode) do
         prompt_state = LineEdit.state(state, normalmode)
         prompt_state.input_buffer = copy(iobuffer)
