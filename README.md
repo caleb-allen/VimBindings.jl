@@ -39,4 +39,4 @@ Switch to `normal` mode by using the backtic, where you can navigate with `h`, `
 julia[i]> println("Hello world!") # user presses backtic "`"
 julia[n]> println("Hello world!") # normal mode!
 ```
-![gif of usage](https://raw.githubusercontent.com/caleb-allen/VimBindings.jl/master/vimbindings.gif)]
+![gif of usage](https://raw.githubusercontent.com/caleb-allen/VimBindings.jl/master/vimbindings.gif)
