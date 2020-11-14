@@ -1,16 +1,4 @@
 
-
-# abstract type Action end
-
-# struct Delete <: Action end
-
-for a in Symbol[:delete, :move]
-    @eval function ($a)()
-        global action = Symbol($a)
-        return true
-    end
-end
-
 function change(s :: LE.MIState, motion :: Motion)
     delete(buf, motion)
     # trigger_insert_mode()
@@ -20,7 +8,6 @@ end
 function delete(buf :: IOBuffer, motion :: Motion)
     move(buf, motion)
     @log edit_splice!(buf, motion.start => motion.stop)
-    move()
     return true
 end
 

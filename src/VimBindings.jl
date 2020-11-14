@@ -8,47 +8,14 @@ using Sockets
 
 const LE = LineEdit
 
-abstract type Action end
-struct Move <: Action end
-struct Delete <: Action end
-
-abstract type VimMode end
-# InsertMode is the standard Julia REPL
-struct InsertMode end
-struct NormalMode end
-
-# A mode in which the user selects the motion which will
-# be used for `Action`
-abstract type AbstractSelectMode{T <: Action} <: VimMode end
-
-"""
-A mode in which the user selects the motion
-to apply the Action to. For example, this mode
-will be enabled after `d` in the command `diw`
-"""
-struct SelectMotion{T <: Action} <: AbstractSelectMode{T} end
-
-"""
-A mode which requires the char value
-of the pressed key
-"""
-abstract type SelectCharMode{T <: Action} <: AbstractSelectMode{T} end
-struct SelectRegister{T <: Action} <: SelectCharMode{T} end
-# struct FindChar <: SelectCharMode end
-# struct ToChar <: SelectCharMode end
-
-
-
-
-include("textobject.jl")
+include("types.jl")
+include("util.jl")
 include("motion.jl")
 include("action.jl")
 include("keys.jl")
 
-global vim_mode = InsertMode()
-global action = :move
-#               :delete
-#               :change
+const VB = VimBindingState(InsertMode())
+
 function init()
     repl = Base.active_repl
     global juliamode = repl.interface.modes[1]
@@ -69,34 +36,61 @@ function init()
     # keymap = AnyDict(
     #     'c' => c
     # )
+    # alphabetic keys, no control characters or punctuation.
+    # safe to convert to symbols
+    alpha_keys = [
+        'd',
+        'w',
+        'h',
+        'j',
+        'k',
+        'l',
+        'e',
+        'E',
+        'b',
+        'B',
+        'a',
+        'A',
+        'i',
+        'x'
+    ]
+
+    # binds = [ @bindkey(c) for c in alpha_keys ]
+    binds = [ @eval ($c => (s::LE.MIState, o...)->
+                     eval(Expr(:call, Symbol($c), VB.mode, s)))
+              for c in alpha_keys ]
+    # @log binds
+    # return binds
     keymap = AnyDict(
         # backspace
         '\b' => (s::LE.MIState, o...)->LE.edit_move_left(s),
-        'h' => (s::LE.MIState, o...)->LE.edit_move_left(s),
-        'l' => (s::LE.MIState, o...)->LE.edit_move_right(s),
-        'k' => (s::LE.MIState, o...)->LE.edit_move_up(s),
-        'j' => (s::LE.MIState, o...)->LE.edit_move_down(s),
-        # 'e' => (s::LE.MIState, o...)->LE.edit_move_word_right(s),
-        'c' => (s::LE.MIState, o...)->change(),
-        'd' => (s::LE.MIState, o...)->d(vim_mode, s),
-        'w' => (s::LE.MIState, o...)->w(vim_mode, s),
-        'E' => (s::LE.MIState, o...)->edit_move_phrase_right(s),
-        'b' => (s::LE.MIState, o...)->LE.edit_move_word_left(s),
-        'B' => (s::LE.MIState, o...)->edit_move_phrase_left(s),
-        'a' => (s::LE.MIState, o...)->begin
-        LE.edit_move_right(s)
-        trigger_insert_mode(s, o...)
-        end,
-        'A' => (s::LE.MIState, o...)->begin
-        edit_move_end(s)
-        trigger_insert_mode(s, o...)
-        end,
-        'i' => trigger_insert_mode,
-        '$' => (s::LE.MIState, o...)->edit_move_end(s),
-        '^' => (s::LE.MIState, o...)->edit_move_start(s),
-        'x' => (s::LE.MIState, o...)->LE.edit_delete(s),
+        # 'h' => (s::LE.MIState, o...)->LE.edit_move_left(s),
+        # 'l' => (s::LE.MIState, o...)->LE.edit_move_right(s),
+        # 'k' => (s::LE.MIState, o...)->LE.edit_move_up(s),
+        # 'j' => (s::LE.MIState, o...)->LE.edit_move_down(s),
+        # # 'e' => (s::LE.MIState, o...)->LE.edit_move_word_right(s),
+        # 'c' => (s::LE.MIState, o...)->change(),
+        # # 'd' => (s::LE.MIState, o...)->d(VB.mode, s),
+        # # 'w' => (s::LE.MIState, o...)->w(VB.mode, s),
+        # 'E' => (s::LE.MIState, o...)->edit_move_phrase_right(s),
+        # 'b' => (s::LE.MIState, o...)->LE.edit_move_word_left(s),
+        # 'B' => (s::LE.MIState, o...)->edit_move_phrase_left(s),
+        # 'a' => (s::LE.MIState, o...)->begin
+        # LE.edit_move_right(s)
+        # trigger_insert_mode(s, o...)
+        # end,
+        # 'A' => (s::LE.MIState, o...)->begin
+        # edit_move_end(s)
+        # trigger_insert_mode(s, o...)
+        # end,
+        # 'i' => trigger_insert_mode,
+        # '$' => (s::LE.MIState, o...)->edit_move_end(s),
+        # '^' => (s::LE.MIState, o...)->edit_move_start(s),
+        # 'x' => (s::LE.MIState, o...)->LE.edit_delete(s),
         '`' => (s::LE.MIState, o...)->vim_reset(),
     )
+    keymap = merge(keymap,
+                   AnyDict(binds))
 
     # for i in 0:9
     #     keymap(Char(i))
@@ -145,7 +139,7 @@ function init()
 end
 
 function vim_reset()
-    @log action = :move
+    VB.mode = NormalMode()
     return true
 end
 
@@ -208,7 +202,7 @@ end
 
 function trigger_normal_mode(state::LineEdit.MIState, repl::LineEditREPL, char::AbstractString)
     iobuffer = LineEdit.buffer(state)
-    @log global vim_mode = NormalMode()
+    VB.mode = NormalMode()
     LineEdit.transition(state, normalmode) do
         prompt_state = LineEdit.state(state, normalmode)
         prompt_state.input_buffer = copy(iobuffer)
