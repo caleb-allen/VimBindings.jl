@@ -25,11 +25,16 @@ function x(mode :: NormalMode, s::LE.MIState)
 end
 
 function d(mode::NormalMode, s::LE.MIState)
-    @log VB.mode = MotionMode{Delete}()
+    @log vim.mode = MotionMode{Delete}()
 end
 
 function c(mode::NormalMode, s::LE.MIState)
-    @log VB.mode = MotionMode{Change}()
+    @log vim.mode = MotionMode{Change}()
+end
+
+function f(mode::MotionMode{T} where T, s::LE.MIState)
+    @log t = eltype(mode)
+    @log vim.mode = FindCharMode{t}()
 end
 
 macro motion(k, fn)
@@ -48,7 +53,10 @@ end
 @motion(h, (buf) -> Motion(position(buf), position(buf) - 1))
 @motion(l, (buf) -> Motion(position(buf), position(buf) + 1))
 @motion(w, word)
+@motion(e, word_end)
 @motion(b, word_back)
+@motion(caret, (buf -> Motion(position(buf), 0)))
+@motion(dollar, line_end)
 
 
 function execute(::AbstractSelectMode{Delete},

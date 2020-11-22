@@ -6,6 +6,11 @@ function change(s :: LE.MIState, motion :: Motion)
     return true
 end
 
+# TODO deleting 'exclusive' or 'inclusive'
+# e.g. "dw" deletes the whole word
+# but "ce" changes until the end of the word (inclusive)
+# currently the implementation only changes "up to" the
+# end of the word
 function delete(s :: LE.MIState, motion :: Motion)
     buf = LE.buffer(s)
     move(s, motion)

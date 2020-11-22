@@ -3,19 +3,6 @@ struct Motion
     stop :: Int64
 end
 
-# function test()
-#     #               0123456789
-#     #               |-----|
-#     buf = IOBuffer("Hello worl")
-#     motion = word(buf)
-#     @assert motion == Motion(0, 6)
-
-
-#     @assert punctuation('-')
-#     buf = IOBuffer("Hello-worl")
-#     motion = word(buf)
-#     @assert motion == Motion(0, 5)
-# end
 
 # function word(s::LE.MIState)
 #     buf = LE.buffer(s)
@@ -67,6 +54,40 @@ function word(buf :: IOBuffer) :: Motion
     return Motion(start, endd)
 end
 
+
+
+function word_end(buf :: IOBuffer) :: Motion
+    start = position(buf)
+    eof(buf) && return Motion(start, start)
+
+    mark(buf)
+    # move to the next character, since this command will always
+    # move at least 1 (or else it is EOF)
+    read(buf, Char)
+
+    @log first_word_char = !eof(buf) && read(buf, Char)
+    # find the first character of the word we will be moving to the end of
+    while !eof(buf) && position(buf) != start && whitespace(first_word_char)
+        @log first_word_char = read(buf, Char)
+    end
+
+    while !eof(buf)
+        c = read(buf, Char)
+        if punctuation(first_word_char) && !punctuation(c)
+            LE.char_move_left(buf)
+            break
+        elseif alphanumeric(first_word_char) && !alphanumeric(c)
+            LE.char_move_left(buf)
+            break
+        end
+    end
+    LE.char_move_left(buf)
+    @log endd = position(buf)
+    @log typeof(endd)
+    reset(buf)
+    return Motion(start, endd)
+end
+
 function word_back(buf :: IOBuffer) :: Motion
     start = position(buf)
     position(buf) == 0 && return Motion(start, start)
@@ -94,7 +115,7 @@ function word_back(buf :: IOBuffer) :: Motion
     return @log Motion(start, endd)
 end
 
-function line(buf :: IOBuffer) :: Motion
+function line_end(buf :: IOBuffer) :: Motion
     mark(buf)
     start = position(buf)
 
@@ -105,13 +126,42 @@ function line(buf :: IOBuffer) :: Motion
         end
     end
     skip(buf, -1)
-    endd = positiopn(buf)
+    endd = position(buf)
     reset(buf)
     return Motion(start, endd)
 end
 
+# function line_end (buf)
+#     start = position(buf)
+#     while !eof(buf)
+#         c = read(buf, Char)
+#         if newline(c)
+#             break
+#         end
+#     end
+#     endd = position(buf)
+#     return Motion(start, endd)
+# end
+
 function endd(buf :: IOBuffer) :: Motion
 
+end
+
+function find_c(buf :: IOBuffer, query_c :: Char) :: Motion
+    start = position(buf)
+    endd = start
+
+    # read one char to bump us by 1
+    eof(buf) || read(buf, Char)
+    while !eof(buf)
+        c = read(buf, Char)
+        if c == query_c
+            skip(buf, -1)
+            endd = position(buf)
+            break
+        end
+    end
+    return Motion(start, endd)
 end
 
 
@@ -122,11 +172,22 @@ word_char(c::Char) = !LE.is_non_word_char(c)
 punct_char(c::Char) = LE.is_non_word_char(c) && !is_non_phrase_char(c)
 
 function alphanumeric(c :: Char) :: Bool
-    chars = ['a':'z';
-             'A':'Z';
-             '0':'9';]
-    return c in chars
+    return c in ['a':'z';
+                 'A':'Z';
+                 '0':'9';]
+
 end
+function alphabetic(c :: Char) :: Bool
+    return c in ['a':'z';
+                 'A':'Z';]
+end
+function is_uppercase(c :: Char) :: Bool
+    return c in ['A':'Z';]
+end
+function is_lowercase(c :: Char) :: Bool
+    return c in ['a':'z';]
+end
+
 function punctuation(c :: Char) :: Bool
     return c in """`!@#\$%^&*()-_=+[]{}'\"/?\\|<>,.:;"""
 end

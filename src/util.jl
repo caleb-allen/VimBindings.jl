@@ -1,16 +1,39 @@
 macro log(exs...)
     blk = Expr(:block)
+    loc = string("\t", __source__.file, "#", __source__.line)
     for ex in exs
-        push!(blk.args, :(println(getsocket(), $(sprint(show_unquoted,ex)*" = "),
-                                  repr(begin value=$(esc(ex)) end))))
+        push!(blk.args, :(println(getsocket(),
+                                  $(sprint(show_unquoted,ex)*" = "),
+                                  repr(begin value=$(esc(ex)) end),
+                                  "\n",
+                                  $loc,
+                                  "\n",
+                                  )))
     end
     isempty(exs) || push!(blk.args, :value)
     return blk
 end
 
-function log(s :: AbstractString)
-    println(getsocket(), s)
+# macro log(str)
+#     blk = Expr(:block)
+#     loc = string("\t", __source__.file, "#", __source__.line)
+#     push!(blk.args, :(println(getsocket(),
+#                               # repr(begin value=$(esc(str)) end),
+#                               $str,
+#                               "\n",
+#                               $loc,
+#                               "\n",
+#                               )))
+#     push!(blk.args, :value)
+#     return blk
+# end
+
+
+function log(s...)
+    println(getsocket(), s...)
 end
+
+# function log(s :: AbstractString...)
 
 
 # bind character to function

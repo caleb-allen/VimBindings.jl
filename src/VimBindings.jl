@@ -2,7 +2,7 @@ module VimBindings
 
 using REPL
 using REPL.LineEdit
-import REPL.LineEdit: KeyAlias, edit_splice!
+import REPL.LineEdit: KeyAlias, edit_splice!, buffer
 import Base: AnyDict, show_unquoted
 using Sockets
 
@@ -14,7 +14,101 @@ include("motion.jl")
 include("action.jl")
 include("keys.jl")
 
-const VB = VimBindingState(InsertMode())
+const vim = VimBindingState(InsertMode())
+
+"""
+dispatch_key method which takes in the char, VB.mode, s.
+Same dispatch_key method for all keys.
+It will do the eval of the symbol at runtime.
+
+e.g. for normal mode (union of many modes, possible), it will dispatch_key
+to the specific keybinds
+
+but for "find" mode, there is a dispatch_key method which uses the character
+to find, instead of calling that character's function.
+
+for normal mode, take the @eval code below in order to call
+the correct function at runtime.
+
+This way, we do not need function specific bindings for every single
+key, only the needed (and/or implemented) ones.
+"""
+function dispatch_key(c, mode, s::LE.MIState)
+    log("dispatching key: ", string(c))
+    fn_name = if c in keys(special_keys)
+        Symbol(special_keys[c])
+    elseif alphabetic(c)
+        if is_lowercase(c)
+            Symbol(c)
+        else
+            Symbol(string(lowercase(c), "_uppercase"))
+        end
+    else
+        log("not dispatching key")
+        @log c
+        return
+    end
+    if !isdefined(VimBindings, fn_name)
+        log("function $fn_name does not exist")
+        return
+    end
+    eval(Expr(:call, fn_name, vim.mode, s))
+end
+
+special_keys = Dict(
+    '`' => "backtic",
+    '~' => "tilde",
+    '!' => "bang",
+    '@' => "at",
+    '#' => "hash",
+    '$' => "dollar",
+    '%' => "percent",
+    '^' => "caret",
+    '&' => "ampersand",
+    '*' => "asterisk",
+    '(' => "open_paren",
+    ')' => "close_paren",
+    '-' => "dash",
+    '_' => "underscore",
+    '=' => "equals",
+    '+' => "plus",
+    '\\' => "backslash",
+    '|' => "bar",
+    '[' => "open_bracket",
+    ']' => "close_bracket",
+    '{' => "open_curly_brace",
+    '}' => "close_curly_brace",
+    "'"[1] => "single_quote",
+    '"' => "double_quote",
+    ';' => "semicolon",
+    ':' => "colon",
+    ',' => "comma",
+    '<' => "open_angle_bracket",
+    '>' => "close_angle_bracket",
+    '.' => "dot",
+    '/' => "slash",
+    '?' => "question_mark"
+)
+
+all_keys = Char[collect(keys(special_keys));
+                collect('a':'z');
+                collect('A':'Z');
+                collect('0':'9')]
+
+
+function dispatch_key(query_c :: Char, mode :: FindCharMode{}, s::LE.MIState)
+    buf = buffer(s)
+    motion = find_c(buf, query_c)
+
+    execute(mode, s, motion)
+    LE.refresh_line(s)
+    vim_reset()
+end
+
+function dispatch_key(c, mode :: ToCharMode, s::LE.MIState)
+    # TODO
+end
+
 
 function init()
     repl = Base.active_repl
@@ -36,6 +130,7 @@ function init()
     # keymap = AnyDict(
     #     'c' => c
     # )
+
     # alphabetic keys, no control characters or punctuation.
     # safe to convert to symbols
     alpha_keys = [
@@ -57,41 +152,26 @@ function init()
     ]
 
     # call the function with the name of the char
-    binds = [ @eval ($c => (s::LE.MIState, o...)->
-                     eval(Expr(:call, Symbol($c), VB.mode, s)))
-              for c in alpha_keys ]
-    # @log binds
-    # return binds
+    # binds = [ @eval ($c => (s::LE.MIState, o...)->
+    #                  eval(Expr(:call, Symbol($c), vim.mode, s)))
+    #           for c in alpha_keys ]
+
+    # TODO for all characters
+    # @eval ($c => (s::LE.MIstate, o...)->
+    #                dispatch_key($c, VB.mode, s))
+
+    binds = AnyDict()
+    for c in all_keys
+        bind = (s::LE.MIState, o...)->begin
+            dispatch_key(c, vim.mode, s)
+        end
+        binds[c] = bind
+    end
+
     keymap = AnyDict(
         # backspace
-        '\b' => (s::LE.MIState, o...)->LE.edit_move_left(s),
-        # 'i' => (s::LE.MIState, o...)->i(VB.mode, s, o...),
-        # 'a' => (s::LE.MIState, o...)->i(VB.mode, s, o...),
-        # 'A' => (s::LE.MIState, o...)->i(VB.mode, s, o...),
-        # 'h' => (s::LE.MIState, o...)->LE.edit_move_left(s),
-        # 'l' => (s::LE.MIState, o...)->LE.edit_move_right(s),
-        # 'k' => (s::LE.MIState, o...)->LE.edit_move_up(s),
-        # 'j' => (s::LE.MIState, o...)->LE.edit_move_down(s),
-        # # 'e' => (s::LE.MIState, o...)->LE.edit_move_word_right(s),
-        # 'c' => (s::LE.MIState, o...)->change(),
-        # # 'd' => (s::LE.MIState, o...)->d(VB.mode, s),
-        # # 'w' => (s::LE.MIState, o...)->w(VB.mode, s),
-        # 'E' => (s::LE.MIState, o...)->edit_move_phrase_right(s),
-        # 'b' => (s::LE.MIState, o...)->LE.edit_move_word_left(s),
-        # 'B' => (s::LE.MIState, o...)->edit_move_phrase_left(s),
-        # 'a' => (s::LE.MIState, o...)->begin
-        # LE.edit_move_right(s)
-        # trigger_insert_mode(s, o...)
-        # end,
-        # 'A' => (s::LE.MIState, o...)->begin
-        # edit_move_end(s)
-        # trigger_insert_mode(s, o...)
-        # end,
-        # 'i' => trigger_insert_mode,
-        # '$' => (s::LE.MIState, o...)->edit_move_end(s),
-        # '^' => (s::LE.MIState, o...)->edit_move_start(s),
-        # 'x' => (s::LE.MIState, o...)->LE.edit_delete(s),
-        '`' => (s::LE.MIState, o...)->vim_reset(),
+        # '\b' => (s::LE.MIState, o...)->LE.edit_move_left(s),
+             # '`' => (s::LE.MIState, o...)->vim_reset(),
     )
     keymap = merge(keymap,
                    AnyDict(binds))
@@ -143,7 +223,7 @@ function init()
 end
 
 function vim_reset()
-    VB.mode = NormalMode()
+    vim.mode = NormalMode()
     return true
 end
 
@@ -206,7 +286,7 @@ end
 
 function trigger_normal_mode(state::LineEdit.MIState, o...)
     iobuffer = LineEdit.buffer(state)
-    VB.mode = NormalMode()
+    vim.mode = NormalMode()
     LineEdit.transition(state, normalmode) do
         prompt_state = LineEdit.state(state, normalmode)
         prompt_state.input_buffer = copy(iobuffer)
