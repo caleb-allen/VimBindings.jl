@@ -1,6 +1,10 @@
 using VimBindings
 import VimBindings: word, word_end, Motion, punctuation, find_c
+import VimBindings: line, TextObject
 using Test
+const VB = VimBindings
+
+include("action.jl")
 
 @testset "VimBindings.jl" begin
 end
@@ -34,6 +38,20 @@ end
 
     buf = IOBuffer("using VimBindings")
     @test find_c(buf, 'g') == Motion(0, 4)
+end
+
+@testset "line diffs" begin
+
+end
+
+@testset "line motion" begin
+    s = """
+First line
+second line
+third line
+"""
+    buf = IOBuffer(s)
+    @test line(buf) == TextObject(0, 10)
 end
 
 

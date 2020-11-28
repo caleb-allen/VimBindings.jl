@@ -24,6 +24,12 @@ function x(mode :: NormalMode, s::LE.MIState)
     return true
 end
 
+function p(mode::NormalMode, s::LE.MIState)
+    buf = LE.buffer(s)
+    paste(buf, vim.register)
+    LE.refresh_line(s)
+end
+
 function d(mode::NormalMode, s::LE.MIState)
     @log vim.mode = MotionMode{Delete}()
 end
@@ -32,10 +38,37 @@ function c(mode::NormalMode, s::LE.MIState)
     @log vim.mode = MotionMode{Change}()
 end
 
+function y(mode::NormalMode, s::LE.MIState)
+    @log vim.mode = MotionMode{Yank}()
+end
+
+
+function double_quote(mode::NormalMode, s::LE.MIState)
+    @log vim.mode = SelectRegister()
+end
+
 function f(mode::MotionMode{T} where T, s::LE.MIState)
     @log t = eltype(mode)
-    @log vim.mode = FindCharMode{t}()
+    @log vim.mode = FindChar{t}()
 end
+
+function d(mode::MotionMode{Delete}, s)
+    buf = buffer(s)
+    motion = Motion(line(buf))
+    execute(mode, s, motion)
+    refresh_line(s)
+    vim_reset()
+    return true
+end
+
+function y(mode::MotionMode{Yank}, s)
+    buf = buffer(s)
+    motion = Motion(line(buf))
+    execute(mode, s, motion)
+    vim_reset()
+    return true
+end
+
 
 macro motion(k, fn)
     return quote
@@ -76,3 +109,10 @@ function execute(::AbstractSelectMode{Move},
                  motion::Motion)
     move(s, motion)
 end
+
+function execute(::AbstractSelectMode{Yank},
+                 s :: LE.MIState,
+                 motion::Motion)
+    yank(s, motion)
+end
+

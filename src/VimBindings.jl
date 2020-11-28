@@ -2,7 +2,7 @@ module VimBindings
 
 using REPL
 using REPL.LineEdit
-import REPL.LineEdit: KeyAlias, edit_splice!, buffer
+import REPL.LineEdit: KeyAlias, edit_splice!, buffer, refresh_line
 import Base: AnyDict, show_unquoted
 using Sockets
 
@@ -10,50 +10,12 @@ const LE = LineEdit
 
 include("types.jl")
 include("util.jl")
+include("textobject.jl")
 include("motion.jl")
 include("action.jl")
 include("keys.jl")
 
-const vim = VimBindingState(InsertMode())
-
-"""
-dispatch_key method which takes in the char, VB.mode, s.
-Same dispatch_key method for all keys.
-It will do the eval of the symbol at runtime.
-
-e.g. for normal mode (union of many modes, possible), it will dispatch_key
-to the specific keybinds
-
-but for "find" mode, there is a dispatch_key method which uses the character
-to find, instead of calling that character's function.
-
-for normal mode, take the @eval code below in order to call
-the correct function at runtime.
-
-This way, we do not need function specific bindings for every single
-key, only the needed (and/or implemented) ones.
-"""
-function dispatch_key(c, mode, s::LE.MIState)
-    log("dispatching key: ", string(c))
-    fn_name = if c in keys(special_keys)
-        Symbol(special_keys[c])
-    elseif alphabetic(c)
-        if is_lowercase(c)
-            Symbol(c)
-        else
-            Symbol(string(lowercase(c), "_uppercase"))
-        end
-    else
-        log("not dispatching key")
-        @log c
-        return
-    end
-    if !isdefined(VimBindings, fn_name)
-        log("function $fn_name does not exist")
-        return
-    end
-    eval(Expr(:call, fn_name, vim.mode, s))
-end
+const vim = VimBindingState()
 
 special_keys = Dict(
     '`' => "backtic",
@@ -94,19 +56,64 @@ all_keys = Char[collect(keys(special_keys));
                 collect('a':'z');
                 collect('A':'Z');
                 collect('0':'9')]
+"""
+dispatch_key method which takes in the char, VB.mode, s.
+Same dispatch_key method for all keys.
+It will do the eval of the symbol at runtime.
+
+e.g. for normal mode (union of many modes, possible), it will dispatch_key
+to the specific keybinds
+
+but for "find" mode, there is a dispatch_key method which uses the character
+to find, instead of calling that character's function.
+
+for normal mode, take the @eval code below in order to call
+the correct function at runtime.
+
+This way, we do not need function specific bindings for every single
+key, only the needed (and/or implemented) ones.
+"""
+function dispatch_key(c, mode, s::LE.MIState)
+    log("dispatching key: ", string(c))
+    fn_name = if c in keys(special_keys)
+        Symbol(special_keys[c])
+    elseif alphabetic(c)
+        if is_lowercase(c)
+            Symbol(c)
+        else
+            Symbol(string(lowercase(c), "_uppercase"))
+        end
+    else
+        log("not dispatching key")
+        @log c
+        return
+    end
+    if !isdefined(VimBindings, fn_name)
+        log("function $fn_name does not exist")
+        return
+    end
+    eval(Expr(:call, fn_name, vim.mode, s))
+end
 
 
-function dispatch_key(query_c :: Char, mode :: FindCharMode{}, s::LE.MIState)
+
+function dispatch_key(query_c :: Char, mode :: FindChar{}, s::LE.MIState)
     buf = buffer(s)
     motion = find_c(buf, query_c)
-
     execute(mode, s, motion)
     LE.refresh_line(s)
     vim_reset()
 end
 
-function dispatch_key(c, mode :: ToCharMode, s::LE.MIState)
+function dispatch_key(c, mode :: ToChar, s::LE.MIState)
     # TODO
+end
+
+function dispatch_key(c :: Char, mode :: SelectRegister, s::LE.MIState)
+    if alphanumeric(c)
+        @log vim.register = c
+    end
+    vim_reset()
 end
 
 
@@ -231,7 +238,7 @@ function edit_move_end(s::LE.MIState)
     buf = LE.buffer(s)
     @show typeof(buf)
     while !eof(buf)
-        if line_break(
+        if linebreak(
             LE.char_move_right(buf))
             break
         end
@@ -246,7 +253,7 @@ end
 function edit_move_start(s::LE.MIState)
     buf = LE.buffer(s)
     while position(buf) > 0
-        if line_break(LE.char_move_left(buf))
+        if linebreak(LE.char_move_left(buf))
             LE.char_move_right(buf)
             break
         end

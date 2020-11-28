@@ -33,10 +33,6 @@ function log(s...)
     println(getsocket(), s...)
 end
 
-# function log(s :: AbstractString...)
-
-
-# bind character to function
 function test_bind()
 
 end

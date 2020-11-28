@@ -1,21 +1,19 @@
 
 abstract type Action end
 struct Move <: Action end
+struct Yank <: Action end
 struct Delete <: Action end
 struct Change <: Action end
 
 abstract type VimMode end
+abstract type VimCommand end
+
 # InsertMode is the standard Julia REPL
 struct InsertMode <: VimMode end
-
 # A mode in which the user selects the motion which will
 # be used for `Action`
 abstract type AbstractSelectMode{T <: Action} <: VimMode end
-
 eltype(::AbstractSelectMode{T}) where {T} = T
-# eltype(x) = eltype(typeof(x))
-
-# findparam(ex::AbstractSelectMode{T}) where {T} = T
 
 """
 A mode in which the user selects the motion
@@ -30,12 +28,17 @@ const NormalMode = MotionMode{Move}
 A mode which requires the char value
 of the pressed key
 """
-abstract type SelectCharMode{T <: Action} <: AbstractSelectMode{T} end
-# struct SelectRegister{T <: Action} <: SelectCharMode{T} end
-struct FindCharMode{T <: Action} <: SelectCharMode{T} end
-struct ToCharMode{T <: Action} <: SelectCharMode{T} end
+struct FindChar{T <: Action} <: VimCommand end
+struct ToChar{T <: Action} <: VimCommand end
+struct SelectRegister <: VimCommand end
+
 
 mutable struct VimBindingState
-    mode :: VimMode
+    mode :: Union{VimMode, VimCommand}
+    registers :: Dict{Char, String}
+    register :: Char
 end
 
+VimBindingState() = VimBindingState(InsertMode(),
+                                    Dict{Char, String}(),
+                                    '"')

@@ -3,6 +3,12 @@ struct Motion
     stop :: Int64
 end
 
+Motion(to :: TextObject) = Motion(to.start, to.stop)
+# TODO add 'inclusive' param
+
+min(motion :: Motion) = Base.min(motion.start, motion.stop)
+max(motion :: Motion) = Base.max(motion.start, motion.stop)
+length(motion :: Motion) = max(motion) - min(motion)
 
 # function word(s::LE.MIState)
 #     buf = LE.buffer(s)
@@ -53,8 +59,6 @@ function word(buf :: IOBuffer) :: Motion
     reset(buf)
     return Motion(start, endd)
 end
-
-
 
 function word_end(buf :: IOBuffer) :: Motion
     start = position(buf)
@@ -121,7 +125,7 @@ function line_end(buf :: IOBuffer) :: Motion
 
     while !eof(buf)
         c = read(buf, Char)
-        if line_break(c)
+        if linebreak(c)
             break
         end
     end
@@ -130,6 +134,7 @@ function line_end(buf :: IOBuffer) :: Motion
     reset(buf)
     return Motion(start, endd)
 end
+
 
 # function line_end (buf)
 #     start = position(buf)
@@ -162,34 +167,6 @@ function find_c(buf :: IOBuffer, query_c :: Char) :: Motion
         end
     end
     return Motion(start, endd)
-end
-
-
-line_break(c::Char) = c in """\n"""
-whitespace(c::Char) = c in """ \t\n"""
-non_word(c::Char) = LE.is_non_word_char(c)
-word_char(c::Char) = !LE.is_non_word_char(c)
-punct_char(c::Char) = LE.is_non_word_char(c) && !is_non_phrase_char(c)
-
-function alphanumeric(c :: Char) :: Bool
-    return c in ['a':'z';
-                 'A':'Z';
-                 '0':'9';]
-
-end
-function alphabetic(c :: Char) :: Bool
-    return c in ['a':'z';
-                 'A':'Z';]
-end
-function is_uppercase(c :: Char) :: Bool
-    return c in ['A':'Z';]
-end
-function is_lowercase(c :: Char) :: Bool
-    return c in ['a':'z';]
-end
-
-function punctuation(c :: Char) :: Bool
-    return c in """`!@#\$%^&*()-_=+[]{}'\"/?\\|<>,.:;"""
 end
 
 
