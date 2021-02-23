@@ -14,48 +14,10 @@ include("textobject.jl")
 include("motion.jl")
 include("action.jl")
 include("keys.jl")
+include("parse.jl")
+include("verb.jl")
 
-const vim = VimBindingState()
-
-special_keys = Dict(
-    '`' => "backtic",
-    '~' => "tilde",
-    '!' => "bang",
-    '@' => "at",
-    '#' => "hash",
-    '$' => "dollar",
-    '%' => "percent",
-    '^' => "caret",
-    '&' => "ampersand",
-    '*' => "asterisk",
-    '(' => "open_paren",
-    ')' => "close_paren",
-    '-' => "dash",
-    '_' => "underscore",
-    '=' => "equals",
-    '+' => "plus",
-    '\\' => "backslash",
-    '|' => "bar",
-    '[' => "open_bracket",
-    ']' => "close_bracket",
-    '{' => "open_curly_brace",
-    '}' => "close_curly_brace",
-    "'"[1] => "single_quote",
-    '"' => "double_quote",
-    ';' => "semicolon",
-    ':' => "colon",
-    ',' => "comma",
-    '<' => "open_angle_bracket",
-    '>' => "close_angle_bracket",
-    '.' => "dot",
-    '/' => "slash",
-    '?' => "question_mark"
-)
-
-all_keys = Char[collect(keys(special_keys));
-                collect('a':'z');
-                collect('A':'Z');
-                collect('0':'9')]
+# const vim = VimBindingState()
 """
 dispatch_key method which takes in the char, VB.mode, s.
 Same dispatch_key method for all keys.
@@ -97,32 +59,39 @@ end
 
 
 
-function dispatch_key(query_c :: Char, mode :: FindChar{}, s::LE.MIState)
-    buf = buffer(s)
-    motion = find_c(buf, query_c)
-    execute(mode, s, motion)
-    LE.refresh_line(s)
-    vim_reset()
-end
+# function dispatch_key(query_c :: Char, mode :: FindChar{}, s::LE.MIState)
+#     buf = buffer(s)
+#     motion = find_c(buf, query_c)
+#     execute(mode, s, motion)
+#     LE.refresh_line(s)
+#     vim_reset()
+# end
 
-function dispatch_key(c, mode :: ToChar, s::LE.MIState)
-    # TODO
-end
+# function dispatch_key(c, mode :: ToChar, s::LE.MIState)
+#     # TODO
+# end
 
-function dispatch_key(c :: Char, mode :: SelectRegister, s::LE.MIState)
-    if alphanumeric(c)
-        @log vim.register = c
+# function dispatch_key(c :: Char, mode :: SelectRegister, s::LE.MIState)
+#     if alphanumeric(c) || c == '_'
+#         @log vim.register = c
+#     end
+#     vim_reset()
+# end
+
+global key_inputs = Char[]
+
+function strike_key(c, s::LE.MIState)
+    append!(key_inputs, c)
+    if well_formed(String(key_inputs))
+
     end
-    vim_reset()
 end
-
 
 function init()
     repl = Base.active_repl
     global juliamode = repl.interface.modes[1]
     juliamode.prompt = "julia[i]> "
     juliamode.keymap_dict['`'] = trigger_normal_mode
-    #= juliamode.keymap_dict['\e'] = trigger_normal_mode =#
 
     # remove normal mode if it's already added
     normalindex = 0
@@ -134,43 +103,12 @@ function init()
     if normalindex != 0
         deleteat!(repl.interface.modes, normalindex)
     end
-    # keymap = AnyDict(
-    #     'c' => c
-    # )
-
-    # alphabetic keys, no control characters or punctuation.
-    # safe to convert to symbols
-    alpha_keys = [
-        'd',
-        'c',
-        'w',
-        'h',
-        'j',
-        'k',
-        'l',
-        'e',
-        'E',
-        'b',
-        'B',
-        'a',
-        'A',
-        'i',
-        'x'
-    ]
-
-    # call the function with the name of the char
-    # binds = [ @eval ($c => (s::LE.MIState, o...)->
-    #                  eval(Expr(:call, Symbol($c), vim.mode, s)))
-    #           for c in alpha_keys ]
-
-    # TODO for all characters
-    # @eval ($c => (s::LE.MIstate, o...)->
-    #                dispatch_key($c, VB.mode, s))
 
     binds = AnyDict()
     for c in all_keys
         bind = (s::LE.MIState, o...)->begin
-            dispatch_key(c, vim.mode, s)
+            strike_key(c, s)
+            # dispatch_key(c, vim.mode, s)
         end
         binds[c] = bind
     end
@@ -182,10 +120,6 @@ function init()
     )
     keymap = merge(keymap,
                    AnyDict(binds))
-
-    # for i in 0:9
-    #     keymap(Char(i))
-    # end
 
     # keys to copy from `juliamode`
     copy_keys = [
@@ -224,6 +158,7 @@ function init()
                     )
     normalmode.on_done = juliamode.on_done
     normalmode.on_enter = juliamode.on_enter
+    normalmode.hist = juliamode.hist
 
     push!(repl.interface.modes, normalmode)
     return

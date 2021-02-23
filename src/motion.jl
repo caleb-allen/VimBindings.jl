@@ -1,14 +1,21 @@
-struct Motion
-    start :: Int64
-    stop :: Int64
+
+
+"""
+    A character motion is either inclusive or exclusive.  When inclusive, the
+start and end position of the motion are included in the operation.  When
+exclusive, the last character towards the end of the buffer is not included.
+    Linewise motions always include the start and end position."""
+@enum MotionType begin
+    linewise
+    exclusive # characterwise
+    inclusive # characterwise
 end
 
 Motion(to :: TextObject) = Motion(to.start, to.stop)
-# TODO add 'inclusive' param
 
 min(motion :: Motion) = Base.min(motion.start, motion.stop)
 max(motion :: Motion) = Base.max(motion.start, motion.stop)
-length(motion :: Motion) = max(motion) - min(motion)
+Base.length(motion :: Motion) = max(motion) - min(motion)
 
 # function word(s::LE.MIState)
 #     buf = LE.buffer(s)

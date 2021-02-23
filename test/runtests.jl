@@ -4,8 +4,9 @@ import VimBindings: line, TextObject
 using Test
 const VB = VimBindings
 
-include("action.jl")
-
+# include("action.jl")
+include("parse.jl")
+#=
 @testset "VimBindings.jl" begin
 end
 @testset "motion.jl" begin
@@ -55,3 +56,4 @@ third line
 end
 
 
+=#

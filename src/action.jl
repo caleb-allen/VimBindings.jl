@@ -1,25 +1,27 @@
 
-function change(s :: LE.MIState, motion :: Motion)
+
+
+#=
+function change(s :: LE.MIState, motion :: Motion, motion_type :: MotionType)
     buf = LE.buffer(s)
     delete(s, motion)
     trigger_insert_mode(s)
     return true
 end
 
-# TODO deleting 'exclusive' or 'inclusive'
-# e.g. "dw" deletes the whole word
-# but "ce" changes until the end of the word (inclusive)
-# currently the implementation only changes "up to" the
-# end of the word
-function delete(s :: LE.MIState, motion :: Motion)
+# also, when there is whitespace following a word,
+# "dw" deletes that whitespace
+# and "cw" only removes the inner word
+function delete(s :: LE.MIState, motion :: Motion, motion_type :: MotionType)
     buf = LE.buffer(s)
     yank(buf, motion)
-    move(s, motion)
-    @log edit_splice!(buf, motion.start => motion.stop)
+    move(s, motion, motion_type)
+    @log stop
+    @log edit_splice!(buf, motion.start => stop)
     return true
 end
 
-function yank(s :: LE.MIState, motion :: Motion)
+function yank(s :: LE.MIState, motion :: Motion, motion_type :: MotionType)
     buf = LE.buffer(s)
     yank(buf, motion)
 
@@ -27,7 +29,7 @@ function yank(s :: LE.MIState, motion :: Motion)
     vim.registers['0'] = cut(buf, motion)
 end
 
-function move(s :: LE.MIState, motion :: Motion)
+function move(s :: LE.MIState, motion :: Motion, motion_type :: MotionType)
     buf = LE.buffer(s)
     seek(buf, motion.stop)
 end
@@ -62,3 +64,4 @@ function paste(buf :: IOBuffer, reg :: Char)
     pos = position(buf)
     edit_splice!(buf, pos => pos, vim.registers[reg])
 end
+=#
