@@ -95,6 +95,7 @@ end
 #     yank(s, motion, motion_type)
 # end
 
+=#
 
 special_keys = Dict(
     '`' => "backtic",
@@ -136,6 +137,7 @@ all_keys = Char[collect(keys(special_keys));
                 collect('A':'Z');
                 collect('0':'9')]
 
+#=
 """
     Get the function-safe name for the character c
 """

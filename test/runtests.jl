@@ -6,6 +6,7 @@ const VB = VimBindings
 
 # include("action.jl")
 include("parse.jl")
+include("command.jl")
 #=
 @testset "VimBindings.jl" begin
 end

@@ -1,4 +1,5 @@
 import DataStructures: OrderedDict
+using .Commands
 REGS = (
     text_object = r"^.?([ai][wWsp])$",
     # complete = 
@@ -70,29 +71,58 @@ function parse_value(item :: Union{Nothing, AbstractString}) :: Union{Integer, C
     end
 end
 
-function command(m :: RegexMatch)
+
+"""
+    Attempt to parse a command, return nothing if `s` could not be parsed into a command
+"""
+function parse_command(s :: AbstractString) :: Union{Command, Nothing}
+    if !well_formed(s)
+        @info "command not well formed", s
+        return nothing
+    end
+    r = matched_rule(s)
+    return command(match(r, s))
+end
+
+"""
+    Return a struct corresponding to a regex match's Vim command
+"""
+function command(m :: RegexMatch) :: Command
     args = [ parse_value(capture) for capture in m.captures ]
-    command(args...)
+    return command(args...)
 end
 
 function command(n1 :: Union{Integer, Nothing},
-                 motion :: Char)
+                 motion :: Char) :: Command
+    r1 = if n1 === nothing 1 else n1 end
+    return MotionCommand(r1, motion)
 end
+
 function command(n1 :: Union{Integer, Nothing},
                  operator1 :: Char,
-                 operator2 :: Char)
+                 operator2 :: Char) :: Command
+    r1 = if n1 === nothing 1 else n1 end
+    if operator1 != operator2
+        error("operator1 is not equal to operator2: $operator1 != $operator2")
+    end
+    return LineOperatorCommand(r1, operator1)
 end
 
 function command(n1 :: Union{Integer, Nothing},
                  operator :: Char,
                  n2 :: Union{Integer, Nothing},
                  motion :: Union{Char, Nothing},
-                 textobject :: Union{String, Nothing})
-    @show n1
-    @show operator
-    @show n2
-    @show motion
-    @show to
+                 textobject :: Union{String, Nothing}) :: Command
+    r1 = if n1 === nothing 1 else n1 end
+    r2 = if n2 === nothing 1 else n2 end
+    if motion === nothing && textobject === nothing
+        error("Both `motion` and `textobject` are empty.")
+    end
+    action = if motion !== nothing motion else textobject end
+    return OperatorCommand(r1,
+                           operator,
+                           r2,
+                           action)
 end
 
 

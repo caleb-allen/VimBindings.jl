@@ -9,6 +9,8 @@ using Sockets
 const LE = LineEdit
 
 include("types.jl")
+include("command.jl")
+include("execute.jl")
 include("util.jl")
 include("textobject.jl")
 include("motion.jl")
@@ -78,12 +80,25 @@ end
 #     vim_reset()
 # end
 
-global key_inputs = Char[]
+global key_stack = Char[]
 
 function strike_key(c, s::LE.MIState)
-    append!(key_inputs, c)
-    if well_formed(String(key_inputs))
-
+    if(c == '`')
+        empty!(key_stack)
+        @log key_stack
+    else
+        append!(key_stack, c)
+        s_cmd = String(key_stack)
+        if well_formed(s_cmd)
+            log("well formed command: $s_cmd")
+            empty!(key_stack)
+            cmd = parse_command(s_cmd)
+            if cmd !== nothing
+                execute(cmd)
+            end
+        else
+            @log key_stack
+        end
     end
 end
 
@@ -228,7 +243,7 @@ end
 
 function trigger_normal_mode(state::LineEdit.MIState, o...)
     iobuffer = LineEdit.buffer(state)
-    vim.mode = NormalMode()
+    # vim.mode = NormalMode()
     LineEdit.transition(state, normalmode) do
         prompt_state = LineEdit.state(state, normalmode)
         prompt_state.input_buffer = copy(iobuffer)
