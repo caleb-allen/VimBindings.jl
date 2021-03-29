@@ -46,25 +46,9 @@ function double_quote(mode::NormalMode, s::LE.MIState) :: Action
     @log vim.mode = SelectRegister()
 end
 
+=#
 
-macro motion(k, fn, motion_type)
-    return quote
-        function $(esc(k))(buf::IOBuffer) :: Motion
-            motion = $fn(buf)
-            return motion
-        end
-    end
-end
-
-@motion(h, (buf) -> Motion(position(buf), position(buf) - 1), exclusive)
-@motion(l, (buf) -> Motion(position(buf), position(buf) + 1), exclusive)
-@motion(w, word, exclusive)
-@motion(e, word_end, inclusive)
-@motion(b, word_back, exclusive)
-@motion(caret, (buf -> Motion(position(buf), 0)), exclusive)
-@motion(dollar, line_end, inclusive)
-
-
+#=
 function f(mode::MotionMode{T} where T, s::LE.MIState) :: Action
     @log t = eltype(mode)
     @log vim.mode = FindChar{t}()
@@ -137,11 +121,10 @@ all_keys = Char[collect(keys(special_keys));
                 collect('A':'Z');
                 collect('0':'9')]
 
-#=
 """
     Get the function-safe name for the character c
 """
-function get_function_name(c :: Char) :: Symbol
+function get_safe_name(c :: Char) :: Symbol
     get(special_keys, c, string(c)) |> Symbol
 end
 
@@ -149,10 +132,9 @@ end
     Get the function-safe name for the string s, which must be
 a 1 character string
 """
-function get_function_name(s :: AbstractString) :: Symbol
+function get_safe_name(s :: AbstractString) :: Symbol
     if length(s) != 1
         error("length of given name is $(length(s)). Length must be 1")
     end
-    return get_function_name(s[1])
+    return get_safe_name(s[1])
 end
-=#

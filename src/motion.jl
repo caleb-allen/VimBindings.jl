@@ -1,3 +1,10 @@
+struct Motion
+    start :: Int64
+    stop :: Int64
+    motiontype
+end
+
+Motion(start :: Int64, stop :: Int64) = Motion(start, stop, nothing)
 
 
 """
@@ -67,6 +74,29 @@ function word(buf :: IOBuffer) :: Motion
     return Motion(start, endd)
 end
 
+"""
+    The motion to the next big word, e.g. using the `W` command
+"""
+function word_big(buf :: IOBuffer) :: Motion
+    mark(buf)
+    start = position(buf)
+
+    eof(buf) && return Motion(start, start)
+    last_c = read(buf, Char)
+    while !eof(buf)
+        c = read(buf, Char)
+        if whitespace(last_c) && !whitespace(c)
+            break
+        end
+        last_c = c
+    end
+    skip(buf, -1)
+    endd = position(buf)
+    reset(buf)
+    return Motion(start, endd)
+end
+
+
 function word_end(buf :: IOBuffer) :: Motion
     start = position(buf)
     eof(buf) && return Motion(start, start)
@@ -123,7 +153,28 @@ function word_back(buf :: IOBuffer) :: Motion
     end
     endd = position(buf)
     seek(buf, start)
-    return @log Motion(start, endd)
+    return Motion(start, endd)
+end
+
+function word_back_big(buf :: IOBuffer) :: Motion
+    start = position(buf)
+    position(buf) == 0 && return Motion(start, start)
+
+    skip(buf, -1)
+    last_c = peek(buf, Char)
+
+    while position(buf) > 0
+        c = peek(buf, Char)
+        if whitespace(c) && !whitespace(last_c)
+            skip(buf, 1)
+            break
+        end
+        last_c = c
+        LE.char_move_left(buf)
+    end
+    endd = position(buf)
+    seek(buf, start)
+    return Motion(start, endd)
 end
 
 function line_end(buf :: IOBuffer) :: Motion
@@ -176,4 +227,44 @@ function find_c(buf :: IOBuffer, query_c :: Char) :: Motion
     return Motion(start, endd)
 end
 
+
+macro motion(k, fn, motion_type)
+    return quote
+        function $(esc(k))(buf::IOBuffer) :: Motion
+            motion = $fn(buf)
+            return motion
+        end
+    end
+end
+
+# function motion(c :: Char)
+#     name = get_safe_name(c)
+#     map = Dict(
+#         :h => (buf) -> Motion(position(buf), position(buf) - 1),# exclusive,
+#         :l => (buf) -> Motion(position(buf), position(buf) + 1),# exclusive,
+#         :w => word,# exclusive),
+#         :e => word_end,# inclusive),
+#         :b => word_back,# exclusive),
+#         :caret => (buf -> Motion(position(buf), 0)),# exclusive)
+#         :dollar => line_end,#inclusive)
+#     )
+#     fn = map[name]
+#     return fn
+# end
+
+@motion(h, (buf) -> Motion(position(buf), position(buf) - 1), exclusive)
+@motion(l, (buf) -> Motion(position(buf), position(buf) + 1), exclusive)
+@motion(w, word, exclusive)
+@motion(W, word_big, exclusive)
+@motion(e, word_end, inclusive)
+@motion(b, word_back, exclusive)
+@motion(B, word_back_big, exclusive)
+@motion(caret, (buf -> Motion(position(buf), 0)), exclusive)
+@motion(dollar, line_end, inclusive)
+
+
+function (m::Motion)(s :: LE.MIState)
+    buf = LE.buffer(s)
+    seek(buf, m.stop)
+end
 

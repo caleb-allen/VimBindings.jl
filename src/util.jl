@@ -51,5 +51,7 @@ macro bindkey(c)
          # Expr(:call, Symbol($(esc(c))),(VB.mode, esc(s)))
 end
 
+# buffer(s :: LE.MIState) = LE.buffer(s)
+
 # alpha_keymap = AnyDict()
 

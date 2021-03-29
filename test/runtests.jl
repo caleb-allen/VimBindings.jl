@@ -1,13 +1,13 @@
-using VimBindings
-import VimBindings: word, word_end, Motion, punctuation, find_c
-import VimBindings: line, TextObject
+# using VimBindings
+import VimBindings: word, word_end, word_big, Motion, punctuation, find_c
+# import VimBindings: line, TextObject
 using Test
-const VB = VimBindings
+# const VB = VimBindings
 
 # include("action.jl")
 include("parse.jl")
 include("command.jl")
-#=
+
 @testset "VimBindings.jl" begin
 end
 @testset "motion.jl" begin
@@ -36,6 +36,19 @@ end
     @test motion == Motion(0, 11)
 end
 
+@testset "big word" begin
+    buf = IOBuffer("push!(LOAD_PATH, dirname(file))")
+    motion = word_big(buf)
+    @test motion == Motion(0, 17)
+end
+
+@testset "begin big word" begin
+    buf = IOBuffer("push!(LOAD_PATH, dirname(file))")
+    seek(buf, 20)
+    motion = word_big(buf)
+    @test motion == Motion(0, 17)
+end
+
 @testset "find char" begin
 
     buf = IOBuffer("using VimBindings")
@@ -46,15 +59,13 @@ end
 
 end
 
-@testset "line motion" begin
-    s = """
-First line
-second line
-third line
-"""
-    buf = IOBuffer(s)
-    @test line(buf) == TextObject(0, 10)
-end
+# @testset "line motion" begin
+#     s = """
+# First line
+# second line
+# third line
+# """
+#     buf = IOBuffer(s)
+#     @test line(buf) == TextObject(0, 10)
+# end
 
-
-=#

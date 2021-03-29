@@ -8,16 +8,18 @@ using Sockets
 
 const LE = LineEdit
 
+include("util.jl")
 include("types.jl")
 include("command.jl")
 include("execute.jl")
-include("util.jl")
 include("textobject.jl")
 include("motion.jl")
 include("action.jl")
 include("keys.jl")
 include("parse.jl")
-include("verb.jl")
+
+using .Parse
+using .Commands
 
 # const vim = VimBindingState()
 """
@@ -94,7 +96,10 @@ function strike_key(c, s::LE.MIState)
             empty!(key_stack)
             cmd = parse_command(s_cmd)
             if cmd !== nothing
-                execute(cmd)
+                refresh :: Bool = execute(s, cmd)
+                if refresh
+                    LE.refresh_line(s)
+                end
             end
         else
             @log key_stack

@@ -15,3 +15,5 @@ function delete(buf :: IOBuffer, motion :: Motion)
 end
 function delete(buf :: IOBuffer, textobject :: TextObject)
 end
+
+

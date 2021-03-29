@@ -1,5 +1,6 @@
 # include("../src/parse.jl")
-import VimBindings: verb_part, text_object_part, well_formed, parse_value
+# import VimBindings: verb_part, text_object_part, well_formed, parse_value
+import VimBindings.Parse: verb_part, text_object_part, well_formed, parse_value
 
 # @testset "is operator" begin
 #     @test is_operator("y") == false

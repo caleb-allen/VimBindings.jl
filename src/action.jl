@@ -28,13 +28,13 @@ function yank(s :: LE.MIState, motion :: Motion, motion_type :: MotionType)
     # '0' is the "yank" register
     vim.registers['0'] = cut(buf, motion)
 end
-
-function move(s :: LE.MIState, motion :: Motion, motion_type :: MotionType)
+=#
+function move(s :: LE.MIState, motion :: Motion)#, motion_type :: MotionType)
     buf = LE.buffer(s)
     seek(buf, motion.stop)
 end
 
-
+#=
 
 function yank(buf :: IOBuffer, motion :: Motion) :: Union{String, Nothing}
     text = cut(buf, motion)

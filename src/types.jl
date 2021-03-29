@@ -9,11 +9,6 @@
 # end
 # Find(;forward::Bool=true) = Find(forward)
 
-struct Motion
-    start :: Int64
-    stop :: Int64
-end
-
 # struct Action
 #     verb :: Verb
 #     quantity :: Integer

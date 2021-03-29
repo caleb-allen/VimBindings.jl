@@ -1,5 +1,7 @@
-import VimBindings: verb_part, text_object_part, well_formed, parse_value, command, matched_rule, parse_command
+# import VimBindings: verb_part, text_object_part, well_formed, parse_value, command, matched_rule, parse_command
 using VimBindings.Commands
+using VimBindings.Parse
+import VimBindings.Parse: command
 
 @testset "parse commands into parts" begin
     cmd = "d10w"

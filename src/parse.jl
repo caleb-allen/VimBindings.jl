@@ -1,5 +1,9 @@
+module Parse
 import DataStructures: OrderedDict
-using .Commands
+using ..Commands
+
+export well_formed, matched_rule, parse_command
+
 REGS = (
     text_object = r"^.?([ai][wWsp])$",
     # complete = 
@@ -164,4 +168,5 @@ function verb_part(cmd :: AbstractString) :: Union{Char, Nothing}
         return nothing
     end
     return m.captures[1][1]
+end
 end
