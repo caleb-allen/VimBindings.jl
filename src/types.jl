@@ -15,7 +15,6 @@
 #     motion :: Motion
 # end
 
-
 # Action(motion :: Motion) = Action(Move(), 1, motion)
 # Action(verb :: Verb, motion :: Motion) = Action(verb, 1, motion)
 

@@ -32,6 +32,13 @@ function gen_motion(buf, name :: Char) :: Motion
     return motion
 end
 
+#=
+Generate motion for the given `name` which is a TextObject
+=#
+function gen_motion(buf, name :: String) :: TextObject
+
+end
+
 function execute(s :: LE.MIState, command :: LineOperatorCommand) :: Bool
     for r in 1:command.r1
         buf = buffer(s)

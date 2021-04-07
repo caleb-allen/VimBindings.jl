@@ -1,3 +1,4 @@
+using .TextUtils
 struct Motion
     start :: Int64
     stop :: Int64
@@ -19,30 +20,24 @@ exclusive, the last character towards the end of the buffer is not included.
     inclusive # characterwise
 end
 
-Motion(to :: TextObject) = Motion(to.start, to.stop)
+# Motion(to :: TextObject) = Motion(to.start, to.stop)
 
 min(motion :: Motion) = Base.min(motion.start, motion.stop)
 max(motion :: Motion) = Base.max(motion.start, motion.stop)
+
 Base.length(motion :: Motion) = max(motion) - min(motion)
 
-# function word(s::LE.MIState)
-#     buf = LE.buffer(s)
-#     @log motion = word(buf)
-#     @log action
-#     (@eval $action)(buf, motion)
-#     LE.refresh_line(s)
-#     return true
-# end
-
-# function line(s::LE.MIState)
-#     buf = LE.buffer(s)
-#     @log motion = line(buf)
-#     @log action
-#     (@eval $action)(buf, motion)
-#     LE.refresh_line(s)
-#     return true
-# end
-
+function Base.:+(motion1 :: Motion, motion2 :: Motion)
+    low = Base.min(
+        min(motion1),
+        min(motion2)
+    )
+    high = Base.max(
+        max(motion1),
+        max(motion2)
+    )
+    return Motion(low, high)
+end
 
 function down(buf :: IOBuffer) :: Motion
     start = position(buf)
@@ -93,7 +88,7 @@ end
     2. Going from alphanumeric to punctuation
     3. Going from punctuation to alphanumeric
 """
-function word(buf :: IOBuffer) :: Motion
+function word_next(buf :: IOBuffer) :: Motion
     mark(buf)
     start = position(buf)
 
@@ -119,7 +114,7 @@ end
 """
     The motion to the next big word, e.g. using the `W` command
 """
-function word_big(buf :: IOBuffer) :: Motion
+function word_big_next(buf :: IOBuffer) :: Motion
     mark(buf)
     start = position(buf)
 
@@ -363,8 +358,8 @@ end
 @motion(l, (buf) -> Motion(position(buf), position(buf) + 1), exclusive)
 @motion(j, down)
 @motion(k, up)
-@motion(w, word, exclusive)
-@motion(W, word_big, exclusive)
+@motion(w, word_next, exclusive)
+@motion(W, word_big_next, exclusive)
 @motion(e, word_end, inclusive)
 @motion(b, word_back, exclusive)
 @motion(B, word_back_big, exclusive)
