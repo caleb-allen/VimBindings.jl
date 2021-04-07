@@ -30,7 +30,7 @@ julia[i]>
 # Usage
 VimBindings begins in `insert` mode, and the Julia REPL can be used in its original, familiar fasion.
 
-Currently, the user must use the backtic `\`` in place of `Esc`*.
+Currently, the user must use the backtic \` in place of `Esc`*.
 
 Switch to `normal` mode by using the backtic, where you can navigate with `h`, `j`, `k`, `l`, etc.
 ```julia
