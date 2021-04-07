@@ -1,8 +1,56 @@
-struct TextObject
-    start :: Int64
-    stop :: Int64
+module TextObjects
+using Match
+using ..TextUtils
+
+abstract type Selection end
+
+struct Inner <: Selection end
+struct A <: Selection end
+
+# abstract type TextObject end
+struct TextObject{T <: Selection}
+
 end
 
+function textobject(buf :: IOBuffer, name :: String)
+    m = match(r"^([ai])(.)$", name)
+    selection = @match m[1] begin
+        "i" => Inner()
+        "a" => A()
+    end
+
+    object_fn :: Function = @match m[2] begin
+        "w" => word
+        _ => error("text object command not found: $(m[2])")
+    end
+    selection(object)
+end
+
+
+
+function inner()
+
+end
+
+"""
+  For non-block objects: For the "a" commands: The operator applies to the object and the white space after the object. If there is no white space after the object or when the cursor was in the white space before the object, the white space before the object is included.
+"""
+function (::A)(object_function)
+end
+
+"""
+For the "inner" commands: If the cursor was on the object, the operator applies to the object. If the cursor was on white space, the  operator applies to the white space.
+"""
+function (::Inner)(object_function)
+end
+
+
+"""
+    The range
+"""
+# function word(buf :: IOBuffer) :: Union{UnitRange{Int}, Nothing}
+
+# end
 
 function line(buf :: IOBuffer) :: TextObject
     # find the line start
@@ -38,38 +86,15 @@ function line(buf :: IOBuffer) :: TextObject
     stop = position(buf)
     reset(buf)
 
-    return TextObject(start, stop)
+    return Motion(start, stop)
 end
 
-
-
-# Text helpers
-linebreak(c::Char) = c in """\n"""
-whitespace(c::Char) = c in """ \t\n"""
-non_word(c::Char) = LE.is_non_word_char(c)
-word_char(c::Char) = !LE.is_non_word_char(c)
-punct_char(c::Char) = LE.is_non_word_char(c) && !is_non_phrase_char(c)
-
-function alphanumeric(c :: Char) :: Bool
-    return c in ['a':'z';
-                 'A':'Z';
-                 '0':'9';]
+function word(buf :: IOBuffer) :: UnitRange{Int}
+    start = position(buf)
+    while position(buf) > 0
+        if 
+    end
+    return start:endd
 end
 
-function alphabetic(c :: Char) :: Bool
-    return c in ['a':'z';
-                 'A':'Z';]
 end
-
-function is_uppercase(c :: Char) :: Bool
-    return c in ['A':'Z';]
-end
-function is_lowercase(c :: Char) :: Bool
-    return c in ['a':'z';]
-end
-
-function punctuation(c :: Char) :: Bool
-    return c in """`!@#\$%^&*()-_=+[]{}'\"/?\\|<>,.:;"""
-end
-
-

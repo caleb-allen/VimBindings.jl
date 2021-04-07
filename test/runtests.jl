@@ -1,13 +1,15 @@
 # using VimBindings
-import VimBindings: word, word_end, word_big, Motion, punctuation, find_c, line_begin
+import VimBindings: word_next, word_end, word_big_next, Motion, punctuation, find_c, line_begin
 # import VimBindings: line, TextObject
 using Test
 # const VB = VimBindings
 
 # include("action.jl")
 include("parse.jl")
+include("textutils.jl")
 include("command.jl")
 include("motion.jl")
+include("textobject.jl")
 
 @testset "VimBindings.jl" begin
 end
@@ -15,12 +17,12 @@ end
     #               0123456789
     #               |-----|
     buf = IOBuffer("Hello worl")
-    motion = word(buf)
+    motion = word_next(buf)
     @test motion == Motion(0, 6)
 
     @assert punctuation('-')
     buf = IOBuffer("Hello-worl")
-    motion = word(buf)
+    motion = word_next(buf)
     @test motion == Motion(0, 5)
 
 end
@@ -39,14 +41,13 @@ end
 
 @testset "big word" begin
     buf = IOBuffer("push!(LOAD_PATH, dirname(file))")
-    motion = word_big(buf)
+    motion = word_big_next(buf)
     @test motion == Motion(0, 17)
 end
 
 # @testset "begin big word" begin
 #     buf = IOBuffer("push!(LOAD_PATH, dirname(file))")
 #     seek(buf, 20)
-#     motion = word_big(buf)
 #     @test motion == Motion(0, 17)
 # end
 

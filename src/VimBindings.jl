@@ -9,11 +9,12 @@ using Sockets
 const LE = LineEdit
 
 include("util.jl")
+include("textutils.jl")
 include("types.jl")
 include("command.jl")
 include("execute.jl")
-include("textobject.jl")
 include("motion.jl")
+include("textobject.jl")
 include("operator.jl")
 include("keys.jl")
 include("parse.jl")
