@@ -5,6 +5,7 @@ struct Motion
 end
 
 Motion(start :: Int64, stop :: Int64) = Motion(start, stop, nothing)
+Motion(buf :: IOBuffer, change :: Int64) = Motion(position(buf), position(buf) + change)
 
 
 """
@@ -43,7 +44,48 @@ Base.length(motion :: Motion) = max(motion) - min(motion)
 # end
 
 
+function down(buf :: IOBuffer) :: Motion
+    start = position(buf)
+    npos = something(findprev(isequal(UInt8('\n')), buf.data[1:buf.size], position(buf)), 0)
+    # We're interested in character count, not byte count
+    offset = length(String(buf.data[(npos+1):(position(buf))]))
+    npos2 = findnext(isequal(UInt8('\n')), buf.data[1:buf.size], position(buf)+1)
+    if npos2 === nothing #we're in the last line
+        return Motion(start, start)
+    end
+    # return Motion(npos, npos2)
+    seek(buf, npos2)
+    for _ = 1:offset
+        pos = position(buf)
+        if eof(buf) || read(buf, Char) == '\n'
+            seek(buf, pos)
+            break
+        end
+    end
+    endd = position(buf)
+    seek(buf, start)
+    return Motion(start, endd)
+end
 
+function up(buf :: IOBuffer) :: Motion
+    start = position(buf)
+    npos = findprev(isequal(UInt8('\n')), buf.data, position(buf))
+    npos === nothing && return Motion(start, start) # we're in the first line
+    # We're interested in character count, not byte count
+    offset = length(LE.content(buf, npos => position(buf)))
+    npos2 = something(findprev(isequal(UInt8('\n')), buf.data, npos-1), 0)
+    seek(buf, npos2)
+    for _ = 1:offset
+        pos = position(buf)
+        if read(buf, Char) == '\n'
+            seek(buf, pos)
+            break
+        end
+    end
+    endd = position(buf)
+    seek(buf, start)
+    return Motion(start, endd)
+end
 """
     The motion to the next word
 
@@ -193,6 +235,63 @@ function line_end(buf :: IOBuffer) :: Motion
     return Motion(start, endd)
 end
 
+function line_begin(buf :: IOBuffer) :: Motion
+    start = position(buf)
+    position(buf) == 0 && return Motion(start, start)
+
+    # skip(buf, -1)
+
+    first_line_char = start
+    while position(buf) > 0
+        LE.char_move_left(buf)
+        c = peek(buf, Char)
+        if linebreak(c)
+            break
+        end
+        if !whitespace(c)
+            first_line_char = position(buf)
+        end
+    end
+    if first_line_char == start
+        skip(buf, 1)
+        while !eof(buf)
+            c = read(buf, Char)
+            if !whitespace(c)
+                skip(buf, -1)
+                first_line_char = position(buf)
+                break
+            end
+            if linebreak(c)
+                break
+            end
+        end
+    end
+
+    endd = first_line_char
+    seek(buf, start)
+    return Motion(start, endd)
+end
+
+"""
+    The beginning of a line, including whitespace
+"""
+function line_zero(buf :: IOBuffer) :: Motion
+    start = position(buf)
+    position(buf) == 0 && return Motion(start, start)
+
+    first_line_char = start
+    while position(buf) > 0
+        LE.char_move_left(buf)
+        c = peek(buf, Char)
+        if linebreak(c)
+            break
+        end
+        first_line_char = position(buf)
+    end
+    endd = first_line_char
+    seek(buf, start)
+    return Motion(start, endd)
+end
 
 # function line_end (buf)
 #     start = position(buf)
@@ -236,6 +335,14 @@ macro motion(k, fn, motion_type)
         end
     end
 end
+macro motion(k, fn)
+    return quote
+        function $(esc(k))(buf::IOBuffer) :: Motion
+            motion = $fn(buf)
+            return motion
+        end
+    end
+end
 
 # function motion(c :: Char)
 #     name = get_safe_name(c)
@@ -254,17 +361,23 @@ end
 
 @motion(h, (buf) -> Motion(position(buf), position(buf) - 1), exclusive)
 @motion(l, (buf) -> Motion(position(buf), position(buf) + 1), exclusive)
+@motion(j, down)
+@motion(k, up)
 @motion(w, word, exclusive)
 @motion(W, word_big, exclusive)
 @motion(e, word_end, inclusive)
 @motion(b, word_back, exclusive)
 @motion(B, word_back_big, exclusive)
-@motion(caret, (buf -> Motion(position(buf), 0)), exclusive)
+@motion(caret, line_begin, exclusive)
 @motion(dollar, line_end, inclusive)
 
 
 function (m::Motion)(s :: LE.MIState)
     buf = LE.buffer(s)
+    seek(buf, m.stop)
+end
+
+function (m::Motion)(buf :: IOBuffer)
     seek(buf, m.stop)
 end
 

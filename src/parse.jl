@@ -29,6 +29,8 @@ motion="[\$%^\\(\\)wWeE{}hjklGHLbB]"
 textobject="$repeat[ai][wWsp]"
 operator="[ydc]"
 rules = (
+    # insert commands
+    r"^(?<c>[aAiIoO])$",
     "^(?<n1>$repeat)(?<motion>$motion)\$" |> Regex,
     "^(?<n1>$repeat)(?<op>$operator)(?<n2>$repeat)(?:(?<motion>$motion)|(?<to>$textobject))\$" |> Regex,
     "^(?<n1>$repeat)(?<op>$operator)(\\k<op>)\$" |> Regex
@@ -94,6 +96,10 @@ end
 function command(m :: RegexMatch) :: Command
     args = [ parse_value(capture) for capture in m.captures ]
     return command(args...)
+end
+
+function command(c :: Char)
+    return InsertCommand(c)
 end
 
 function command(n1 :: Union{Integer, Nothing},

@@ -2,51 +2,48 @@
 -----------
 Normal Mode
 -----------
-
-function i(mode :: NormalMode, s::LE.MIState) :: Action
-    trigger_insert_mode(s)
+=#
+function i(buf :: IOBuffer) :: Motion
+    start = position(buf)
+    # leave it in the same spot
+    return Motion(start, start)
 end
 
-function a(mode :: NormalMode, s::LE.MIState) :: Action
-    buf = LE.buffer(s)
-    motion = Motion(position(buf), position(buf) + 1)
-    execute(mode, s, motion)
-    trigger_insert_mode(s)
-    return true
+function i_big(buf :: IOBuffer) :: Motion
+    return line_begin(buf)
 end
 
-function x(mode :: NormalMode, s::LE.MIState) :: Action
-    buf = LE.buffer(s)
-    motion = Motion(position(buf), position(buf) + 1)
-    execute(MotionMode{Delete}(), s, motion)
-    LE.refresh_line(s)
-    return true
+function a(buf :: IOBuffer) :: Motion
+    if !eof(buf)
+        return Motion(position(buf), position(buf) + 1)
+    else
+        return Motion(position(buf), position(buf))
+    end
 end
 
-function p(mode::NormalMode, s::LE.MIState) :: Action
-    buf = LE.buffer(s)
-    paste(buf, vim.register)
-    LE.refresh_line(s)
+function a_big(buf :: IOBuffer) :: Motion
+    return line_end(buf)
 end
 
-function d(mode::NormalMode, s::LE.MIState) :: Action
-    @log vim.mode = MotionMode{Delete}()
-end
+# function x(mode :: NormalMode, s::LE.MIState)
+#     buf = LE.buffer(s)
+#     motion = Motion(position(buf), position(buf) + 1)
+#     execute(MotionMode{Delete}(), s, motion)
+#     LE.refresh_line(s)
+#     return true
+# end
 
-function c(mode::NormalMode, s::LE.MIState) :: Action
-    @log vim.mode = MotionMode{Change}()
-end
+# function p(mode::NormalMode, s::LE.MIState)
+#     buf = LE.buffer(s)
+#     paste(buf, vim.register)
+#     LE.refresh_line(s)
+# end
 
-function y(mode::NormalMode, s::LE.MIState) :: Action
-    @log vim.mode = MotionMode{Yank}()
-end
 
 
 function double_quote(mode::NormalMode, s::LE.MIState) :: Action
     @log vim.mode = SelectRegister()
 end
-
-=#
 
 #=
 function f(mode::MotionMode{T} where T, s::LE.MIState) :: Action

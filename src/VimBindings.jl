@@ -14,14 +14,20 @@ include("command.jl")
 include("execute.jl")
 include("textobject.jl")
 include("motion.jl")
-include("action.jl")
+include("operator.jl")
 include("keys.jl")
 include("parse.jl")
 
 using .Parse
 using .Commands
+mutable struct VimState
+    registers :: Dict{Char, String}
+    register :: Char
+end
 
-# const vim = VimBindingState()
+VimState() = VimState(Dict{Char, String}(), '"')
+
+const vim = VimState()
 """
 dispatch_key method which takes in the char, VB.mode, s.
 Same dispatch_key method for all keys.
@@ -183,6 +189,86 @@ function init()
     push!(repl.interface.modes, normalmode)
     return
 end
+#=
+function is_esc_key(c :: Char, term::Union{LE.AbstractTerminal, IOBuffer})
+    # term = LE.terminal(s)
+    # c = read(term, Char)
+    # if c == '\e'
+    # @async begin
+    #     peek(term, Char)
+    # end
+    # @log c
+    if c != '\e'
+        return false
+    end
+    # log("waiting for additional escape codes")
+    status = timedwait(0.1, pollint=0.01) do
+        # if !eof(term)
+            # @log peek(term, Char)
+        # else
+            # log("term is EOF")
+        # end
+
+        # log("received additonal escape code")
+        # return true for timed callback
+        return true
+    end
+    @log is_escape_key = status == :timed_out
+    is_command_sequence = status == :ok
+
+    return is_escape_key
+    # sleep(0.1)
+    # if no other chars have been sent, we can assume that this
+    # was the "escape" key
+    # otherwise
+
+end
+
+function LE.match_input(f::Function, s::Union{Nothing,LE.MIState}, term, cs::Vector{Char}, keymap)
+    log("match function")
+    LE.update_key_repeats(s, cs)
+    c = String(cs)
+    return function (s, p)  # s::Union{Nothing,MIState}; p can be (at least) a LineEditREPL, PrefixSearchState, Nothing
+        r = Base.invokelatest(f, s, p, c)
+        if isa(r, Symbol)
+            return r
+        else
+            return :ok
+        end
+    end
+end
+
+function LE.match_input(k::Nothing, s, term, cs, keymap)
+    log("match nothing")
+    # @log cs
+    return (s,p) -> begin
+        log("nothing")
+        return :ok
+    end
+end
+LE.match_input(k::KeyAlias, s::Union{Nothing,LE.MIState}, term, cs, keymap::Dict{Char}) = LE.match_input(keymap, s, IOBuffer(k.seq), Char[], keymap)
+
+function LE.match_input(k::Dict{Char}, s::Union{Nothing,LE.MIState}, term::Union{LE.AbstractTerminal,IOBuffer}=terminal(s), cs::Vector{Char}=Char[], keymap::Dict{Char} = k)
+    log("matching input")
+    # if we run out of characters to match before resolving an action,
+    # return an empty keymap function
+    eof(term) && return (s, p) -> :abort
+    c = read(term, Char)
+    @log c
+    @log cs
+    # @log 
+
+    @log is_esc_key(c, term)
+    # Ignore any `wildcard` as this is used as a
+    # placeholder for the wildcard (see normalize_key("*"))
+    @log c == LE.wildcard
+    c == LE.wildcard && return (s, p) -> :ok
+    push!(cs, c)
+    key = haskey(k, c) ? c : LE.wildcard
+    # if we don't match on the key, look for a default action then fallback on 'nothing' to ignore
+    return LE.match_input(get(k, key, nothing), s, term, cs, keymap)
+end
+=#
 
 function vim_reset()
     vim.mode = NormalMode()

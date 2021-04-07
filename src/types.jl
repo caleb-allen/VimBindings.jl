@@ -49,14 +49,3 @@ will be enabled after `d` in the command `diw`
 # struct SelectRegister <: VimCommand end
 
 
-# mutable struct VimBindingState
-#     mode :: Union{VimMode, VimCommand}
-#     registers :: Dict{Char, String}
-#     register :: Char
-# end
-
-# VimBindingState() = VimBindingState(InsertMode(),
-#                                     Dict{Char, String}(),
-#                                     '"')
-
-
