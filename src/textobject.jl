@@ -4,8 +4,8 @@ using ..TextUtils
 
 abstract type Selection end
 
-struct Inner <: Selection end
-struct A <: Selection end
+# struct Inner <: Selection end
+# struct A <: Selection end
 
 # abstract type TextObject end
 struct TextObject{T <: Selection}
@@ -46,10 +46,17 @@ end
 
 
 """
-    The range
+    A word consists of a sequence of letters, digits and underscores, or a
+sequence of other non-blank characters, separated with white space (spaces,
+tabs, <EOL>).  This can be changed with the 'iskeyword' option.  An empty line
+is also considered to be a word.
 """
-# function word(buf :: IOBuffer) :: Union{UnitRange{Int}, Nothing}
+# function word(buf :: IOBuffer) :: UnitRange{Int}
+#     start = position(buf)
+#     while position(buf) > 0
 
+#     end
+#     return start:endd
 # end
 
 function line(buf :: IOBuffer) :: TextObject
@@ -89,12 +96,9 @@ function line(buf :: IOBuffer) :: TextObject
     return Motion(start, stop)
 end
 
-function word(buf :: IOBuffer) :: UnitRange{Int}
-    start = position(buf)
-    while position(buf) > 0
-        if 
-    end
-    return start:endd
-end
+"""
+    Identify the text object surrounding a space
+"""
+function space(buf :: IOBuffer) :: UnitRange{Int}
 
 end
