@@ -2,20 +2,32 @@ module VimBindings
 
 using REPL
 using REPL.LineEdit
-import REPL.LineEdit: KeyAlias, edit_splice!, buffer
+import REPL.LineEdit: KeyAlias, edit_splice!, buffer, refresh_line
 import Base: AnyDict, show_unquoted
 using Sockets
 
 const LE = LineEdit
 
-include("types.jl")
 include("util.jl")
+include("types.jl")
+include("command.jl")
+include("execute.jl")
+include("textobject.jl")
 include("motion.jl")
-include("action.jl")
+include("operator.jl")
 include("keys.jl")
+include("parse.jl")
 
-const vim = VimBindingState(InsertMode())
+using .Parse
+using .Commands
+mutable struct VimState
+    registers :: Dict{Char, String}
+    register :: Char
+end
 
+VimState() = VimState(Dict{Char, String}(), '"')
+
+const vim = VimState()
 """
 dispatch_key method which takes in the char, VB.mode, s.
 Same dispatch_key method for all keys.
@@ -55,67 +67,57 @@ function dispatch_key(c, mode, s::LE.MIState)
     eval(Expr(:call, fn_name, vim.mode, s))
 end
 
-special_keys = Dict(
-    '`' => "backtic",
-    '~' => "tilde",
-    '!' => "bang",
-    '@' => "at",
-    '#' => "hash",
-    '$' => "dollar",
-    '%' => "percent",
-    '^' => "caret",
-    '&' => "ampersand",
-    '*' => "asterisk",
-    '(' => "open_paren",
-    ')' => "close_paren",
-    '-' => "dash",
-    '_' => "underscore",
-    '=' => "equals",
-    '+' => "plus",
-    '\\' => "backslash",
-    '|' => "bar",
-    '[' => "open_bracket",
-    ']' => "close_bracket",
-    '{' => "open_curly_brace",
-    '}' => "close_curly_brace",
-    "'"[1] => "single_quote",
-    '"' => "double_quote",
-    ';' => "semicolon",
-    ':' => "colon",
-    ',' => "comma",
-    '<' => "open_angle_bracket",
-    '>' => "close_angle_bracket",
-    '.' => "dot",
-    '/' => "slash",
-    '?' => "question_mark"
-)
-
-all_keys = Char[collect(keys(special_keys));
-                collect('a':'z');
-                collect('A':'Z');
-                collect('0':'9')]
 
 
-function dispatch_key(query_c :: Char, mode :: FindCharMode{}, s::LE.MIState)
-    buf = buffer(s)
-    motion = find_c(buf, query_c)
+# function dispatch_key(query_c :: Char, mode :: FindChar{}, s::LE.MIState)
+#     buf = buffer(s)
+#     motion = find_c(buf, query_c)
+#     execute(mode, s, motion)
+#     LE.refresh_line(s)
+#     vim_reset()
+# end
 
-    execute(mode, s, motion)
-    LE.refresh_line(s)
-    vim_reset()
+# function dispatch_key(c, mode :: ToChar, s::LE.MIState)
+#     # TODO
+# end
+
+# function dispatch_key(c :: Char, mode :: SelectRegister, s::LE.MIState)
+#     if alphanumeric(c) || c == '_'
+#         @log vim.register = c
+#     end
+#     vim_reset()
+# end
+
+global key_stack = Char[]
+
+function strike_key(c, s::LE.MIState)
+    if(c == '`')
+        empty!(key_stack)
+        @log key_stack
+    else
+        append!(key_stack, c)
+        s_cmd = String(key_stack)
+        if well_formed(s_cmd)
+            log("well formed command: $s_cmd")
+            empty!(key_stack)
+            cmd = parse_command(s_cmd)
+            if cmd !== nothing
+                refresh :: Bool = execute(s, cmd)
+                if refresh
+                    LE.refresh_line(s)
+                end
+            end
+        else
+            @log key_stack
+        end
+    end
 end
-
-function dispatch_key(c, mode :: ToCharMode, s::LE.MIState)
-    # TODO
-end
-
 
 function init()
     repl = Base.active_repl
     global juliamode = repl.interface.modes[1]
     juliamode.prompt = "julia[i]> "
     juliamode.keymap_dict['`'] = trigger_normal_mode
-    #= juliamode.keymap_dict['\e'] = trigger_normal_mode =#
 
     # remove normal mode if it's already added
     normalindex = 0
@@ -127,43 +129,12 @@ function init()
     if normalindex != 0
         deleteat!(repl.interface.modes, normalindex)
     end
-    # keymap = AnyDict(
-    #     'c' => c
-    # )
-
-    # alphabetic keys, no control characters or punctuation.
-    # safe to convert to symbols
-    alpha_keys = [
-        'd',
-        'c',
-        'w',
-        'h',
-        'j',
-        'k',
-        'l',
-        'e',
-        'E',
-        'b',
-        'B',
-        'a',
-        'A',
-        'i',
-        'x'
-    ]
-
-    # call the function with the name of the char
-    # binds = [ @eval ($c => (s::LE.MIState, o...)->
-    #                  eval(Expr(:call, Symbol($c), vim.mode, s)))
-    #           for c in alpha_keys ]
-
-    # TODO for all characters
-    # @eval ($c => (s::LE.MIstate, o...)->
-    #                dispatch_key($c, VB.mode, s))
 
     binds = AnyDict()
     for c in all_keys
         bind = (s::LE.MIState, o...)->begin
-            dispatch_key(c, vim.mode, s)
+            strike_key(c, s)
+            # dispatch_key(c, vim.mode, s)
         end
         binds[c] = bind
     end
@@ -175,10 +146,6 @@ function init()
     )
     keymap = merge(keymap,
                    AnyDict(binds))
-
-    # for i in 0:9
-    #     keymap(Char(i))
-    # end
 
     # keys to copy from `juliamode`
     copy_keys = [
@@ -217,10 +184,91 @@ function init()
                     )
     normalmode.on_done = juliamode.on_done
     normalmode.on_enter = juliamode.on_enter
+    normalmode.hist = juliamode.hist
 
     push!(repl.interface.modes, normalmode)
     return
 end
+#=
+function is_esc_key(c :: Char, term::Union{LE.AbstractTerminal, IOBuffer})
+    # term = LE.terminal(s)
+    # c = read(term, Char)
+    # if c == '\e'
+    # @async begin
+    #     peek(term, Char)
+    # end
+    # @log c
+    if c != '\e'
+        return false
+    end
+    # log("waiting for additional escape codes")
+    status = timedwait(0.1, pollint=0.01) do
+        # if !eof(term)
+            # @log peek(term, Char)
+        # else
+            # log("term is EOF")
+        # end
+
+        # log("received additonal escape code")
+        # return true for timed callback
+        return true
+    end
+    @log is_escape_key = status == :timed_out
+    is_command_sequence = status == :ok
+
+    return is_escape_key
+    # sleep(0.1)
+    # if no other chars have been sent, we can assume that this
+    # was the "escape" key
+    # otherwise
+
+end
+
+function LE.match_input(f::Function, s::Union{Nothing,LE.MIState}, term, cs::Vector{Char}, keymap)
+    log("match function")
+    LE.update_key_repeats(s, cs)
+    c = String(cs)
+    return function (s, p)  # s::Union{Nothing,MIState}; p can be (at least) a LineEditREPL, PrefixSearchState, Nothing
+        r = Base.invokelatest(f, s, p, c)
+        if isa(r, Symbol)
+            return r
+        else
+            return :ok
+        end
+    end
+end
+
+function LE.match_input(k::Nothing, s, term, cs, keymap)
+    log("match nothing")
+    # @log cs
+    return (s,p) -> begin
+        log("nothing")
+        return :ok
+    end
+end
+LE.match_input(k::KeyAlias, s::Union{Nothing,LE.MIState}, term, cs, keymap::Dict{Char}) = LE.match_input(keymap, s, IOBuffer(k.seq), Char[], keymap)
+
+function LE.match_input(k::Dict{Char}, s::Union{Nothing,LE.MIState}, term::Union{LE.AbstractTerminal,IOBuffer}=terminal(s), cs::Vector{Char}=Char[], keymap::Dict{Char} = k)
+    log("matching input")
+    # if we run out of characters to match before resolving an action,
+    # return an empty keymap function
+    eof(term) && return (s, p) -> :abort
+    c = read(term, Char)
+    @log c
+    @log cs
+    # @log 
+
+    @log is_esc_key(c, term)
+    # Ignore any `wildcard` as this is used as a
+    # placeholder for the wildcard (see normalize_key("*"))
+    @log c == LE.wildcard
+    c == LE.wildcard && return (s, p) -> :ok
+    push!(cs, c)
+    key = haskey(k, c) ? c : LE.wildcard
+    # if we don't match on the key, look for a default action then fallback on 'nothing' to ignore
+    return LE.match_input(get(k, key, nothing), s, term, cs, keymap)
+end
+=#
 
 function vim_reset()
     vim.mode = NormalMode()
@@ -231,7 +279,7 @@ function edit_move_end(s::LE.MIState)
     buf = LE.buffer(s)
     @show typeof(buf)
     while !eof(buf)
-        if line_break(
+        if linebreak(
             LE.char_move_right(buf))
             break
         end
@@ -246,7 +294,7 @@ end
 function edit_move_start(s::LE.MIState)
     buf = LE.buffer(s)
     while position(buf) > 0
-        if line_break(LE.char_move_left(buf))
+        if linebreak(LE.char_move_left(buf))
             LE.char_move_right(buf)
             break
         end
@@ -286,7 +334,7 @@ end
 
 function trigger_normal_mode(state::LineEdit.MIState, o...)
     iobuffer = LineEdit.buffer(state)
-    vim.mode = NormalMode()
+    # vim.mode = NormalMode()
     LineEdit.transition(state, normalmode) do
         prompt_state = LineEdit.state(state, normalmode)
         prompt_state.input_buffer = copy(iobuffer)

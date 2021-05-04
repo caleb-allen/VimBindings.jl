@@ -33,10 +33,6 @@ function log(s...)
     println(getsocket(), s...)
 end
 
-# function log(s :: AbstractString...)
-
-
-# bind character to function
 function test_bind()
 
 end
@@ -54,6 +50,8 @@ macro bindkey(c)
          # @show Symbol($(esc(c)))
          # Expr(:call, Symbol($(esc(c))),(VB.mode, esc(s)))
 end
+
+# buffer(s :: LE.MIState) = LE.buffer(s)
 
 # alpha_keymap = AnyDict()
 

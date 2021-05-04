@@ -2,11 +2,9 @@
 
 VimBindings is a Julia package which brings vim keybindings and modal editing to the Julia REPL.
 
-VimBindings is early in development and is likely not ready for real-world use.
+VimBindings is early in development and is not ready for real-world use.
 
-As heavy user of vim myself my goal is to make this implementation as fully featured as possible, to make it "feel" like the real vim and not just some rebound hotkeys thrown on, at least as far as that is possible. I'd like to avoid the experience I've had with so many vim implementations (in IDEs, mostly) which implement the basic features, but don't go far enough or whose own hotkeys or designs clash with vim's.
-
-This is also an exercise in Julia for me, and I believe Julia makes a great candidate for a vim implementation. Not only is the REPL code modular and user accessible, (with existing modes like `shell>`, `help?>`, and `pkg>`), Julia's metaprogramming capabilities + type system make for succinct and highly expressive code, perfect for a DSL-like system such as vim. Additionally, the REPL paradigm is essentially a line editor, and so unlike an IDE the potential for clashing designs is low.
+I believe Julia makes a great candidate for a vim implementation, and for interactive applications in general, and this is an exercise for me in software development in Julia. 
 
 # Features
 - [x] Normal mode
@@ -15,7 +13,7 @@ This is also an exercise in Julia for me, and I believe Julia makes a great cand
 - [ ] Less basic editing (e.g. `diw`, `cfx`)
 - [ ] History integration
 - [ ] Visual mode
-- [ ] Registers
+- [x] Registers
 - [ ] Undo/Redo
 - [ ] Macros
 
@@ -24,9 +22,7 @@ This is also an exercise in Julia for me, and I believe Julia makes a great cand
 ```julia
 ] add https://github.com/caleb-allen/VimBindings.jl
 
-julia> using VimBindings
-
-julia> VimBindings.init()
+julia> using VimBindings; VimBindings.init()
 
 julia[i]> 
 ```
@@ -34,9 +30,22 @@ julia[i]>
 # Usage
 VimBindings begins in `insert` mode, and the Julia REPL can be used in its original, familiar fasion.
 
+Currently, the user must use the backtic \` in place of `Esc`*.
+
 Switch to `normal` mode by using the backtic, where you can navigate with `h`, `j`, `k`, `l`, etc.
 ```julia
 julia[i]> println("Hello world!") # user presses backtic "`"
 julia[n]> println("Hello world!") # normal mode!
 ```
 ![gif of usage](https://raw.githubusercontent.com/caleb-allen/VimBindings.jl/master/vimbindings.gif)
+
+
+## Note*
+Correctly handling `Esc` is a goal of this project, but doing so is made complicated by the way that escape sequences from the keyboard work in general. Here is an explanation from Wikipedia:
+
+> If the Esc key and other keys that send escape sequences are both supposed to be meaningful to an application, an ambiguity arises if a character terminal is in use. When the application receives the ASCII escape character, it is not clear whether that character is the result of the user pressing the Esc key or whether it is the initial character of an escape sequence (e.g., resulting from an arrow key press). The traditional method of resolving the ambiguity is to observe whether or not another character quickly follows the escape character. If not, it is assumed not to be part of an escape sequence. This heuristic can fail under some circumstances, especially without fast modern communication speeds. 
+https://en.wikipedia.org/wiki/Escape_sequence#Keyboard
+
+The feature is achievable, but requires a deeper refactor of Julia's REPL code than I've been able to tackle.
+
+See https://github.com/caleb-allen/VimBindings.jl/issues/8 and  https://github.com/JuliaLang/julia/issues/28598
