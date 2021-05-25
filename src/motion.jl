@@ -96,11 +96,11 @@ function word_next(buf :: IOBuffer) :: Motion
     last_c = read(buf, Char)
     while !eof(buf)
         c = read(buf, Char)
-        if alphanumeric(last_c) && punctuation(c)
+        if is_alphanumeric(last_c) && is_punctuation(c)
             break
-        elseif punctuation(last_c) && alphanumeric(c)
+        elseif is_punctuation(last_c) && is_alphanumeric(c)
             break
-        elseif whitespace(last_c) && !whitespace(c)
+        elseif is_whitespace(last_c) && !is_whitespace(c)
             break
         end
         last_c = c
@@ -122,7 +122,7 @@ function word_big_next(buf :: IOBuffer) :: Motion
     last_c = read(buf, Char)
     while !eof(buf)
         c = read(buf, Char)
-        if whitespace(last_c) && !whitespace(c)
+        if is_whitespace(last_c) && !is_whitespace(c)
             break
         end
         last_c = c
@@ -145,16 +145,16 @@ function word_end(buf :: IOBuffer) :: Motion
 
     @log first_word_char = !eof(buf) && read(buf, Char)
     # find the first character of the word we will be moving to the end of
-    while !eof(buf) && position(buf) != start && whitespace(first_word_char)
+    while !eof(buf) && position(buf) != start && is_whitespace(first_word_char)
         @log first_word_char = read(buf, Char)
     end
 
     while !eof(buf)
         c = read(buf, Char)
-        if punctuation(first_word_char) && !punctuation(c)
+        if is_punctuation(first_word_char) && !is_punctuation(c)
             LE.char_move_left(buf)
             break
-        elseif alphanumeric(first_word_char) && !alphanumeric(c)
+        elseif is_alphanumeric(first_word_char) && !is_alphanumeric(c)
             LE.char_move_left(buf)
             break
         end
@@ -175,13 +175,13 @@ function word_back(buf :: IOBuffer) :: Motion
 
     while position(buf) > 0
         c = peek(buf, Char)
-        if alphanumeric(c) && punctuation(last_c)
+        if is_alphanumeric(c) && is_punctuation(last_c)
             skip(buf, 1)
             break
-        elseif punctuation(c) && alphanumeric(last_c)
+        elseif is_punctuation(c) && is_alphanumeric(last_c)
             skip(buf, 1)
             break
-        elseif whitespace(c) && !whitespace(last_c)
+        elseif is_whitespace(c) && !is_whitespace(last_c)
             skip(buf, 1)
             break
         end
@@ -202,7 +202,7 @@ function word_back_big(buf :: IOBuffer) :: Motion
 
     while position(buf) > 0
         c = peek(buf, Char)
-        if whitespace(c) && !whitespace(last_c)
+        if is_whitespace(c) && !is_whitespace(last_c)
             skip(buf, 1)
             break
         end
@@ -220,7 +220,7 @@ function line_end(buf :: IOBuffer) :: Motion
 
     while !eof(buf)
         c = read(buf, Char)
-        if linebreak(c)
+        if is_linebreak(c)
             break
         end
     end
@@ -240,10 +240,10 @@ function line_begin(buf :: IOBuffer) :: Motion
     while position(buf) > 0
         LE.char_move_left(buf)
         c = peek(buf, Char)
-        if linebreak(c)
+        if is_linebreak(c)
             break
         end
-        if !whitespace(c)
+        if !is_whitespace(c)
             first_line_char = position(buf)
         end
     end
@@ -251,12 +251,12 @@ function line_begin(buf :: IOBuffer) :: Motion
         skip(buf, 1)
         while !eof(buf)
             c = read(buf, Char)
-            if !whitespace(c)
+            if !is_whitespace(c)
                 skip(buf, -1)
                 first_line_char = position(buf)
                 break
             end
-            if linebreak(c)
+            if is_linebreak(c)
                 break
             end
         end
@@ -278,7 +278,7 @@ function line_zero(buf :: IOBuffer) :: Motion
     while position(buf) > 0
         LE.char_move_left(buf)
         c = peek(buf, Char)
-        if linebreak(c)
+        if is_linebreak(c)
             break
         end
         first_line_char = position(buf)

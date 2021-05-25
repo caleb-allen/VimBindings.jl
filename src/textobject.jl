@@ -1,11 +1,12 @@
 module TextObjects
 using Match
 using ..TextUtils
+export word
 
 abstract type Selection end
 
-# struct Inner <: Selection end
-# struct A <: Selection end
+struct Inner <: Selection end
+struct A <: Selection end
 
 # abstract type TextObject end
 struct TextObject{T <: Selection}
@@ -51,13 +52,28 @@ sequence of other non-blank characters, separated with white space (spaces,
 tabs, <EOL>).  This can be changed with the 'iskeyword' option.  An empty line
 is also considered to be a word.
 """
-# function word(buf :: IOBuffer) :: UnitRange{Int}
-#     start = position(buf)
-#     while position(buf) > 0
+function word(buf :: IOBuffer) :: UnitRange{Int}
+    origin = position(buf)
+    local start
+    while !is_object_start(buf)
+        skip(buf, -1)
+    end
+    start = position(buf)
+    seek(buf, origin)
 
-#     end
-#     return start:endd
-# end
+
+    local endd
+    while !is_object_end(buf)
+        skip(buf, 1)
+    end
+    endd = position(buf)
+    seek(buf, origin)
+    return start:endd
+end
+
+function WORD(buf :: IOBuffer) :: UnitRange{Int}
+
+end
 
 function line(buf :: IOBuffer) :: TextObject
     # find the line start
@@ -101,4 +117,5 @@ end
 """
 function space(buf :: IOBuffer) :: UnitRange{Int}
 
+end
 end
