@@ -1,5 +1,5 @@
 # using VimBindings
-import VimBindings: word_next, word_end, word_big_next, Motion, punctuation, find_c, line_begin
+import VimBindings: word_next, word_end, word_big_next, Motion, is_punctuation, find_c, line_begin
 # import VimBindings: line, TextObject
 using Test
 # const VB = VimBindings
@@ -20,7 +20,7 @@ end
     motion = word_next(buf)
     @test motion == Motion(0, 6)
 
-    @assert punctuation('-')
+    @assert is_punctuation('-')
     buf = IOBuffer("Hello-worl")
     motion = word_next(buf)
     @test motion == Motion(0, 5)
