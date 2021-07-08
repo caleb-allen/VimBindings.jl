@@ -5,16 +5,19 @@ using REPL.LineEdit
 import REPL.LineEdit: KeyAlias, edit_splice!, buffer, refresh_line
 import Base: AnyDict, show_unquoted
 using Sockets
+using Neovim
+using DataPipes, Match
 
 const LE = LineEdit
+const Nvim = Neovim
 
 include("util.jl")
 include("textutils.jl")
 include("types.jl")
 include("command.jl")
+include("textobjects.jl")
 include("execute.jl")
 include("motion.jl")
-include("textobject.jl")
 include("operator.jl")
 include("keys.jl")
 include("parse.jl")
@@ -92,6 +95,10 @@ end
 global key_stack = Char[]
 
 function strike_key(c, s::LE.MIState)
+    
+    nvim_strike_key(c, s)
+    LE.refresh_line(s)
+    return
     if(c == '`')
         empty!(key_stack)
         @log key_stack
@@ -114,11 +121,108 @@ function strike_key(c, s::LE.MIState)
     end
 end
 
+import Neovim: feedkeys, set_client_info, get_buffers, get_current_line, set_line, get_buffer
+import Neovim: get_mode, get_line, get_current_buf
+
+mutable struct NvimHandler
+    state::LE.MIState
+    NvimHandler() = new()
+end
+function nvim_init()
+    global nvim_handler = NvimHandler()
+    global nvim = nvim_connect("/home/caleb/nvim.sock", nvim_handler)
+    set_client_info(
+        nvim,
+        "VimBindings.jl",
+        Dict("major" => 0,
+             "minor" => 0,
+             "patch" => 1
+        ),
+        "embedder",
+        Dict(),
+        Dict("website" => "https://github.com/caleb-allen/VimBindings.jl/")
+    )
+    
+
+    nbuffer = Nvim.get_current_buf(nvim)
+    Nvim.buf_attach(nvim, nbuffer, false, Dict())
+    # create_buf(nvim, true, true)
+    
+end
+
+function Neovim.on_notify(handler::NvimHandler, c, name, args)
+    log("on_notify")
+    mode = get_mode(c)["mode"]
+    
+    # if there were text changes during normal mode,
+    # it was a vim command
+    if name == "nvim_buf_lines_event" && mode == "n"
+        # TODO get the line data from `args`
+        sync_nvim_to_repl(handler.state, data)
+    end
+    @log name, args
+end
+
+function nvim_strike_key(c, s::LE.MIState)
+    nvim_handler.state = s
+    log("strikkey $c")
+    keys = String([c])
+    if c == '`'
+        keys = Neovim.replace_termcodes(nvim, "<Esc>", true, true, true)
+    end
+
+    
+    mode_start = get_mode(nvim)["mode"] # may be blocking
+
+    feedkeys(nvim, keys, "t", true)
+    
+    mode_end = get_mode(nvim)["mode"] # may be blocking
+    
+    win = get_current_win(nvim)
+    row, column = win_get_cursor(nvim, win)
+    
+    buf = buffer(s)
+        @match mode_end begin
+
+            "i" => begin 
+                if mode_start != "i"
+                    trigger_insert_mode(s)
+                end
+            end
+            "n" => begin if column != position(buf)
+                        seek(buf, column)
+                    end
+                end
+            _ => nothing
+        end
+    
+end
+
+function sync_repl_to_nvim(s::LE.MIState)
+    buf = buffer(s)
+    seek(buf, 0)
+    s = read(buf, String)
+    lines = @p begin
+        split(s, '\n')
+        map(String(_))
+    end
+    lines = tuple(lines...)
+    # Neovim.put(nvim, lines, "l", true, true)
+    nvim_buffer = Neovim.get_current_buf(nvim)
+    Neovim.set_lines(nvim_buffer, 0, -1, false, lines)
+end
+
+function sync_nvim_to_repl(s::LE.MIState, data)
+    # TODO fetch lines f
+end
+
 function init()
+    nvim_init()
     repl = Base.active_repl
     global juliamode = repl.interface.modes[1]
     juliamode.prompt = "julia[i]> "
     juliamode.keymap_dict['`'] = trigger_normal_mode
+    
 
     # remove normal mode if it's already added
     normalindex = 0
@@ -190,6 +294,8 @@ function init()
     push!(repl.interface.modes, normalmode)
     return
 end
+
+
 #=
 function is_esc_key(c :: Char, term::Union{LE.AbstractTerminal, IOBuffer})
     # term = LE.terminal(s)
@@ -335,10 +441,17 @@ end
 
 function trigger_normal_mode(state::LineEdit.MIState, o...)
     iobuffer = LineEdit.buffer(state)
-    # vim.mode = NormalMode()
     LineEdit.transition(state, normalmode) do
         prompt_state = LineEdit.state(state, normalmode)
         prompt_state.input_buffer = copy(iobuffer)
+        
+        sync_repl_to_nvim(prompt_state)
+
+                # nvim
+        # vim.mode = NormalMode()
+        # iobuffer = IOBuffer(s)
+
+        
     end
 end
 
