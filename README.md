@@ -23,12 +23,24 @@ I believe Julia makes a great candidate for a vim implementation, and for intera
 ```julia
 ] add https://github.com/caleb-allen/VimBindings.jl
 
-julia> using VimBindings; VimBindings.init()
-
-julia[i]> 
 ```
 
 # Usage
+
+The VimBindings package must be loaded before the REPL so that it can override some key-mapping functionality to correctly bind the 'escape' key. You can do this in your startup config:
+```julia
+# .julia/config/startup.jl
+atreplinit() do repl
+    @eval using VimBindings
+end
+```
+After starting the REPL, call `VimBindings.init()`
+
+```julia
+julia> VimBindings.init()
+julia[i]> # You now have vim bindings!
+```
+
 VimBindings begins in `insert` mode, and the Julia REPL can be used in its original, familiar fasion.
 
 Switch to `normal` mode by pressing Esc, where you can navigate with `h`, `j`, `k`, `l`, etc.
