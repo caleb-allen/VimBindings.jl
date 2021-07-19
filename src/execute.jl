@@ -1,5 +1,5 @@
 using .Commands
-using .TextObject
+using .TextObjects
 using Match
 
 """

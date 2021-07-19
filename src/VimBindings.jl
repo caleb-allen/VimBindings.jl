@@ -1,5 +1,6 @@
 module VimBindings
 
+using Base: AnyDict
 using REPL
 using REPL.LineEdit
 import REPL.LineEdit: KeyAlias, edit_splice!, buffer, refresh_line
@@ -12,9 +13,9 @@ include("util.jl")
 include("textutils.jl")
 include("types.jl")
 include("command.jl")
+include("textobject.jl")
 include("execute.jl")
 include("motion.jl")
-include("textobject.jl")
 include("operator.jl")
 include("keys.jl")
 include("parse.jl")
@@ -117,8 +118,19 @@ end
 function init()
     repl = Base.active_repl
     global juliamode = repl.interface.modes[1]
+    historymode = repl.interface.modes[4]
+    prefixhistorymode = repl.interface.modes[5]
     juliamode.prompt = "julia[i]> "
     juliamode.keymap_dict['`'] = trigger_normal_mode
+    LE.add_nested_key!(juliamode.keymap_dict, "\e\e", trigger_normal_mode)
+    # LE.add_nested_key!(historymode.keymap_dict, "\e\e", trigger_normal_mode)
+    LE.add_nested_key!(prefixhistorymode.keymap_dict, "\e\e", trigger_normal_mode)
+    # julia_mode_new_keys = AnyDict(
+    #     "\e\e" =>  trigger_normal_mode,
+    #     '`' =>  trigger_normal_mode
+    # ) |> LE.normalize_key
+    # juliamode.keymap_dict = merge(juliamode.keymap_dict, julia_mode_new_keys)
+    # juliamode.keymap_dict["\e\e"] = trigger_normal_mode
 
     # remove normal mode if it's already added
     normalindex = 0
@@ -141,6 +153,21 @@ function init()
     end
 
     keymap = AnyDict(
+        '*' => (s::LE.MIState, o...)->begin
+            log("keymap fallthrough: *")
+            # @log o
+        end,
+        # "\e" => (s, o...)->begin
+        #     log("keymap: \\e, escape")
+        # end,
+
+        "\e\e" => (s, o...)->begin
+            empty!(key_stack)
+        end,
+        # "\e[A" => (s::LE.MIState, o...)->begin
+            # log("Up Arrow")
+            # @log o
+        # end,
         # backspace
         # '\b' => (s::LE.MIState, o...)->LE.edit_move_left(s),
              # '`' => (s::LE.MIState, o...)->vim_reset(),
@@ -167,9 +194,9 @@ function init()
         # left arrow
         "\e[D",
         # up arrow
-        "\e[A",
+        # "\e[A",
         # down arrow
-        "\e[B",
+        # "\e[B",
         # delete
         "\e[3~",
     ]
@@ -181,6 +208,11 @@ function init()
         REPL.Prompt("julia[n]> ",
                     keymap_dict = LE.keymap([keymap]),
                     # on_done = REPL.respond(split, repl, juliamode),
+                    on_done = (s, o...) -> begin
+                        log("on_done")
+                        @log s.last_action
+                        @log s.current_action
+                    end
                     # on_enter = juliamode.on_enter,
                     )
     normalmode.on_done = juliamode.on_done
@@ -190,86 +222,120 @@ function init()
     push!(repl.interface.modes, normalmode)
     return
 end
-#=
-function is_esc_key(c :: Char, term::Union{LE.AbstractTerminal, IOBuffer})
-    # term = LE.terminal(s)
-    # c = read(term, Char)
-    # if c == '\e'
-    # @async begin
-    #     peek(term, Char)
-    # end
-    # @log c
-    if c != '\e'
-        return false
-    end
-    # log("waiting for additional escape codes")
-    status = timedwait(0.1, pollint=0.01) do
-        # if !eof(term)
-            # @log peek(term, Char)
-        # else
-            # log("term is EOF")
-        # end
 
-        # log("received additonal escape code")
-        # return true for timed callback
-        return true
-    end
-    @log is_escape_key = status == :timed_out
-    is_command_sequence = status == :ok
-
-    return is_escape_key
-    # sleep(0.1)
-    # if no other chars have been sent, we can assume that this
-    # was the "escape" key
-    # otherwise
-
-end
-
-function LE.match_input(f::Function, s::Union{Nothing,LE.MIState}, term, cs::Vector{Char}, keymap)
-    log("match function")
-    LE.update_key_repeats(s, cs)
-    c = String(cs)
-    return function (s, p)  # s::Union{Nothing,MIState}; p can be (at least) a LineEditREPL, PrefixSearchState, Nothing
-        r = Base.invokelatest(f, s, p, c)
-        if isa(r, Symbol)
-            return r
-        else
-            return :ok
+import REPL.LineEdit: TextTerminal, ModalInterface, MIState, activate, keymap, match_input, keymap_data, transition, mode, terminal
+import REPL.Terminals: raw!, enable_bracketed_paste, disable_bracketed_paste
+function LE.prompt!(term::TextTerminal, prompt::ModalInterface, s::MIState = init_state(term, prompt))
+    # println("initializing prompt from VimBindings.jl")
+    Base.reseteof(term)
+    raw!(term, true)
+    enable_bracketed_paste(term)
+    try
+        activate(prompt, s, term, term)
+        old_state = mode(s)
+        while true
+            kmap = keymap(s, prompt)
+            fcn = match_input(kmap, s)
+            # @log fcn
+            @log propertynames(fcn)
+            if hasproperty(fcn, :c)
+                @log fcn.c
+            end
+            kdata = keymap_data(s, prompt)
+            s.current_action = :unknown # if the to-be-run action doesn't update this field,
+                                        # :unknown will be recorded in the last_action field
+            local status
+            # errors in keymaps shouldn't cause the REPL to fail, so wrap in a
+            # try/catch block
+            try
+                status = fcn(s, kdata)
+            catch e
+                @error "Error in the keymap" exception=e,catch_backtrace()
+                # try to cleanup and get `s` back to its original state before returning
+                transition(s, :reset)
+                transition(s, old_state)
+                status = :done
+            end
+            status !== :ignore && (s.last_action = s.current_action)
+            if status === :abort
+                s.aborted = true
+                return buffer(s), false, false
+            elseif status === :done
+                return buffer(s), true, false
+            elseif status === :suspend
+                if Sys.isunix()
+                    return buffer(s), true, true
+                end
+            else
+                @assert status ∈ (:ok, :ignore)
+            end
         end
+    finally
+        raw!(term, false) && disable_bracketed_paste(term)
     end
+    # unreachable
 end
 
-function LE.match_input(k::Nothing, s, term, cs, keymap)
-    log("match nothing")
-    # @log cs
-    return (s,p) -> begin
-        log("nothing")
-        return :ok
-    end
-end
-LE.match_input(k::KeyAlias, s::Union{Nothing,LE.MIState}, term, cs, keymap::Dict{Char}) = LE.match_input(keymap, s, IOBuffer(k.seq), Char[], keymap)
+# function LE.match_input(f::Function, s::Union{Nothing,LE.MIState}, term, cs::Vector{Char}, keymap)
+#     log("match function")
+#     LE.update_key_repeats(s, cs)
+#     c = String(cs)
+#     return function (s, p)  # s::Union{Nothing,MIState}; p can be (at least) a LineEditREPL, PrefixSearchState, Nothing
+#         r = Base.invokelatest(f, s, p, c)
+#         if isa(r, Symbol)
+#             return r
+#         else
+#             return :ok
+#         end
+#     end
+# end
+
+# function LE.match_input(k::Nothing, s, term, cs, keymap)
+#     log("match nothing")
+#     # @log cs
+#     return (s,p) -> begin
+#         log("nothing")
+#         return :ok
+#     end
+# end
+# LE.match_input(k::KeyAlias, s::Union{Nothing,LE.MIState}, term, cs, keymap::Dict{Char}) = LE.match_input(keymap, s, IOBuffer(k.seq), Char[], keymap)
 
 function LE.match_input(k::Dict{Char}, s::Union{Nothing,LE.MIState}, term::Union{LE.AbstractTerminal,IOBuffer}=terminal(s), cs::Vector{Char}=Char[], keymap::Dict{Char} = k)
-    log("matching input")
     # if we run out of characters to match before resolving an action,
     # return an empty keymap function
     eof(term) && return (s, p) -> :abort
     c = read(term, Char)
-    @log c
-    @log cs
-    # @log 
+    
+    if isempty(cs) && c == '\e'
+        is_escape_task = @async begin
+            sleep(0.03)
+            @log avail = bytesavailable(term)
 
-    @log is_esc_key(c, term)
+            if avail > 0
+                log("bytes available to read: suspected encoded sequence")
+                return false
+            else
+                log("no bytes available to read: suspected Escape key")
+                return true
+            end
+        end
+        
+        if fetch(is_escape_task)
+            @log keys(k['\e'])
+            # short-circuit completion here for Escape key
+            if @log haskey(k['\e'], '\e')
+                return LE.match_input(k['\e']['\e'], s, term, cs, nothing)
+            end
+        end
+    end
     # Ignore any `wildcard` as this is used as a
     # placeholder for the wildcard (see normalize_key("*"))
-    @log c == LE.wildcard
     c == LE.wildcard && return (s, p) -> :ok
     push!(cs, c)
     key = haskey(k, c) ? c : LE.wildcard
     # if we don't match on the key, look for a default action then fallback on 'nothing' to ignore
     return LE.match_input(get(k, key, nothing), s, term, cs, keymap)
 end
-=#
 
 function vim_reset()
     vim.mode = NormalMode()
