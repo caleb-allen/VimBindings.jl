@@ -27,7 +27,7 @@ I believe Julia makes a great candidate for a vim implementation, and for intera
 
 # Usage
 
-The VimBindings package must be loaded before the REPL so that it can override some key-mapping functionality to correctly bind the 'escape' key. You can do this in your startup config:
+The VimBindings package must be loaded before the REPL to correctly bind the `Esc` key. You can do this in your startup config:
 ```julia
 # .julia/config/startup.jl
 atreplinit() do repl

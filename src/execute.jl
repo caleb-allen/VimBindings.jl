@@ -8,16 +8,20 @@ using Match
 function execute(s :: LE.MIState, command :: MotionCommand) :: Bool
     log("executing motion command: $(command.motion)")
     buf = buffer(s)
-    for rep in 1:command.r1
+    for iteration in 1:command.r1
         # fn_name = get_safe_name(command.motion)
         # buf = buffer(s)
         # call the command's function to generate the motion object
         # motion = eval(Expr(:call, fn_name, buf))
         motion = gen_motion(buf, command.motion)
-
+        if is_stationary(motion)
+            @match key(command) begin
+                'j' => history_next(s, mode(s).hist)
+                'k' => history_prev(s, mode(s).hist)
+            end
+        end
         # execute the motion object
         motion(s)
-        # fn(buf)
     end
     return true
 end
@@ -54,9 +58,9 @@ end
 function execute(s :: LE.MIState, command :: InsertCommand) :: Bool
     # cmds = [aAiIoO]
     buf = buffer(s)
-    val = @match command.c begin
+    motion = @match command.c begin
         'a' => a(buf)
-        'A' => line_end(buf)
+        'A' => a_big(buf)
         'i' => nothing
         'I' => line_begin(buf)
         'o' => begin
@@ -73,8 +77,8 @@ function execute(s :: LE.MIState, command :: InsertCommand) :: Bool
             up(buf)
         end
     end
-    if val isa Motion
-        val(buf)
+    if motion isa Motion
+        motion(buf)
     end
     trigger_insert_mode(s)
     return true

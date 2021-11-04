@@ -8,12 +8,14 @@ end
 Motion(start :: Int64, stop :: Int64) = Motion(start, stop, nothing)
 Motion(buf :: IOBuffer, change :: Int64) = Motion(position(buf), position(buf) + change)
 
+Motion(buf :: IOBuffer) = Motion(buf, 0)
 
 """
     A character motion is either inclusive or exclusive.  When inclusive, the
 start and end position of the motion are included in the operation.  When
 exclusive, the last character towards the end of the buffer is not included.
-    Linewise motions always include the start and end position."""
+    Linewise motions always include the start and end position.
+"""
 @enum MotionType begin
     linewise
     exclusive # characterwise
@@ -24,6 +26,8 @@ end
 
 min(motion :: Motion) = Base.min(motion.start, motion.stop)
 max(motion :: Motion) = Base.max(motion.start, motion.stop)
+
+is_stationary(motion :: Motion) :: Bool = motion.start == motion.stop
 
 Base.length(motion :: Motion) = max(motion) - min(motion)
 
@@ -193,7 +197,7 @@ function word_back(buf :: IOBuffer) :: Motion
     return Motion(start, endd)
 end
 
-function word_back_big(buf :: IOBuffer) :: Motion
+function word_big_back(buf :: IOBuffer) :: Motion
     start = position(buf)
     position(buf) == 0 && return Motion(start, start)
 
@@ -362,7 +366,7 @@ end
 @motion(W, word_big_next, exclusive)
 @motion(e, word_end, inclusive)
 @motion(b, word_back, exclusive)
-@motion(B, word_back_big, exclusive)
+@motion(B, word_big_back, exclusive)
 @motion(caret, line_begin, exclusive)
 @motion(dollar, line_end, inclusive)
 

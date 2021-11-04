@@ -1,5 +1,6 @@
 module VimBindings
 
+using REPL: history_next, history_prev
 using Base: AnyDict
 using REPL
 using REPL.LineEdit
@@ -218,6 +219,7 @@ function init()
     normalmode.on_done = juliamode.on_done
     normalmode.on_enter = juliamode.on_enter
     normalmode.hist = juliamode.hist
+    normalmode.hist.mode_mapping[:julia] = normalmode
 
     push!(repl.interface.modes, normalmode)
     return
@@ -236,11 +238,6 @@ function LE.prompt!(term::TextTerminal, prompt::ModalInterface, s::MIState = ini
         while true
             kmap = keymap(s, prompt)
             fcn = match_input(kmap, s)
-            # @log fcn
-            @log propertynames(fcn)
-            if hasproperty(fcn, :c)
-                @log fcn.c
-            end
             kdata = keymap_data(s, prompt)
             s.current_action = :unknown # if the to-be-run action doesn't update this field,
                                         # :unknown will be recorded in the last_action field
@@ -309,8 +306,7 @@ function LE.match_input(k::Dict{Char}, s::Union{Nothing,LE.MIState}, term::Union
     if isempty(cs) && c == '\e'
         is_escape_task = @async begin
             sleep(0.03)
-            @log avail = bytesavailable(term)
-
+            avail = bytesavailable(term)
             if avail > 0
                 log("bytes available to read: suspected encoded sequence")
                 return false

@@ -1,5 +1,6 @@
 module Commands
 export Command, MotionCommand, OperatorCommand, LineOperatorCommand, InsertCommand
+export key
 
 abstract type Command end
 
@@ -9,6 +10,9 @@ struct MotionCommand <: Command
 end
 
 
+"""
+Command which operates on a selection of text, for example yank `y`, cut `c`, or delete `d`
+"""
 struct OperatorCommand <: Command
     r1 :: Integer
     # one of 'y', 'd', 'c'
@@ -27,7 +31,22 @@ struct LineOperatorCommand <: Command
     operator :: Char
 end
 
+
+"""
+Command which changes into Insert mode, possibly preceded by a motion, for example `A`.
+"""
 struct InsertCommand <: Command
     c :: Char
 end
+
+
+function key(cmd :: Command) :: Char
+    error("method `key` not implemented for type $(typeof(cmd))")
+end
+
+key(cmd :: MotionCommand) = cmd.motion
+key(cmd :: OperatorCommand) = cmd.operator
+key(cmd :: LineOperatorCommand) = cmd.operator
+key(cmd :: InsertCommand) = cmd.c
+
 end

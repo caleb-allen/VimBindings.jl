@@ -22,7 +22,12 @@ function a(buf :: IOBuffer) :: Motion
 end
 
 function a_big(buf :: IOBuffer) :: Motion
-    return line_end(buf)
+    motion = line_end(buf)
+    return if !eof(buf)
+        return Motion(motion.start, motion.stop + 1)
+    else
+        return motion
+    end
 end
 
 # function x(mode :: NormalMode, s::LE.MIState)

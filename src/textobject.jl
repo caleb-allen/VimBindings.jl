@@ -1,7 +1,10 @@
 module TextObjects
 using Match
 using ..TextUtils
-export word
+using REPL.LineEdit
+export word, line
+
+const LE = LineEdit
 
 abstract type Selection end
 
@@ -86,7 +89,7 @@ function line(buf :: IOBuffer) :: TextObject
 
     while !eof(buf) && position(buf) > 0
         c = peek(buf, Char)
-        if linebreak(c)
+        if is_linebreak(c)
             skip(buf, 1)
             break
         end
@@ -101,7 +104,7 @@ function line(buf :: IOBuffer) :: TextObject
     mark(buf)
     while !eof(buf)
         c = read(buf, Char)
-        if linebreak(c)
+        if is_linebreak(c)
             LE.char_move_left(buf)
             break
         end
