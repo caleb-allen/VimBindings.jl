@@ -1,88 +1,62 @@
-#=
------------
-Normal Mode
------------
-=#
-function i(buf :: IOBuffer) :: Motion
-    start = position(buf)
-    # leave it in the same spot
-    return Motion(start, start)
-end
+motions = Dict{Char, Any}(
+    'i' => (buf) -> Motion(buf),
+    'I' => (buf) -> line_begin(buf),
+    'a' => (buf) -> begin
+        return if !eof(buf)
+            return Motion(position(buf), position(buf) + 1)
+        else
+            return Motion(buf)
+        end
+    end,
+    'A' => (buf) -> begin
+        motion = line_end(buf)
+        return if !eof(buf)
+            return Motion(motion.start, motion.stop + 1)
+        else
+            return motion
+        end
+    end,
+    'h' => (buf) -> Motion(position(buf), position(buf) - 1), # , exclusive
+    'l' => (buf) -> Motion(position(buf), position(buf) + 1),# exclusive
+    'j' => down,
+    'k' => up,
+    'w' => word_next, # exclusive),
+    'W' => word_big_next, # exclusive),
+    'e' => word_end, # inclusive,
+    'E' => word_big_end, # )
+    'b' => word_back, # exclusive)
+    'B' => word_big_back, # exclusive)
+    '^' => line_begin, # exclusive)
+    '$' => line_end, # inclusive)
+)
 
-function i_big(buf :: IOBuffer) :: Motion
-    return line_begin(buf)
-end
-
-function a(buf :: IOBuffer) :: Motion
-    if !eof(buf)
-        return Motion(position(buf), position(buf) + 1)
+"""
+    Generate a Motion object for the given `name`
+"""
+function gen_motion(buf, name :: Char) :: Motion
+    # motions = Motion[]
+    fn_name = get_safe_name(name)
+    fn = if name in keys(motions)
+        motions[name]
     else
-        return Motion(position(buf), position(buf))
+        log("$name has no mapped function")
+        (buf) -> Motion(buf)
     end
+    # call the command's function to generate the motion object
+    motion = fn(buf)
+    return motion
 end
+"""
+Generate motion for the given `name` which is a TextObject
+"""
+function gen_motion(buf, name :: String) :: Motion
 
-function a_big(buf :: IOBuffer) :: Motion
-    motion = line_end(buf)
-    return if !eof(buf)
-        return Motion(motion.start, motion.stop + 1)
-    else
-        return motion
-    end
 end
-
-# function x(mode :: NormalMode, s::LE.MIState)
-#     buf = LE.buffer(s)
-#     motion = Motion(position(buf), position(buf) + 1)
-#     execute(MotionMode{Delete}(), s, motion)
-#     LE.refresh_line(s)
-#     return true
-# end
-
-# function p(mode::NormalMode, s::LE.MIState)
-#     buf = LE.buffer(s)
-#     paste(buf, vim.register)
-#     LE.refresh_line(s)
-# end
-
 
 
 function double_quote(mode::NormalMode, s::LE.MIState) :: Action
     @log vim.mode = SelectRegister()
 end
-
-#=
-function f(mode::MotionMode{T} where T, s::LE.MIState) :: Action
-    @log t = eltype(mode)
-    @log vim.mode = FindChar{t}()
-end
-
-function d(mode::MotionMode{Delete}, s) :: Action
-    buf = buffer(s)
-    motion = Motion(line(buf))
-    execute(mode, s, motion, linewise)
-    refresh_line(s)
-    vim_reset()
-    return true
-end
-
-function y(mode::MotionMode{Yank}, s) :: Action
-    buf = buffer(s)
-    motion = Motion(line(buf))
-    execute(mode, s, motion, linewise)
-    vim_reset()
-    return true
-end
-
-
-# function execute(::AbstractSelectMode{Yank},
-#                  s :: LE.MIState,
-#                  motion::Motion,
-#                  motion_type::MotionType)
-#     yank(s, motion, motion_type)
-# end
-
-=#
-
 special_keys = Dict(
     '`' => "backtic",
     '~' => "tilde",

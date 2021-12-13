@@ -94,26 +94,26 @@ end
 global key_stack = Char[]
 
 function strike_key(c, s::LE.MIState)
-    if(c == '`')
+    # if(c == '`')
+    #     empty!(key_stack)
+    #     @log key_stack
+    # else
+    append!(key_stack, c)
+    s_cmd = String(key_stack)
+    if well_formed(s_cmd)
+        log("well formed command: $s_cmd")
         empty!(key_stack)
-        @log key_stack
-    else
-        append!(key_stack, c)
-        s_cmd = String(key_stack)
-        if well_formed(s_cmd)
-            log("well formed command: $s_cmd")
-            empty!(key_stack)
-            cmd = parse_command(s_cmd)
-            if cmd !== nothing
-                refresh :: Bool = execute(s, cmd)
-                if refresh
-                    LE.refresh_line(s)
-                end
+        cmd = parse_command(s_cmd)
+        if cmd !== nothing
+            refresh :: Bool = execute(s, cmd)
+            if refresh
+                LE.refresh_line(s)
             end
-        else
-            @log key_stack
         end
+    else
+        @log key_stack
     end
+    # end
 end
 
 function init()
@@ -122,7 +122,7 @@ function init()
     historymode = repl.interface.modes[4]
     prefixhistorymode = repl.interface.modes[5]
     juliamode.prompt = "julia[i]> "
-    juliamode.keymap_dict['`'] = trigger_normal_mode
+    # juliamode.keymap_dict['`'] = trigger_normal_mode
     LE.add_nested_key!(juliamode.keymap_dict, "\e\e", trigger_normal_mode)
     # LE.add_nested_key!(historymode.keymap_dict, "\e\e", trigger_normal_mode)
     LE.add_nested_key!(prefixhistorymode.keymap_dict, "\e\e", trigger_normal_mode)

@@ -9,10 +9,7 @@ function execute(s :: LE.MIState, command :: MotionCommand) :: Bool
     log("executing motion command: $(command.motion)")
     buf = buffer(s)
     for iteration in 1:command.r1
-        # fn_name = get_safe_name(command.motion)
-        # buf = buffer(s)
         # call the command's function to generate the motion object
-        # motion = eval(Expr(:call, fn_name, buf))
         motion = gen_motion(buf, command.motion)
         if is_stationary(motion)
             @match key(command) begin
@@ -25,30 +22,11 @@ function execute(s :: LE.MIState, command :: MotionCommand) :: Bool
     end
     return true
 end
-
-"""
-    Generate a Motion object for the given `name`
-"""
-function gen_motion(buf, name :: Char) :: Motion
-    motions = Motion[]
-    fn_name = get_safe_name(name)
-    # call the command's function to generate the motion object
-    motion = eval(Expr(:call, fn_name, buf))
-    return motion
-end
-
-#=
-Generate motion for the given `name` which is a TextObject
-=#
-function gen_motion(buf, name :: String) :: Motion
-
-end
-
 function execute(s :: LE.MIState, command :: LineOperatorCommand) :: Bool
     for r in 1:command.r1
         buf = buffer(s)
         line_textobject = line(buf)
-        line_motion = Motion(line_textobject)
+        line_motion = Motion(line_textobject...)
         op_fn = operator_fn(command.operator)
         eval(Expr(:call, op_fn, buf, line_motion))
     end
@@ -59,10 +37,6 @@ function execute(s :: LE.MIState, command :: InsertCommand) :: Bool
     # cmds = [aAiIoO]
     buf = buffer(s)
     motion = @match command.c begin
-        'a' => a(buf)
-        'A' => a_big(buf)
-        'i' => nothing
-        'I' => line_begin(buf)
         'o' => begin
             endd = line_end(buf).stop
             insert(buf, line_end(buf).stop, '\n')
@@ -76,6 +50,7 @@ function execute(s :: LE.MIState, command :: InsertCommand) :: Bool
             insert(buf, line_zero(buf).stop, '\n')
             up(buf)
         end
+        _ => gen_motion(buf, command.c)
     end
     if motion isa Motion
         motion(buf)

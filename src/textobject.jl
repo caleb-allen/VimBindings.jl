@@ -8,22 +8,31 @@ const LE = LineEdit
 
 abstract type Selection end
 
+"""
+An inner selection
+"""
 struct Inner <: Selection end
+"""
+An "all" selection
+"""
 struct A <: Selection end
 
 # abstract type TextObject end
-struct TextObject{T <: Selection}
+struct TextObject{T<:Selection}
 
 end
 
-function textobject(buf :: IOBuffer, name :: String)
+"""
+Create a text object
+"""
+function textobject(buf::IOBuffer, name::String)
     m = match(r"^([ai])(.)$", name)
     selection = @match m[1] begin
         "i" => Inner()
         "a" => A()
     end
 
-    object_fn :: Function = @match m[2] begin
+    object_fn::Function = @match m[2] begin
         "w" => word
         _ => error("text object command not found: $(m[2])")
     end
@@ -37,16 +46,19 @@ function inner()
 end
 
 """
-  For non-block objects: For the "a" commands: The operator applies to the object and the white space after the object. If there is no white space after the object or when the cursor was in the white space before the object, the white space before the object is included.
+  For non-block objects: For the "a" commands: The operator applies to the object
+   and the white space after the object. If there is no white space after the object
+    or when the cursor was in the white space before the object, the white space before
+    the object is included.
 """
-function (::A)(object_function)
-end
+function (::A)(object_function) end
 
 """
-For the "inner" commands: If the cursor was on the object, the operator applies to the object. If the cursor was on white space, the  operator applies to the white space.
+For the "inner" commands: If the cursor was on the object, the operator applies to 
+the object. If the cursor was on white space, the  operator applies to the white 
+space.
 """
-function (::Inner)(object_function)
-end
+function (::Inner)(object_function) end
 
 
 """
@@ -55,7 +67,7 @@ sequence of other non-blank characters, separated with white space (spaces,
 tabs, <EOL>).  This can be changed with the 'iskeyword' option.  An empty line
 is also considered to be a word.
 """
-function word(buf :: IOBuffer) :: UnitRange{Int}
+function word(buf::IOBuffer)::Tuple{Int,Int}
     origin = position(buf)
     local start
     while !is_object_start(buf)
@@ -71,14 +83,14 @@ function word(buf :: IOBuffer) :: UnitRange{Int}
     end
     endd = position(buf)
     seek(buf, origin)
-    return start:endd
+    return (start, endd)
 end
 
-function WORD(buf :: IOBuffer) :: UnitRange{Int}
+function WORD(buf::IOBuffer)::Tuple{Int,Int}
 
 end
 
-function line(buf :: IOBuffer) :: TextObject
+function line(buf::IOBuffer)::Tuple{Int,Int}
     # find the line start
     mark(buf)
     if eof(buf)
@@ -112,13 +124,13 @@ function line(buf :: IOBuffer) :: TextObject
     stop = position(buf)
     reset(buf)
 
-    return Motion(start, stop)
+    return (start, stop)
 end
 
 """
     Identify the text object surrounding a space
 """
-function space(buf :: IOBuffer) :: UnitRange{Int}
+function space(buf::IOBuffer)::UnitRange{Int}
 
 end
 end
