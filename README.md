@@ -35,8 +35,6 @@ end
 
 After starting the REPL, call `VimBindings.init()`
 
-You may see warnings about method definitions being overwritten. VimBindings.jl overwrites some methods in order to hook into REPL functionality, and you can safely ignore these warnings.
-
 
 ```julia
 julia> VimBindings.init()
@@ -52,6 +50,10 @@ julia[n]> println("Hello world!") # normal mode!
 ```
 ![gif of usage](https://raw.githubusercontent.com/caleb-allen/VimBindings.jl/master/vimbindings.gif)
 
+# Gotchas
+You may see warnings about method definitions being overwritten. VimBindings.jl overwrites some methods in order to hook into REPL functionality, and you can safely ignore these warnings.
+
+You may experience lag when you begin to use VimBindings.jl as Julia compiles functions for the first time. This lag should ease up over time. Adding some precompilation is a longer term item on the todo list.
 
 # Feedback
 
