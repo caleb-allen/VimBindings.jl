@@ -92,6 +92,7 @@ end
 # end
 
 global key_stack = Char[]
+global initialized = false
 
 function strike_key(c, s::LE.MIState)
     # if(c == '`')
@@ -117,6 +118,10 @@ function strike_key(c, s::LE.MIState)
 end
 
 function init()
+    if initialized
+        return
+    end
+    global initialized = true
     repl = Base.active_repl
     global juliamode = repl.interface.modes[1]
     historymode = repl.interface.modes[4]
@@ -225,7 +230,7 @@ function init()
     return
 end
 
-import REPL.LineEdit: TextTerminal, ModalInterface, MIState, activate, keymap, match_input, keymap_data, transition, mode, terminal
+import REPL.LineEdit: TextTerminal, ModalInterface, MIState, activate, keymap, match_input, keymap_data, transition, mode, terminal, refresh_line
 import REPL.Terminals: raw!, enable_bracketed_paste, disable_bracketed_paste
 function LE.prompt!(term::TextTerminal, prompt::ModalInterface, s::MIState = init_state(term, prompt))
     # println("initializing prompt from VimBindings.jl")
@@ -234,6 +239,10 @@ function LE.prompt!(term::TextTerminal, prompt::ModalInterface, s::MIState = ini
     enable_bracketed_paste(term)
     try
         activate(prompt, s, term, term)
+        if !initialized
+            init()
+            refresh_line(s)
+        end
         old_state = mode(s)
         while true
             kmap = keymap(s, prompt)
