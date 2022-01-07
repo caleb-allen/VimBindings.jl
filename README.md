@@ -1,6 +1,6 @@
 # Intro
 
-VimBindings is a Julia package which brings some vim keybindings to the Julia REPL.
+VimBindings is an experimental Julia package which brings some vim keybindings to the Julia REPL.
 
 VimBindings is early in development and is not yet recommended for daily use. For the brave, feel free to give it a try!
 
@@ -33,13 +33,13 @@ atreplinit() do repl
 end
 ```
 
-After starting the REPL, call `VimBindings.init()`
-
+Then when you start julia:
 
 ```julia
-julia> VimBindings.init()
 julia[i]> # You now have vim bindings!
 ```
+
+If you are having issues initializing the package, you can try manual initialization with `VimBindings.init()`
 
 VimBindings begins in `insert` mode, and the Julia REPL can be used in its original, familiar fasion.
 
@@ -51,7 +51,7 @@ julia[n]> println("Hello world!") # normal mode!
 ![gif of usage](https://raw.githubusercontent.com/caleb-allen/VimBindings.jl/master/vimbindings.gif)
 
 # Gotchas
-You may see warnings about method definitions being overwritten. VimBindings.jl overwrites some methods in order to hook into REPL functionality, and you can safely ignore these warnings.
+You may see warnings about method definitions being overwritten. VimBindings.jl overwrites some methods in the standard library in order to hook into REPL functionality, and you can safely ignore these warnings.
 
 You may experience lag when you begin to use VimBindings.jl as Julia compiles functions for the first time. This lag should ease up over time. Adding some precompilation is a longer term item on the todo list.
 
