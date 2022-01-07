@@ -32,3 +32,9 @@ end
     @test parse_command("10w") == MotionCommand(10, 'w')
 end
 
+@testset "parse singular commands" begin
+    @test parse_command("x") == OperatorCommand(1, 'd', 1, 'l')
+    @test parse_command("X") == OperatorCommand(1, 'd', 1, 'h')
+    @test parse_command("4x") == OperatorCommand(4, 'd', 1, 'l')
+end
+

@@ -77,3 +77,8 @@ function execute(s :: LE.MIState, command :: OperatorCommand) :: Bool
     end
     true
 end
+
+function execute(s :: LE.MIState, command :: SynonymCommand) :: Bool
+    new_command = lookup(command)
+    return execute(s, new_command)
+end

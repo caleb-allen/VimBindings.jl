@@ -31,10 +31,15 @@ operator="[ydc]"
 rules = (
     # insert commands
     r"^(?<c>[aAiIoO])$",
+    # synonym commands
+    "^(?<n1>$repeat)(?<c>[xX])\$" |> Regex,
     "^(?<n1>$repeat)(?<motion>$motion)\$" |> Regex,
     "^(?<n1>$repeat)(?<op>$operator)(?<n2>$repeat)(?:(?<motion>$motion)|(?<to>$textobject))\$" |> Regex,
     "^(?<n1>$repeat)(?<op>$operator)(\\k<op>)\$" |> Regex
 )
+
+insert_rule = rules[1]
+synonym_rule = rules[2]
 
 """
 Determines whether the given string is accepted and successfully terminates
@@ -103,9 +108,13 @@ function command(c :: Char)
 end
 
 function command(n1 :: Union{Integer, Nothing},
-                 motion :: Char) :: Command
+                 m :: Char) :: Command
     r1 = if n1 === nothing 1 else n1 end
-    return MotionCommand(r1, motion)
+    # if this command is not a motion, it is a synonym
+    if match(Regex(motion), string(m)) === nothing
+        return lookup_synonym(r1, m)
+    end
+    return MotionCommand(r1, m)
 end
 
 function command(n1 :: Union{Integer, Nothing},
@@ -135,6 +144,14 @@ function command(n1 :: Union{Integer, Nothing},
                            action)
 end
 
+
+function lookup_synonym(n :: Integer, c :: Char)
+    synonyms = Dict(
+        'x' => 'l',
+        'X' => 'h'
+    )
+    return OperatorCommand(n, 'd', 1, synonyms[c])
+end
 
 
 function parse(cmd :: String)
@@ -175,4 +192,5 @@ function verb_part(cmd :: AbstractString) :: Union{Char, Nothing}
     end
     return m.captures[1][1]
 end
+
 end

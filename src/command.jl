@@ -1,5 +1,5 @@
 module Commands
-export Command, MotionCommand, OperatorCommand, LineOperatorCommand, InsertCommand
+export Command, MotionCommand, OperatorCommand, LineOperatorCommand, InsertCommand, SynonymCommand
 export key
 
 abstract type Command end
@@ -18,6 +18,7 @@ struct OperatorCommand <: Command
     # one of 'y', 'd', 'c'
     operator :: Char
     r2 :: Integer
+    # e.g. 'iw' or 'w'
     # char = motion, string = textobject
     action :: Union{Char, String}
 end
@@ -31,7 +32,12 @@ struct LineOperatorCommand <: Command
     operator :: Char
 end
 
-
+"""
+Command which after parsing is a synonym of another command
+"""
+struct SynonymCommand <: Command
+    operator :: Char 
+end
 """
 Command which changes into Insert mode, possibly preceded by a motion, for example `A`.
 """
