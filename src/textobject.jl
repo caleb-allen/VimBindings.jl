@@ -2,7 +2,7 @@ module TextObjects
 using Match
 using ..TextUtils
 using REPL.LineEdit
-export word, line
+export word, line, space
 
 const LE = LineEdit
 
@@ -32,17 +32,35 @@ function textobject(buf::IOBuffer, name::String)
         "a" => A()
     end
 
-    object_fn::Function = @match m[2] begin
-        "w" => word
-        _ => error("text object command not found: $(m[2])")
-    end
-    selection(object)
+    fns = Dict(
+        "w" => word,
+    )
+    object_fn::Function = fns[m[2]]
 end
 
 
-
-function inner()
-
+"""
+For the "inner" commands: If the cursor was on the object, the operator applies to 
+the object. If the cursor was on white space, the operator applies to the white 
+space.
+"""
+function inner(buf,)::Tuple{Int, Int}
+    # TODO 
+    origin = position(buf)
+    if eof(buf)
+        if origin == 0
+            return (origin, origin)
+        else
+            skip(buf, -1)
+        end
+    end
+    c = peek(buf)
+    if is_whitespace(c)
+        return space(buf)
+    else
+        error("TODO")
+        return word(buf)
+    end
 end
 
 """
@@ -51,15 +69,9 @@ end
     or when the cursor was in the white space before the object, the white space before
     the object is included.
 """
-function (::A)(object_function) end
-
-"""
-For the "inner" commands: If the cursor was on the object, the operator applies to 
-the object. If the cursor was on white space, the  operator applies to the white 
-space.
-"""
-function (::Inner)(object_function) end
-
+function a(object_fn)::Tuple{Int, Int}
+    
+end
 
 """
     A word consists of a sequence of letters, digits and underscores, or a
@@ -69,6 +81,10 @@ is also considered to be a word.
 """
 function word(buf::IOBuffer)::Tuple{Int,Int}
     origin = position(buf)
+
+    eof(buf) && return (origin, origin)
+    !is_word_char(peek(buf, Char)) && return (origin, origin)
+
     local start
     while !is_object_start(buf)
         skip(buf, -1)
@@ -86,6 +102,31 @@ function word(buf::IOBuffer)::Tuple{Int,Int}
     return (start, endd)
 end
 
+"""
+    Identify the text object surrounding a space
+"""
+function space(buf::IOBuffer)::Tuple{Int, Int}
+    # use origin rather than `mark` because
+    # methods called below use their own marks
+    origin = position(buf)
+    local start
+    eof(buf) && return (origin, origin)
+    !is_whitespace(peek(buf, Char)) && return (origin, origin)
+    while !is_whitespace_start(buf)
+        skip(buf, -1)
+    end
+    start = position(buf)
+    seek(buf, origin)
+
+
+    local endd
+    while !is_whitespace_end(buf)
+        skip(buf, 1)
+    end
+    endd = position(buf)
+    seek(buf, origin)
+    return (start, endd)
+end
 function WORD(buf::IOBuffer)::Tuple{Int,Int}
 
 end
@@ -127,10 +168,4 @@ function line(buf::IOBuffer)::Tuple{Int,Int}
     return (start, stop)
 end
 
-"""
-    Identify the text object surrounding a space
-"""
-function space(buf::IOBuffer)::UnitRange{Int}
-
-end
 end

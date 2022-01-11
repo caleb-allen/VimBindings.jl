@@ -50,7 +50,7 @@ end
 Generate motion for the given `name` which is a TextObject
 """
 function gen_motion(buf, name :: String) :: Motion
-
+    # TODO
 end
 
 

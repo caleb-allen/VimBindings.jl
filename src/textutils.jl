@@ -8,7 +8,8 @@ export is_object_end, is_object_start, is_whitespace_end, is_whitespace_start
 export testbuf
 
 """
-    Determine whether the buffer is currently at the end of a text object. Whitespace is not included as a text object.
+    Determine whether the buffer is currently at the start of a text object.
+    Whitespace is not included as a text object.
 """
 function is_object_start(buf)
     eof(buf) && return false
