@@ -54,7 +54,7 @@ end
 function cut(buf :: IOBuffer, motion :: Motion) :: String
     mark(buf)
     seek(buf, min(motion))
-    chars = [ read(buf, Char) for i in 1:length(motion) ]
+    chars = [ read(buf, Char) for i in 1:length(motion) if !eof(buf) ]
     reset(buf)
     return String(chars)
 end
