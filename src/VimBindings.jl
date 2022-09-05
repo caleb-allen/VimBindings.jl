@@ -6,7 +6,6 @@ using REPL
 using REPL.LineEdit
 import REPL.LineEdit: KeyAlias, edit_splice!, buffer, refresh_line
 import Base: AnyDict, show_unquoted
-using Sockets
 
 const LE = LineEdit
 
