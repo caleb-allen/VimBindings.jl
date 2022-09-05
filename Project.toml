@@ -7,15 +7,13 @@ version = "0.1.0"
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 Debugger = "31a5f54b-26ea-5ae9-a837-f05ce5417438"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
-LanguageServer = "2b0e0bc5-e4fd-59b4-8912-456d1b03d8d7"
 Match = "7eb4fadd-790c-5f42-8a69-bfa0b872bfbf"
 REPL = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
 Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
-Sockets = "6462fe0b-24de-5631-8697-dd941f90decc"
 
 [compat]
-Documenter = "0.25, 0.26"
 Debugger = "0.6"
+Documenter = "0.25, 0.26"
 julia = "1"
 
 [extras]
