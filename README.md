@@ -23,24 +23,24 @@ VimBindings is early in development and is not yet recommended for daily use. Fo
 
 ```
 
-# Usage
+# Running
 
-The VimBindings package must be loaded before the REPL to correctly bind the `Esc` key (see https://github.com/caleb-allen/VimBindings.jl/issues/8). You can do this in your startup config:
-```julia
-# ~/.julia/config/startup.jl
-atreplinit() do repl
-    @eval using VimBindings
-end
-```
+VimBindings must be initialized when julia is started, like so:
 
-Then when you start julia:
-
-```julia
+```bash
+$ julia -i -e "using VimBindings"
 julia[i]> # You now have vim bindings!
 ```
 
-If you are having issues initializing the package, you can try manual initialization with `VimBindings.init()`
+The VimBindings package must be loaded before the REPL to correctly bind the `Esc` key (see https://github.com/caleb-allen/VimBindings.jl/issues/8 and https://github.com/caleb-allen/VimBindings.jl/issues/19 ). 
 
+`VimBindings` CAN NOT be loaded in `~/.julia/config/startup.jl`, unlike most packages. Loading `VimBindings` in this manner will result in buggy/unpredictable behavior, especially related to the `Escape` key, and other keys which use escape sequences.
+
+This is because most stdlib code is loaded before any user code, and as a result any packages which modifies the core behavior of the REPL will be shadowed.
+
+`VimBindings.jl` relies on a few important alterations to the REPL code which handles key input events. If these changes are loaded after the REPL code is started (as is the case with `startup.jl`), then the REPL code operates unmodified. Thus, the current solution is to evaluate the module before any REPL code is run at all.
+
+# Usage
 VimBindings begins in `insert` mode, and the Julia REPL can be used in its original, familiar fasion.
 
 Switch to `normal` mode by pressing Esc, where you can navigate with `h`, `j`, `k`, `l`, etc.
@@ -48,7 +48,6 @@ Switch to `normal` mode by pressing Esc, where you can navigate with `h`, `j`, `
 julia[i]> println("Hello world!") # user presses Esc
 julia[n]> println("Hello world!") # normal mode!
 ```
-![gif of usage](https://raw.githubusercontent.com/caleb-allen/VimBindings.jl/master/vimbindings.gif)
 
 # Gotchas
 You may see warnings about method definitions being overwritten. VimBindings.jl overwrites some methods in the standard library in order to hook into REPL functionality, and you can safely ignore these warnings.
