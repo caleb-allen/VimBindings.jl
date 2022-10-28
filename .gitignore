@@ -1,2 +1,4 @@
 /Manifest.toml
 test/Manifest.toml
+
+**.~undo-tree~
