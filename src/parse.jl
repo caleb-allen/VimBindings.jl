@@ -1,6 +1,7 @@
 module Parse
 import DataStructures: OrderedDict
 using ..Commands
+import ..VimBindings: motions
 
 export well_formed, matched_rule, parse_command
 
@@ -9,10 +10,21 @@ REGS = (
     # complete = 
 )
 """
-Grammar for Vim's little language:
-    1. motion
-        w
-        E
+Grammar for Vim's language:
+    1. Insert commands:
+        a
+        A
+        i
+        O
+    2. single-key motion
+        w E
+        ^
+        h j k l
+    3. multi-key motion
+        gg
+        gE
+        fx
+        Fx
     2. operator [motion|textobject]
         dw
         cW
@@ -24,28 +36,31 @@ Grammar for Vim's little language:
         3dd
 """
 repeat = "\\d*"
-motion="[\$%^\\(\\)wWeE{}hjklGHLbB]"
+# motion="[\$%^\\(\\)wWeE{}hjklGHLbB]"
+motion=begin
+    implemented_keys = join(keys(motions))
+    "[$implemented_keys]"
+    # a = "[\$%^\\(\\)]"
+    # a = "[
+end
 # r_motion=r"([$%^\(\)wWeE{}hjklGHLbB]"
 textobject="$repeat[ai][wWsp]"
 operator="[ydc]"
-rules = (
+rules = Dict(
     # insert commands
-    r"^(?<c>[aAiIoO])$",
+    r"^(?<c>[aAiIoO])$" => InsertCommand,
     # synonym commands
-    "^(?<n1>$repeat)(?<c>[xX])\$" |> Regex,
-    "^(?<n1>$repeat)(?<motion>$motion)\$" |> Regex,
-    "^(?<n1>$repeat)(?<op>$operator)(?<n2>$repeat)(?:(?<motion>$motion)|(?<to>$textobject))\$" |> Regex,
-    "^(?<n1>$repeat)(?<op>$operator)(\\k<op>)\$" |> Regex
+    "^(?<n1>$repeat)(?<c>[xX])\$" |> Regex => SynonymCommand,
+    "^(?<n1>$repeat)(?<motion>$motion)\$" |> Regex => MotionCommand,
+    "^(?<n1>$repeat)(?<op>$operator)(?<n2>$repeat)(?:(?<motion>$motion)|(?<to>$textobject))\$" |> Regex => OperatorCommand,
+    "^(?<n1>$repeat)(?<op>$operator)(\\k<op>)\$" |> Regex => LineOperatorCommand
 )
-
-insert_rule = rules[1]
-synonym_rule = rules[2]
 
 """
 Determines whether the given string is accepted and successfully terminates
 """
 function well_formed(cmd :: String) :: Bool
-    for rule in rules
+    for rule in keys(rules)
         if occursin(rule, cmd)
             return true
         end
@@ -54,7 +69,7 @@ function well_formed(cmd :: String) :: Bool
 end
 
 function matched_rule(cmd :: String)
-    for rule in rules
+    for rule in keys(rules)
         if occursin(rule, cmd)
             return rule
         end
@@ -82,44 +97,49 @@ function parse_value(item :: Union{Nothing, AbstractString}) :: Union{Integer, C
     end
 end
 
-
 """
     Attempt to parse a command, return nothing if `s` could not be parsed into a command
 """
 function parse_command(s :: AbstractString) :: Union{Command, Nothing}
-    if !well_formed(s)
-        @info "command not well formed", s
+    r = matched_rule(s)
+    if r === nothing
+        log("command not well formed", s)
         return nothing
     end
-    r = matched_rule(s)
-    return command(match(r, s))
+
+    # TODO the exact expected command type needs to be resolved before we
+    #  go to multiple dispatch.
+    # It should be resolved using keys(command_dict)
+    # For example to resolve ambiguities between
+    # 'fx' and 'dw', instead of relying on the type ("char") to determine
+    # the command type
+    m = match(r, s)
+
+    args = [ parse_value(capture) for capture in m.captures ]
+    # command_dict = Dict(m)
+
+    command_type = rules[r]
+    command_type(args...)
 end
+
 
 """
     Return a struct corresponding to a regex match's Vim command
 """
-function command(m :: RegexMatch) :: Command
-    args = [ parse_value(capture) for capture in m.captures ]
-    return command(args...)
-end
 
-function command(c :: Char)
-    return InsertCommand(c)
-end
 
-function command(n1 :: Union{Integer, Nothing},
-                 m :: Char) :: Command
+function MotionCommand(n1 :: Union{Integer, Nothing}, m :: Char) :: MotionCommand
     r1 = if n1 === nothing 1 else n1 end
-    # if this command is not a motion, it is a synonym
-    if match(Regex(motion), string(m)) === nothing
-        return lookup_synonym(r1, m)
-    end
     return MotionCommand(r1, m)
 end
 
-function command(n1 :: Union{Integer, Nothing},
+function SynonymCommand(n1 :: Union{Integer, Nothing}, m :: Char) :: SynonymCommand
+    return lookup_synonym(r1, m)
+end
+
+function LineOperatorCommand(n1 :: Union{Integer, Nothing},
                  operator1 :: Char,
-                 operator2 :: Char) :: Command
+                 operator2 :: Char) :: LineOperatorCommand
     r1 = if n1 === nothing 1 else n1 end
     if operator1 != operator2
         error("operator1 is not equal to operator2: $operator1 != $operator2")
@@ -127,11 +147,12 @@ function command(n1 :: Union{Integer, Nothing},
     return LineOperatorCommand(r1, operator1)
 end
 
-function command(n1 :: Union{Integer, Nothing},
+# OperatorCommand
+function OperatorCommand(n1 :: Union{Integer, Nothing},
                  operator :: Char,
                  n2 :: Union{Integer, Nothing},
                  motion :: Union{Char, Nothing},
-                 textobject :: Union{String, Nothing}) :: Command
+                 textobject :: Union{String, Nothing}) :: OperatorCommand
     r1 = if n1 === nothing 1 else n1 end
     r2 = if n2 === nothing 1 else n2 end
     if motion === nothing && textobject === nothing

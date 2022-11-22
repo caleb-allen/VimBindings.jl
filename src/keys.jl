@@ -28,6 +28,14 @@ motions = Dict{Char, Any}(
     'B' => word_big_back, # exclusive)
     '^' => line_begin, # exclusive)
     '$' => line_end, # inclusive)
+    '0' => line_zero,
+    '{' => nothing,
+    '}' => nothing,
+    '(' => nothing,
+    ')' => nothing,
+    'G' => nothing,
+    'H' => nothing,
+    'L' => nothing
 )
 
 """
@@ -54,9 +62,9 @@ function gen_motion(buf, name :: String) :: Motion
 end
 
 
-function double_quote(mode::NormalMode, s::LE.MIState) :: Action
-    @log vim.mode = SelectRegister()
-end
+# function double_quote(mode::NormalMode, s::LE.MIState) :: Action
+    # @log vim.mode = SelectRegister()
+# end
 special_keys = Dict(
     '`' => "backtic",
     '~' => "tilde",

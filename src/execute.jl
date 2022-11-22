@@ -2,40 +2,41 @@ using .Commands
 using .TextObjects
 using Match
 
+
 """
     Execute the given command, and return whether to refresh the displayed line
 """
-function execute(s :: LE.MIState, command :: MotionCommand) :: Bool
+function execute(buf, command :: MotionCommand) :: Union{VimMode, Nothing}
     log("executing motion command: $(command.motion)")
-    buf = buffer(s)
+    # buf = buffer(s)
     for iteration in 1:command.r1
         # call the command's function to generate the motion object
         motion = gen_motion(buf, command.motion)
         if is_stationary(motion)
-            @match key(command) begin
-                'j' => history_next(s, mode(s).hist)
-                'k' => history_prev(s, mode(s).hist)
-            end
+            # @match key(command) begin
+            #     'j' => history_next(s, mode(s).hist)
+            #     'k' => history_prev(s, mode(s).hist)
+            # end
         end
         # execute the motion object
-        motion(s)
+        motion(buf)
     end
-    return true
+    return nothing
 end
-function execute(s :: LE.MIState, command :: LineOperatorCommand) :: Bool
+function execute(buf, command :: LineOperatorCommand) :: Union{VimMode, Nothing}
     for r in 1:command.r1
-        buf = buffer(s)
+        # buf = buffer(s)
         line_textobject = line(buf)
         line_motion = Motion(line_textobject...)
         op_fn = operator_fn(command.operator)
-        eval(Expr(:call, op_fn, buf, line_motion))
+        op_fn(buf, line_motion)
     end
-    return true
+    return nothing
 end
 
-function execute(s :: LE.MIState, command :: InsertCommand) :: Bool
+function execute(buf, command :: InsertCommand) :: Union{VimMode, Nothing}
     # cmds = [aAiIoO]
-    buf = buffer(s)
+    # buf = buffer(s)
     motion = @match command.c begin
         'o' => begin
             endd = line_end(buf).stop
@@ -55,11 +56,12 @@ function execute(s :: LE.MIState, command :: InsertCommand) :: Bool
     if motion isa Motion
         motion(buf)
     end
-    trigger_insert_mode(s)
-    return true
+    # trigger_insert_mode(s)
+    return insert_mode
+    # return true
 end
 
-function execute(s :: LE.MIState, command :: OperatorCommand) :: Bool
+function execute(buf, command :: OperatorCommand) :: Union{VimMode, Nothing}
     # *5*d2w
     log(command)
     @log op_fn = operator_fn(command.operator)
@@ -67,18 +69,17 @@ function execute(s :: LE.MIState, command :: OperatorCommand) :: Bool
         # 5d*2*w
         for r2 in 1:command.r2
             @log r2
-            buf = buffer(s)
             motion = gen_motion(buf, command.action)
             @log result = eval(Expr(:call, op_fn, buf, motion))
         end
     end
     if op_fn === :change
-        trigger_insert_mode(s)
+        return insert_mode
     end
-    true
+    return nothing
 end
 
-function execute(s :: LE.MIState, command :: SynonymCommand) :: Bool
+function execute(buf, command :: SynonymCommand) :: Union{VimMode, Nothing}
     new_command = lookup(command)
     return execute(s, new_command)
 end

@@ -54,7 +54,7 @@ function LE.prompt!(term::TextTerminal, prompt::ModalInterface, s::MIState = ini
 end
 
 function LE.match_input(f::Function, s::Union{Nothing,LE.MIState}, term, cs::Vector{Char}, keymap)
-    log("match function")
+    # log("match function")
     LE.update_key_repeats(s, cs)
     c = String(cs)
     return function (s, p)  # s::Union{Nothing,MIState}; p can be (at least) a LineEditREPL, PrefixSearchState, Nothing

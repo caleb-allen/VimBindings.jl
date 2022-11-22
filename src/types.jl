@@ -18,12 +18,12 @@
 # Action(motion :: Motion) = Action(Move(), 1, motion)
 # Action(verb :: Verb, motion :: Motion) = Action(verb, 1, motion)
 
-abstract type VimMode end
+# abstract type VimMode end
 abstract type VimCommand end
 
 # InsertMode is the standard Julia REPL
-struct InsertMode <: VimMode end
-struct NormalMode <: VimMode end
+# struct InsertMode <: VimMode end
+# struct NormalMode <: VimMode end
 # A mode in which the user selects the motion which will
 # be used for `Action`
 # abstract type AbstractSelectMode{T <: Action} <: VimMode end

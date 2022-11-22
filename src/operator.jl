@@ -1,9 +1,9 @@
 
-function operator_fn(c :: Char) :: Symbol
+function operator_fn(c :: Char) :: Function
     operators = Dict(
-        'c' => :change,
-        'y' => :yank,
-        'd' => :delete
+        'c' => change,
+        'y' => yank,
+        'd' => delete
     )
     return operators[c]
 end

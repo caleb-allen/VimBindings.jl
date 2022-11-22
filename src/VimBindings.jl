@@ -32,73 +32,22 @@ include("lineeditalt.jl")
 
 using .Parse
 using .Commands
+
+@enum VimMode begin
+    normal_mode
+    insert_mode
+    # visual
+end
 mutable struct VimState
     registers :: Dict{Char, String}
     register :: Char
 end
 
+
+
 VimState() = VimState(Dict{Char, String}(), '"')
 
 const vim = VimState()
-"""
-dispatch_key method which takes in the char, VB.mode, s.
-Same dispatch_key method for all keys.
-It will do the eval of the symbol at runtime.
-
-e.g. for normal mode (union of many modes, possible), it will dispatch_key
-to the specific keybinds
-
-but for "find" mode, there is a dispatch_key method which uses the character
-to find, instead of calling that character's function.
-
-for normal mode, take the @eval code below in order to call
-the correct function at runtime.
-
-This way, we do not need function specific bindings for every single
-key, only the needed (and/or implemented) ones.
-"""
-function dispatch_key(c, mode, s::LE.MIState)
-    log("dispatching key: ", string(c))
-    fn_name = if c in keys(special_keys)
-        Symbol(special_keys[c])
-    elseif alphabetic(c)
-        if is_lowercase(c)
-            Symbol(c)
-        else
-            Symbol(string(lowercase(c), "_uppercase"))
-        end
-    else
-        log("not dispatching key")
-        @log c
-        return
-    end
-    if !isdefined(VimBindings, fn_name)
-        log("function $fn_name does not exist")
-        return
-    end
-    eval(Expr(:call, fn_name, vim.mode, s))
-end
-
-
-
-# function dispatch_key(query_c :: Char, mode :: FindChar{}, s::LE.MIState)
-#     buf = buffer(s)
-#     motion = find_c(buf, query_c)
-#     execute(mode, s, motion)
-#     LE.refresh_line(s)
-#     vim_reset()
-# end
-
-# function dispatch_key(c, mode :: ToChar, s::LE.MIState)
-#     # TODO
-# end
-
-# function dispatch_key(c :: Char, mode :: SelectRegister, s::LE.MIState)
-#     if alphanumeric(c) || c == '_'
-#         @log vim.register = c
-#     end
-#     vim_reset()
-# end
 
 global key_stack = Char[]
 global initialized = false
@@ -115,10 +64,15 @@ function strike_key(c, s::LE.MIState)
         empty!(key_stack)
         cmd = parse_command(s_cmd)
         if cmd !== nothing
-            refresh :: Bool = execute(s, cmd)
-            if refresh
-                LE.refresh_line(s)
+            buf = buffer(s)
+            new_mode :: Union{VimMode, Nothing} = execute(buf, cmd)
+            if new_mode !== nothing
+                trigger_mode(s, new_mode)
             end
+
+            # if refresh
+            LE.refresh_line(s)
+            # end
         end
     else
         @log key_stack
@@ -242,7 +196,7 @@ function init()
     return
 end
 function vim_reset()
-    vim.mode = NormalMode()
+    vim.mode = normal
     return true
 end
 
@@ -295,6 +249,15 @@ function edit_move_phrase_left(s::LE.MIState)
     return true
 end
 
+function trigger_mode(state :: LE.MIState, mode :: VimMode)
+    if mode == normal_mode
+        trigger_normal_mode(state)
+    elseif mode == insert_mode
+        trigger_insert_mode(state)
+    else
+        log("Could not trigger mode ", mode)
+    end
+end
 function trigger_insert_mode(state::LineEdit.MIState)
     iobuffer = LineEdit.buffer(state)
     LineEdit.transition(state, juliamode) do

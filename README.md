@@ -19,7 +19,7 @@ VimBindings is early in development and is not yet recommended for daily use. Fo
 # Installation
 
 ```julia
-] add https://github.com/caleb-allen/VimBindings.jl
+] add VimBindings
 
 ```
 

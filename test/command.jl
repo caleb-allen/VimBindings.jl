@@ -1,40 +1,40 @@
-# import VimBindings: verb_part, text_object_part, well_formed, parse_value, command, matched_rule, parse_command
-using VimBindings.Commands
-using VimBindings.Parse
-import VimBindings.Parse: command
+using VimBindings.TextUtils
 
-@testset "parse commands into parts" begin
-    cmd = "d10w"
-    @test well_formed(cmd) == true
-    r = matched_rule(cmd)
-    @test command(match(r, cmd)) == OperatorCommand(1,
-                                                    'd',
-                                                    10,
-                                                    'w')
+@testset "space textobject" begin
+    @test space(testbuf("|    ")) == (0, 3)
+    @test space(testbuf("this|  space")) == (4, 5)
+    @test space(testbuf("this | space")) == (4, 5)
+    @test space(testbuf("this  |space")) == (6, 6)
+end
 
+@testset "basic movements" begin
+    keystack = "a"
+    buf = testbuf("|12345")
+    mode = "normal"
 
 end
 
-@testset "parse line operator commands" begin
-    @test parse_command("5dd") == LineOperatorCommand(5,
-                                                      'd')
-    @test parse_command("100yy") == LineOperatorCommand(100,
-                                                        'y')
+@testset "0: beginning of line" begin
 
-    @test parse_command("100yd") === nothing
-    @test parse_command("yy") === LineOperatorCommand(1, 'y')
+    s_cmd = String(key_stack)
+
+
+    @test run(testbuf("an exampl|e sentence"), "0") == testbuf("|an example sentence")
 end
 
-@testset "parse motion commands" begin
-    @test parse_command("l") == MotionCommand(1, 'l')
-    @test parse_command("B") == MotionCommand(1, 'B')
-    @test parse_command("^") == MotionCommand(1, '^')
-    @test parse_command("10w") == MotionCommand(10, 'w')
+"""
+run a vim command on a buffer of text. Return a buffer of the result of the command
+"""
+function run(buf, command) :: IOBuffer
+    if !well_formed(command)
+        error("Command not well formed", command)
+    end
+
+    cmd = parse_command(s_cmd)
+
+    # TODO how to recreate "MIState?"
+    # Or should the mode logic be altered to avoid using MIState?
+    execute(s, cmd)
 end
 
-@testset "parse singular commands" begin
-    @test parse_command("x") == OperatorCommand(1, 'd', 1, 'l')
-    @test parse_command("X") == OperatorCommand(1, 'd', 1, 'h')
-    @test parse_command("4x") == OperatorCommand(4, 'd', 1, 'l')
-end
 
