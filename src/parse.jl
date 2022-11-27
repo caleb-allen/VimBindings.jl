@@ -46,7 +46,7 @@ end
 # r_motion=r"([$%^\(\)wWeE{}hjklGHLbB]"
 textobject="$repeat[ai][wWsp]"
 operator="[ydc]"
-rules = Dict(
+rules = OrderedDict(
     # insert commands
     r"^(?<c>[aAiIoO])$" => InsertCommand,
     # synonym commands

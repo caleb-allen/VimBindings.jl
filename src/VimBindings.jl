@@ -62,7 +62,7 @@ function strike_key(c, s::LE.MIState)
     if well_formed(s_cmd)
         log("well formed command: $s_cmd")
         empty!(key_stack)
-        cmd = parse_command(s_cmd)
+        @log cmd = parse_command(s_cmd)
         if cmd !== nothing
             buf = buffer(s)
             new_mode :: Union{VimMode, Nothing} = execute(buf, cmd)
