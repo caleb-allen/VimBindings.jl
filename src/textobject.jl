@@ -2,7 +2,7 @@ module TextObjects
 using Match
 using ..TextUtils
 using REPL.LineEdit
-export word, line, space
+export word, line, space, WORD, textobject
 
 const LE = LineEdit
 
@@ -25,17 +25,19 @@ end
 """
 Create a text object
 """
-function textobject(buf::IOBuffer, name::String)
+function textobject(buf::IOBuffer, name::String)::Tuple{Int, Int}
     m = match(r"^([ai])(.)$", name)
     selection = @match m[1] begin
-        "i" => Inner()
-        "a" => A()
+        "i" => inner
+        "a" => a
     end
 
-    fns = Dict(
-        "w" => word,
-    )
-    object_fn::Function = fns[m[2]]
+    text_object_fn = @match m[2] begin
+        "w" => word
+        "W" => WORD
+    end
+    to = selection(buf, text_object_fn)
+    return (to[1], to[2] + 1)
 end
 
 
@@ -43,9 +45,10 @@ end
 For the "inner" commands: If the cursor was on the object, the operator applies to 
 the object. If the cursor was on white space, the operator applies to the white 
 space.
+
+Only works with words right now.
 """
-function inner(buf,)::Tuple{Int, Int}
-    # TODO 
+function inner(buf, selection_fun)::Tuple{Int, Int}
     origin = position(buf)
     if eof(buf)
         if origin == 0
@@ -54,12 +57,11 @@ function inner(buf,)::Tuple{Int, Int}
             skip(buf, -1)
         end
     end
-    c = peek(buf)
+    c = peek(buf, Char)
     if is_whitespace(c)
         return space(buf)
     else
-        error("TODO")
-        return word(buf)
+        return selection_fun(buf)
     end
 end
 
@@ -69,8 +71,21 @@ end
     or when the cursor was in the white space before the object, the white space before
     the object is included.
 """
-function a(object_fn)::Tuple{Int, Int}
-    
+function a(buf, selection_fun)::Tuple{Int, Int}
+    origin = position(buf)
+    if eof(buf)
+        if origin == 0
+            return (origin, origin)
+        else
+            skip(buf, -1)
+        end
+    end
+    c = peek(buf, Char)
+    if is_whitespace(c)
+        return space(buf)
+    else
+        return selection_fun(buf)
+    end
 end
 
 """
@@ -103,6 +118,34 @@ function word(buf::IOBuffer)::Tuple{Int,Int}
 end
 
 """
+A WORD consists of a sequence of non-blank characters, separated with white
+space.  An empty line is also considered to be a WORD.
+
+"""
+function WORD(buf::IOBuffer)::Tuple{Int,Int}
+    origin = position(buf)
+
+    eof(buf) && return (origin, origin)
+    is_whitespace(peek(buf, Char)) && return (origin, origin)
+
+    local start
+    while !is_non_whitespace_start(buf)
+        skip(buf, -1)
+    end
+    start = position(buf)
+    seek(buf, origin)
+
+
+    local endd
+    while !is_non_whitespace_end(buf)
+        skip(buf, 1)
+    end
+    endd = position(buf)
+    seek(buf, origin)
+    return (start, endd)
+end
+
+"""
     Identify the text object surrounding a space
 """
 function space(buf::IOBuffer)::Tuple{Int, Int}
@@ -126,9 +169,6 @@ function space(buf::IOBuffer)::Tuple{Int, Int}
     endd = position(buf)
     seek(buf, origin)
     return (start, endd)
-end
-function WORD(buf::IOBuffer)::Tuple{Int,Int}
-
 end
 
 function line(buf::IOBuffer)::Tuple{Int,Int}

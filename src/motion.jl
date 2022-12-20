@@ -7,9 +7,8 @@ end
 
 Motion(start :: Int64, stop :: Int64) = Motion(start, stop, nothing)
 Motion(buf :: IOBuffer, change :: Int64) = Motion(position(buf), position(buf) + change)
-
 Motion(buf :: IOBuffer) = Motion(buf, 0)
-
+Motion(tup :: Tuple{Int64, Int64}) = Motion(tup[1], tup[2], nothing)
 """
     A character motion is either inclusive or exclusive.  When inclusive, the
 start and end position of the motion are included in the operation.  When

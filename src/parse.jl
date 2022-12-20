@@ -107,12 +107,6 @@ function parse_command(s :: AbstractString) :: Union{Command, Nothing}
         return nothing
     end
 
-    # TODO the exact expected command type needs to be resolved before we
-    #  go to multiple dispatch.
-    # It should be resolved using keys(command_dict)
-    # For example to resolve ambiguities between
-    # 'fx' and 'dw', instead of relying on the type ("char") to determine
-    # the command type
     m = match(r, s)
 
     args = [ parse_value(capture) for capture in m.captures ]

@@ -1,4 +1,5 @@
-motions = Dict{Char, Any}(
+# using .TextObjects
+insert_motions = Dict{Char, Any}(
     'i' => (buf) -> Motion(buf),
     'I' => (buf) -> line_begin(buf),
     'a' => (buf) -> begin
@@ -15,7 +16,10 @@ motions = Dict{Char, Any}(
         else
             return motion
         end
-    end,
+    end
+)
+
+motions = Dict{Char, Any}(
     'h' => (buf) -> Motion(position(buf), position(buf) - 1), # , exclusive
     'l' => (buf) -> Motion(position(buf), position(buf) + 1),# exclusive
     'j' => down,
@@ -58,7 +62,7 @@ end
 Generate motion for the given `name` which is a TextObject
 """
 function gen_motion(buf, name :: String) :: Motion
-    # TODO
+    return Motion(textobject(buf, name))
 end
 
 

@@ -4,7 +4,7 @@ using REPL
 const LE = REPL.LineEdit
 export is_linebreak, is_whitespace, is_word_char, TextChar, WordChar, WhitespaceChar, PunctuationChar, ObjectChar
 export is_alphanumeric, is_alphabetic, is_uppercase, is_lowercase, is_punctuation
-export is_object_end, is_object_start, is_whitespace_end, is_whitespace_start
+export is_object_end, is_object_start, is_non_whitespace_start, is_non_whitespace_end,  is_whitespace_end, is_whitespace_start
 export testbuf
 
 """
@@ -52,12 +52,43 @@ function is_whitespace_start(buf)
     skip(buf, -1)
     c2 = read(buf, Char) |> TextChar
 
+    if !(c1 isa WhitespaceChar) && c2 isa WhitespaceChar
+        reset(buf)
+        return true
+    end
+    return false
+end
+
+
+"""
+Whether the buffer is currently at the start of a non-whitespace
+block
+
+"""
+function is_non_whitespace_start(buf)
+    eof(buf) && return false
+    start_pos = mark(buf)
+    c1 = read(buf, Char) |> TextChar
+
+    reset(buf)
+
+    if c1 isa ObjectChar && start_pos == 0
+        # beginning of line
+        return true
+    end
+
+    mark(buf)
+
+    skip(buf, -1)
+    c2 = read(buf, Char) |> TextChar
+
     if c1 isa WhitespaceChar && !(c2 isa WhitespaceChar)
         reset(buf)
         return true
     end
     return false
 end
+
 
 """
     Whether the buffer is currently at the end of a text object. Whitespace is not included as a text object.
@@ -82,6 +113,27 @@ function is_object_end(buf)
     return false
 end
 
+function is_non_whitespace_end(buf)
+    eof(buf) && return false
+    mark(buf)
+
+    c1 = read(buf, Char) |> TextChar
+
+    if eof(buf)
+        reset(buf)
+        return c1 isa ObjectChar
+    end
+    c2 = read(buf, Char) |> TextChar
+
+    if !(c1 isa WhitespaceChar) && c2 isa WhitespaceChar
+        reset(buf)
+        return true
+    end
+    reset(buf)
+    return false
+end
+
+
 function is_whitespace_end(buf)
     eof(buf) && return false
     mark(buf)
@@ -101,7 +153,6 @@ function is_whitespace_end(buf)
     reset(buf)
     return false
 end
-
 
 """
     Generate a buffer from s, but place its position where the pipe operator occurs in `s`

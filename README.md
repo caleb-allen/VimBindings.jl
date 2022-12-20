@@ -9,12 +9,12 @@ VimBindings is early in development and is not yet recommended for daily use. Fo
 - [x] Basic navigation (`h`, `j`, `k`, `l`,)
 - [x] Binding escape key from Julia REPL (see https://github.com/caleb-allen/VimBindings.jl/issues/8)
 - [x] Basic editing (e.g. `dw`, `cw`, `x`)
-- [ ] Less basic editing (e.g. `diw`, `cfx`)
+- [x] Editing basic text objects (e.g. `diw`)
 - [x] History integration (partial)
-- [ ] Visual mode
-- [ ] Registers
-- [ ] Undo/Redo
-- [ ] Macros
+<!-- - [ ] Visual mode -->
+<!-- - [ ] Registers -->
+<!-- - [ ] Undo/Redo -->
+<!-- - [ ] Macros -->
 
 # Installation
 

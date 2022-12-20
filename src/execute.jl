@@ -51,14 +51,29 @@ function execute(buf, command :: InsertCommand) :: Union{VimMode, Nothing}
             insert(buf, line_zero(buf).stop, '\n')
             up(buf)
         end
+        'i' => Motion(buf)
+        'I' => line_begin(buf)
+        'a' => begin
+            if !eof(buf)
+                Motion(position(buf), position(buf) + 1)
+            else
+                Motion(buf)
+            end
+        end
+        'A' => begin
+            motion = line_end(buf)
+            if !eof(buf)
+                Motion(motion.start, motion.stop + 1)
+            else
+                motion
+            end
+        end
         _ => gen_motion(buf, command.c)
     end
     if motion isa Motion
         motion(buf)
     end
-    # trigger_insert_mode(s)
     return insert_mode
-    # return true
 end
 
 function execute(buf, command :: OperatorCommand) :: Union{VimMode, Nothing}
@@ -73,7 +88,7 @@ function execute(buf, command :: OperatorCommand) :: Union{VimMode, Nothing}
             @log result = eval(Expr(:call, op_fn, buf, motion))
         end
     end
-    if op_fn === :change
+    if op_fn == change
         return insert_mode
     end
     return nothing
