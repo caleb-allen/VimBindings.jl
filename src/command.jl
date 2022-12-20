@@ -36,6 +36,7 @@ end
 Command which after parsing is a synonym of another command
 """
 struct SynonymCommand <: Command
+    r1 :: Integer
     operator :: Char 
 end
 """

@@ -30,11 +30,35 @@ function run(buf, command) :: IOBuffer
         error("Command not well formed", command)
     end
 
-    cmd = parse_command(s_cmd)
+    cmd = parse_command(buf)
 
     # TODO how to recreate "MIState?"
     # Or should the mode logic be altered to avoid using MIState?
     execute(s, cmd)
 end
 
+function run(test_string :: String, command)
+    buf = testbuf(test_string)
+    run(buf, command)
+end
 
+
+
+@testset "hl with delete" begin
+    @test run("asdf|", "h") == testbuf("asd|f")
+    @test run("asdf|", "l") == testbuf("")
+    @test run("asdf|", "dl") == testbuf("asdf|")
+    @test run("asdf|", "dh") == testbuf("asd|")
+    @test run("asdf|", "X") == testbuf("asd|")
+end
+
+@testset "textobjects" begin
+    @test run("", "") == testbuf("")
+    
+    @test run("as|df", "cw") == testbuf("as|")
+
+    @test run("a as|df b", "cw") == testbuf("a as| b")
+    @test run("a as|df b", "cw") == testbuf("a as| b")
+    @test run("a as|df b", "ciw") == testbuf("a | b")
+
+end

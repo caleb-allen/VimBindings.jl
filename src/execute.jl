@@ -95,6 +95,12 @@ function execute(buf, command :: OperatorCommand) :: Union{VimMode, Nothing}
 end
 
 function execute(buf, command :: SynonymCommand) :: Union{VimMode, Nothing}
-    new_command = lookup(command)
-    return execute(s, new_command)
+
+    synonyms = Dict(
+        'x' => "dl",
+        'X' => "dh"
+    )
+    new_command = parse_command("$(command.r1)$(synonyms[command.operator])")
+    
+    return execute(buf, new_command)
 end

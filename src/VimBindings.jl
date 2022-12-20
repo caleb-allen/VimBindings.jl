@@ -281,7 +281,7 @@ end
 
 
 function getsocket()
-    if !isdefined(VimBindings, :socket) || isa(socket, Base.DevNull)
+    if !isdefined(VimBindings, :socket)# || isa(socket, Base.DevNull)
         try
             global socket = connect(1234)
         catch e

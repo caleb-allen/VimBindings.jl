@@ -128,7 +128,8 @@ function MotionCommand(n1 :: Union{Integer, Nothing}, m :: Char) :: MotionComman
 end
 
 function SynonymCommand(n1 :: Union{Integer, Nothing}, m :: Char) :: SynonymCommand
-    return lookup_synonym(r1, m)
+    r1 = if n1 === nothing 1 else n1 end
+    return SynonymCommand(r1, m)
 end
 
 function LineOperatorCommand(n1 :: Union{Integer, Nothing},
@@ -161,11 +162,6 @@ end
 
 
 function lookup_synonym(n :: Integer, c :: Char)
-    synonyms = Dict(
-        'x' => 'l',
-        'X' => 'h'
-    )
-    return OperatorCommand(n, 'd', 1, synonyms[c])
 end
 
 
