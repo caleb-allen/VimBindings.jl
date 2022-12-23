@@ -25,7 +25,7 @@ VimBindings is early in development and is not yet recommended for daily use. Fo
 
 # Running
 
-VimBindings must be initialized when julia is started, like so:
+VimBindings must be initialized when Julia is started, and **before** `startup.jl`, like so:
 
 ```bash
 $ julia -i -e "using VimBindings"
@@ -34,11 +34,21 @@ julia[i]> # You now have vim bindings!
 
 The VimBindings package must be loaded before the REPL to correctly bind the `Esc` key (see https://github.com/caleb-allen/VimBindings.jl/issues/8 and https://github.com/caleb-allen/VimBindings.jl/issues/19 ). 
 
-`VimBindings` SHOULD NOT be loaded in `~/.julia/config/startup.jl`, unlike most packages. Loading `VimBindings` in this manner will result in buggy/unpredictable behavior, especially related to the `Escape` key, and other keys which use escape sequences.
+> **Warning**
+> `VimBindings` **SHOULD NOT** be loaded in `~/.julia/config/startup.jl`, unlike most packages. Loading `VimBindings` in this manner will result in buggy/unpredictable behavior, especially related to the `Escape` key, and other keys which use escape sequences.
+>
+> This is because of the standard library is loaded before `startup.jl` is run, and as a result any code which modifies the core behavior from within `startup.jl` of the REPL will be shadowed.
+> 
+> `VimBindings.jl` relies on a few important alterations to the REPL code which handles key input events. If these changes are loaded after the REPL code is started (as is the case with `startup.jl`), then the REPL code operates unmodified. Thus, the current solution is to evaluate the module before any REPL code is run at all.
 
-This is because of the standard library is loaded before `startup.jl` is run, and as a result any code which modifies the core behavior from within `startup.jl` of the REPL will be shadowed.
+You can define `vjulia` as an alias with:
 
-`VimBindings.jl` relies on a few important alterations to the REPL code which handles key input events. If these changes are loaded after the REPL code is started (as is the case with `startup.jl`), then the REPL code operates unmodified. Thus, the current solution is to evaluate the module before any REPL code is run at all.
+```bash
+alias vjulia='julia -i -e "using VimBindings"'
+```
+
+in your `.{ba,z}shrc` file.
+
 
 # Usage
 VimBindings begins in `insert` mode, and the Julia REPL can be used in its original, familiar fasion.
