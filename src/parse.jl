@@ -2,8 +2,10 @@ module Parse
 import DataStructures: OrderedDict
 using ..Commands
 import ..VimBindings: motions
+using ..Util
+import ..Util.log
 
-export well_formed, matched_rule, parse_command
+export well_formed, matched_rule, parse_command, synonym
 
 REGS = (
     text_object = r"^.?([ai][wWsp])$",
@@ -159,6 +161,16 @@ function OperatorCommand(n1 :: Union{Integer, Nothing},
                            r2,
                            action)
 end
+
+function synonym(command :: SynonymCommand) :: Command
+    synonyms = Dict(
+            'x' => "dl",
+            'X' => "dh"
+        )
+    return parse_command("$(command.r1)$(synonyms[command.operator])")
+
+end
+    
 
 
 function lookup_synonym(n :: Integer, c :: Char)

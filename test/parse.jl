@@ -3,7 +3,7 @@
 import VimBindings.Parse: verb_part, text_object_part, well_formed, parse_value
 using VimBindings.Commands
 using VimBindings.Parse
-import VimBindings.Parse: command
+import VimBindings.Parse: command, parse_command
 
 
 # @testset "is operator" begin
@@ -79,7 +79,7 @@ end
     cmd = "d10w"
     @test well_formed(cmd) == true
     r = matched_rule(cmd)
-    @test command(match(r, cmd)) == OperatorCommand(1,
+    @test parse_command(cmd) == OperatorCommand(1,
                                                     'd',
                                                     10,
                                                     'w')
@@ -105,7 +105,10 @@ end
 end
 
 @testset "parse singular commands" begin
-    @test parse_command("x") == OperatorCommand(1, 'd', 1, 'l')
-    @test parse_command("X") == OperatorCommand(1, 'd', 1, 'h')
-    @test parse_command("4x") == OperatorCommand(4, 'd', 1, 'l')
+    @test parse_command("x") == SynonymCommand(1, 'x')
+    @test synonym(parse_command("x")) == OperatorCommand(1, 'd', 1, 'l')
+    @test parse_command("X") == SynonymCommand(1, 'X')
+    @test synonym(parse_command("X")) == OperatorCommand(1, 'd', 1, 'h')
+    @test parse_command("4x") == SynonymCommand(4, 'x')
+    @test synonym(parse_command("4x")) == OperatorCommand(4, 'd', 1, 'l')
 end

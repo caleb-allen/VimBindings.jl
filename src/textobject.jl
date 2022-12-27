@@ -37,7 +37,7 @@ function textobject(buf::IOBuffer, name::String)::Tuple{Int, Int}
         "W" => WORD
     end
     to = selection(buf, text_object_fn)
-    return (to[1], to[2] + 1)
+    return (to[1], to[2])
 end
 
 

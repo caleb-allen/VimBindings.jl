@@ -3,6 +3,7 @@ import Base: *
 using REPL
 const LE = REPL.LineEdit
 export is_linebreak, is_whitespace, is_word_char, TextChar, WordChar, WhitespaceChar, PunctuationChar, ObjectChar
+export chars_by_cursor, junction_type, Text, NonWhitespace, Word, Whitespace, Junction, Start, End
 export is_alphanumeric, is_alphabetic, is_uppercase, is_lowercase, is_punctuation
 export is_object_end, is_object_start, is_non_whitespace_start, is_non_whitespace_end,  is_whitespace_end, is_whitespace_start
 export testbuf
@@ -11,148 +12,20 @@ export testbuf
     Determine whether the buffer is currently at the start of a text object.
     Whitespace is not included as a text object.
 """
-function is_object_start(buf)
-    eof(buf) && return false
-    start_pos = mark(buf)
-    c1 = read(buf, Char) |> TextChar
-
-    reset(buf)
-
-    if c1 isa ObjectChar && start_pos == 0
-        # beginning of line
-        return true
-    end
-
-    mark(buf)
-
-    skip(buf, -1)
-    c2 = read(buf, Char) |> TextChar
-
-    if c1 isa ObjectChar && typeof(c1) != typeof(c2)
-        reset(buf)
-        return true
-    end
-    return false
-end
-
-function is_whitespace_start(buf)
-    eof(buf) && return false
-    start_pos = mark(buf)
-    c1 = read(buf, Char) |> TextChar
-
-    reset(buf)
-
-    if c1 isa WhitespaceChar && start_pos == 0
-        # beginning of line
-        return true
-    end
-
-    mark(buf)
-
-    skip(buf, -1)
-    c2 = read(buf, Char) |> TextChar
-
-    if !(c1 isa WhitespaceChar) && c2 isa WhitespaceChar
-        reset(buf)
-        return true
-    end
-    return false
-end
-
-
+is_object_start(buf) = at_junction_type(buf, Start{>:Word})
+is_whitespace_start(buf) = at_junction_type(buf, Start{>:Whitespace})
 """
 Whether the buffer is currently at the start of a non-whitespace
 block
-
 """
-function is_non_whitespace_start(buf)
-    eof(buf) && return false
-    start_pos = mark(buf)
-    c1 = read(buf, Char) |> TextChar
-
-    reset(buf)
-
-    if c1 isa ObjectChar && start_pos == 0
-        # beginning of line
-        return true
-    end
-
-    mark(buf)
-
-    skip(buf, -1)
-    c2 = read(buf, Char) |> TextChar
-
-    if c1 isa WhitespaceChar && !(c2 isa WhitespaceChar)
-        reset(buf)
-        return true
-    end
-    return false
-end
-
+is_non_whitespace_start(buf) = at_junction_type(buf, Start{>:NonWhitespace})
 
 """
     Whether the buffer is currently at the end of a text object. Whitespace is not included as a text object.
 """
-function is_object_end(buf)
-    eof(buf) && return false
-    mark(buf)
-
-    c1 = read(buf, Char) |> TextChar
-
-    if eof(buf)
-        reset(buf)
-        return c1 isa ObjectChar
-    end
-    c2 = read(buf, Char) |> TextChar
-
-    if c1 isa ObjectChar && typeof(c1) != typeof(c2)
-        reset(buf)
-        return true
-    end
-    reset(buf)
-    return false
-end
-
-function is_non_whitespace_end(buf)
-    eof(buf) && return false
-    mark(buf)
-
-    c1 = read(buf, Char) |> TextChar
-
-    if eof(buf)
-        reset(buf)
-        return c1 isa ObjectChar
-    end
-    c2 = read(buf, Char) |> TextChar
-
-    if !(c1 isa WhitespaceChar) && c2 isa WhitespaceChar
-        reset(buf)
-        return true
-    end
-    reset(buf)
-    return false
-end
-
-
-function is_whitespace_end(buf)
-    eof(buf) && return false
-    mark(buf)
-
-    c1 = read(buf, Char) |> TextChar
-
-    if eof(buf)
-        reset(buf)
-        return c1 isa WhitespaceChar
-    end
-    c2 = read(buf, Char) |> TextChar
-
-    if c1 isa WhitespaceChar && !(c2 isa WhitespaceChar)
-        reset(buf)
-        return true
-    end
-    reset(buf)
-    return false
-end
+is_object_end(buf) = at_junction_type(buf, End{>:Word})
+is_non_whitespace_end(buf) = at_junction_type(buf, End{>:NonWhitespace})
+is_whitespace_end(buf) = at_junction_type(buf, End{>:Whitespace})
 
 """
     Generate a buffer from s, but place its position where the pipe operator occurs in `s`
@@ -164,33 +37,71 @@ function testbuf(s :: AbstractString) :: IOBuffer
     return buf
 end
 
+"""
+Get the 
+"""
+function chars_by_cursor(buf :: IO) :: Tuple{Union{TextChar, Nothing}, Union{TextChar, Nothing}}
+    local c1
+    local c0
+    start_pos = position(buf)
+    if eof(buf)
+        c1 = nothing
+    else
+        mark(buf)
+        c1 = read(buf, Char) |> TextChar
+        reset(buf)
+    end
+
+    if start_pos == 0
+        # beginning of buffer
+        c0 = nothing
+    else
+        mark(buf)
+
+        skip(buf, -1)
+        c0 = read(buf, Char) |> TextChar
+        reset(buf)
+    end
+    return (c0, c1)
+end
+
+abstract type Text end
+abstract type NonWhitespace <: Text end
+struct Word <: NonWhitespace end
+struct Whitespace <: Text end
+
+abstract type Junction{T<:Text} end
+struct Start{T<:Text} <: Junction{T} end
+struct End{T<:Text} <: Junction{T} end
+
 
 """
     A character as understood within the context of a vim object
 """
-abstract type TextChar{T <: Char} end
+abstract type TextChar end
 # abstract type NonWordChar{T} <: TextChar{T} end
-abstract type ObjectChar{T} <: TextChar{T} end
+abstract type ObjectChar <: TextChar end
 
-struct WhitespaceChar{T} <: TextChar{T}
-    c :: T
+struct WhitespaceChar <: TextChar
+    c :: Char
 end
 
-struct WordChar{T} <: ObjectChar{T}
-    c :: T
+struct WordChar <: ObjectChar
+    c :: Char
 end
 
-struct PunctuationChar{T} <: ObjectChar{T}
-    c :: T
+struct PunctuationChar <: ObjectChar
+    c :: Char
 end
 
-Base.convert(::Type{Char}, c::TextChar{Char}) = c.c
+Base.convert(::Type{Char}, c::TextChar) = c.c
+Base.convert(::Type{TextChar}, c::Char) = TextChar(c)
 Base.promote_rule(::Type{<:TextChar}, ::Type{Char}) = Char
 
 *(a::TextChar, b::AbstractChar) = *(promote(a, b)...)
 
 
-function TextChar(c::T) where T <: Char
+function TextChar(c :: Char)
     return if is_whitespace(c)
         WhitespaceChar(c)
     elseif is_word_char(c)
@@ -202,6 +113,51 @@ function TextChar(c::T) where T <: Char
     end
 end
 
+"""
+Describe the textobject characteristics of the junction of Text
+comprised of `char1` and `char2`
+"""
+function junction_type(char1 :: TextChar, char2 :: TextChar) :: Set{Junction}
+    return Set{Junction}()
+end
+
+function junction_type(char1 :: Union{Char, Nothing}, char2 :: Union{Char, Nothing})
+    arg1 = if char1 === nothing
+        nothing
+    else
+        convert(TextChar, char1)
+    end 
+    arg2 = if char2 === nothing
+        nothing
+    else
+        convert(TextChar, char2)
+    end 
+    junction_type(arg1, arg2)
+end
+
+junction_type(char1 :: Nothing, char2 :: ObjectChar) = Set([Start{NonWhitespace}()])
+junction_type(char1 :: WhitespaceChar, char2 :: ObjectChar) = Set([Start{NonWhitespace}(), End{Whitespace}()])
+junction_type(char1 :: ObjectChar, char2 :: WhitespaceChar) = Set([End{NonWhitespace}(), Start{Whitespace}()])
+junction_type(char1 :: ObjectChar, char2 :: Nothing) = Set([End{NonWhitespace}()])
+
+junction_type(char1 :: Nothing, char2 :: WhitespaceChar) = Set([Start{Whitespace}()])
+junction_type(char1 :: WhitespaceChar, char2 :: Nothing) = Set([End{Whitespace}()])
+
+junction_type(char1 :: WordChar, char2 :: PunctuationChar) = Set([Start{Word}(), End{Word}()])
+junction_type(char1 :: PunctuationChar, char2 :: WordChar) = Set([Start{Word}(), End{Word}()])
+
+"""
+Whether the given buffer is currently at a junction of type junc
+"""
+function at_junction_type(buf, junc_type)
+    c0, c1 = chars_by_cursor(buf)
+    for junc in junction_type(c0, c1)
+        if junc isa junc_type
+            return true
+        end
+    end
+    return false
+end
 # Text helpers
 is_linebreak(c::Char) = c in """\n"""
 is_whitespace(c::Char) = c in """ \t\n"""

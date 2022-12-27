@@ -1,3 +1,7 @@
+module Util
+export log, getsocket, @log
+import Base: show_unquoted
+
 macro log(exs...)
     blk = Expr(:block)
     loc = string("\t", __source__.file, "#", __source__.line)
@@ -33,6 +37,23 @@ function log(s...)
     println(getsocket(), s...)
 end
 
+function getsocket()
+    if !isdefined(Util, :socket)# || isa(socket, Base.DevNull)
+        try
+            global socket = connect(1234)
+        catch e
+            global socket = devnull
+        end
+    end
+    return socket
+end
+
+function log(any::Any)
+    socket = getsocket()
+    println(socket, any)
+end
+
+
 function test_bind()
 
 end
@@ -55,3 +76,4 @@ end
 
 # alpha_keymap = AnyDict()
 
+end

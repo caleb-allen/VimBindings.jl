@@ -17,8 +17,10 @@ import Base: AnyDict, show_unquoted
 using Sockets
 
 const LE = LineEdit
-
 include("util.jl")
+using .Util
+import .Util.log
+
 include("textutils.jl")
 include("types.jl")
 include("command.jl")
@@ -277,23 +279,6 @@ end
 
 
 function key_press(state::REPL.LineEdit.MIState, repl::LineEditREPL, char::String)
-end
-
-
-function getsocket()
-    if !isdefined(VimBindings, :socket)# || isa(socket, Base.DevNull)
-        try
-            global socket = connect(1234)
-        catch e
-            global socket = devnull
-        end
-    end
-    return socket
-end
-
-function log(any::Any)
-    socket = getsocket()
-    println(socket, any)
 end
 
 function debug_mode(state::REPL.LineEdit.MIState, repl::LineEditREPL, char::String)

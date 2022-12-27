@@ -1,30 +1,37 @@
 using VimBindings.TextUtils
 @testset "text object end" begin
-    buf = IOBuffer("hello world")
+    # buf = IOBuffer("hello world")
 
-    @test is_object_end(buf) == false
+    # @test is_object_end(buf) == false
 
-    seek(buf, 4)
-    @assert peek(buf, Char) == 'o'
+    # seek(buf, 4)
+    # @assert peek(buf, Char) == 'o'
 
-    @test is_object_end(buf) == true
+    # @test is_object_end(buf) == true
 
-    seek(buf, 5)
-    @test is_object_end(buf) == false
+    # seek(buf, 5)
+    # @test is_object_end(buf) == false
 
-    seek(buf, 10)
-    @assert peek(buf, Char) == 'd'
+    # seek(buf, 10)
+    # @assert peek(buf, Char) == 'd'
 
-    @test is_object_end(buf) == true
+    # @test is_object_end(buf) == true
+end
+
+@testset "chars by cursor" begin
+    chars_by_cursor(testbuf("ab|cd")) == (WordChar('b'), WordChar('c'))
+end
+@testset "junction" begin
+    @test junction_type('a', ' ') == Set(Junction[Start{Whitespace}(), End{NonWhitespace}()])
 end
 
 @testset "is object end" begin
     @test is_object_end(testbuf("hello |%^%^%^")) == false
-    @test is_object_end(testbuf("hell|o %^%^%^")) == true
-    @test is_object_end(testbuf("a wor|d%#%#%#")) == true
-    @test is_object_end(testbuf("a word|%#%#%#")) == false
-    @test is_object_end(testbuf("dasd%#%#%|#")) == true
-    @test is_object_end(testbuf("dasd%#%#%#|")) == false
+    @test is_object_end(testbuf("hello| %^%^%^")) == true
+    @test is_object_end(testbuf("a wor|d%#%#%#")) == false
+    @test is_object_end(testbuf("a word|%#%#%#")) == true
+    @test is_object_end(testbuf("dasd%#%#%|#")) == false
+    @test is_object_end(testbuf("dasd%#%#%#|")) == true
 end
 
 @testset "is object start" begin
@@ -40,14 +47,14 @@ end
 end
 
 @testset "is whitespace end" begin
-    @test is_whitespace_end(testbuf("hello| world")) == true
-    @test is_whitespace_end(testbuf("hello |world")) == false
+    @test is_whitespace_end(testbuf("hello| world")) == false
+    @test is_whitespace_end(testbuf("hello |world")) == true
     @test is_whitespace_end(testbuf("|hello world")) == false
-    @test is_whitespace_end(testbuf("  |hello world")) == false
-    @test is_whitespace_end(testbuf("  | hello world")) == true
+    @test is_whitespace_end(testbuf("  |hello world")) == true
+    @test is_whitespace_end(testbuf("  | hello world")) == false
     @test is_whitespace_end(testbuf("|   hello world")) == false
-    @test is_whitespace_end(testbuf("hello world| ")) == true
-    @test is_whitespace_end(testbuf("hello world |")) == false
+    @test is_whitespace_end(testbuf("hello world| ")) == false
+    @test is_whitespace_end(testbuf("hello world |")) == true
     @test is_whitespace_end(testbuf("hello |   world")) == false
     @test is_whitespace_end(testbuf("hello worl|d")) == false
 end
