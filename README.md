@@ -4,6 +4,8 @@ VimBindings is an experimental Julia package which brings some vim keybindings t
 
 VimBindings is early in development and is not yet recommended for daily use. For the brave, feel free to give it a try!
 
+![latest ci](https://github.com/caleb-allen/VimBindings.jl/actions/workflows/test.yaml/badge.svg)
+
 # Features
 - [x] Normal mode
 - [x] Basic navigation (`h`, `j`, `k`, `l`,)
