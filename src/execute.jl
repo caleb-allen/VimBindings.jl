@@ -89,6 +89,20 @@ function execute(buf, command :: OperatorCommand) :: Union{VimMode, Nothing}
     # *5*d2w
     log(command)
     @log op_fn = operator_fn(command.operator)
+    # From neovim help ":h cw"
+    # Special case: When the cursor is in a word, "cw" and "cW" do not include the
+    # white space after a word, they only change up to the end of the word.  This is
+    # because Vim interprets "cw" as change-word, and a word does not include the
+    # following white space.
+    # see vim help :h cw regarding this exception
+    if command.operator == 'c' && command.action in ['w', 'W']
+        # in the middle of a word
+        if at_junction_type(buf, In{>:Word})
+            new_action = if command.action == 'w' 'e' else 'E' end
+            log("altering 'c$(command.action)' command to 'c$new_action'")
+            command = OperatorCommand(command.r1, command.operator, command.r2, new_action)
+        end
+    end
     for r1 in 1:command.r1
         # 5d*2*w
         for r2 in 1:command.r2

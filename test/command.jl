@@ -42,7 +42,19 @@ end
     @test run("asdf|", "X") == testbuf("asd|")
 end
 
-@testset "yank / change text objects" begin
+@testset "de" begin
+    @test run("a|sdf", "de") == testbuf("a|")
+end
+@testset "distinct behavior of dw and cw" begin
+    @test run("fi|rst second third", "cw") == testbuf("fi|i| second third")
+    @test run("fi|rst%%%% second third", "cw") == testbuf("fi|i|%%%% second third")
+    @test run("fi|rst%%%% second third", "dw") == testbuf("fi|n|%%%% second third")
+    @test run("fi|rst%%%% second third", "cW") == testbuf("fi|i| second third")
+    @test run("fi|rst%%%% second third", "dW") == testbuf("fi|n|second third")
+    @test run("fi|rst second third", "dw") == testbuf("fi|n|second third")
+end
+
+@testset "delete / change text objects" begin
     @test run("as|n|df", "cw") == testbuf("as|i|")
     @test run("a as|n|df b", "cw") == testbuf("a as|i| b")
     @test run("a as|n|df b", "ciw") == testbuf("a |i| b")

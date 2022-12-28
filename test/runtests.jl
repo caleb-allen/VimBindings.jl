@@ -12,28 +12,3 @@ include("motion.jl")
 include("textobject.jl")
 include("registers.jl")
 
-@testset "VimBindings.jl" begin
-end
-@testset "line diffs" begin
-
-end
-
-@testset "line begin" begin
-    s = """
-First line
-    second line
-    third line
-"""
-    buf = IOBuffer(s)
-    seek(buf, 17)
-    # @show peek(buf)
-    @test line_begin(buf) == Motion(17, 15)
-
-    # in the second line's space
-    seek(buf, 11)
-    @test line_begin(buf) == Motion(11, 15)
-
-    seek(buf, 4)
-    @test line_begin(buf) == Motion(4, 0)
-end
-

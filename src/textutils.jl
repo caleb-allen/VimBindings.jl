@@ -6,7 +6,7 @@ using .Buffer
 export VimBuffer, mode, VimMode, normal_mode, insert_mode, testbuf, readall
 const LE = REPL.LineEdit
 export is_linebreak, is_whitespace, is_word_char, TextChar, WordChar, WhitespaceChar, PunctuationChar, ObjectChar
-export chars_by_cursor, junction_type, Text, NonWhitespace, Word, Whitespace, Junction, Start, End
+export chars_by_cursor, junction_type, at_junction_type, Text, NonWhitespace, Word, Whitespace, Junction, Start, End, In
 export is_alphanumeric, is_alphabetic, is_uppercase, is_lowercase, is_punctuation
 export is_object_end, is_object_start, is_non_whitespace_start, is_non_whitespace_end,  is_whitespace_end, is_whitespace_start
 
@@ -65,6 +65,7 @@ struct Whitespace <: Text end
 abstract type Junction{T<:Text} end
 struct Start{T<:Text} <: Junction{T} end
 struct End{T<:Text} <: Junction{T} end
+struct In{T<:Text} <: Junction{T} end
 
 
 """
@@ -137,6 +138,9 @@ junction_type(char1 :: WhitespaceChar, char2 :: Nothing) = Set([End{Whitespace}(
 
 junction_type(char1 :: WordChar, char2 :: PunctuationChar) = Set([Start{Word}(), End{Word}()])
 junction_type(char1 :: PunctuationChar, char2 :: WordChar) = Set([Start{Word}(), End{Word}()])
+
+junction_type(char1 :: T, char2 :: T) where T <: ObjectChar = Set([In{Word}()])
+junction_type(char1 :: T, char2 :: T) where T <: WhitespaceChar = Set([In{Whitespace}()])
 
 """
 Whether the given buffer is currently at a junction of type junc

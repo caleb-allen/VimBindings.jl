@@ -10,12 +10,18 @@ using ..TextObjects
 export Motion, MotionType, motions, insert_motions, gen_motion, is_stationary,
         down, up, word_next, word_big_next, word_end, word_back,
         word_big_back, word_big_end, line_end, line_begin, line_zero,
-        find_c, get_safe_name, all_keys, special_keys
+        find_c, get_safe_name, all_keys, special_keys, exclusive, inclusive
+
+@enum MotionType begin
+    linewise
+    exclusive # characterwise
+    inclusive # characterwise
+end
 
 struct Motion
     start :: Int64
     stop :: Int64
-    motiontype
+    motiontype :: Union{Nothing, MotionType}
 end
 
 Motion(start :: Int64, stop :: Int64) = Motion(start, stop, nothing)
@@ -28,11 +34,6 @@ start and end position of the motion are included in the operation.  When
 exclusive, the last character towards the end of the buffer is not included.
     Linewise motions always include the start and end position.
 """
-@enum MotionType begin
-    linewise
-    exclusive # characterwise
-    inclusive # characterwise
-end
 
 function (m::Motion)(s :: LE.MIState)
     buf = LE.buffer(s)
@@ -45,8 +46,14 @@ end
 
 # Motion(to :: TextObject) = Motion(to.start, to.stop)
 
-Base.min(motion :: Motion) = Base.min(motion.start, motion.stop)
-Base.max(motion :: Motion) = Base.max(motion.start, motion.stop)
+Base.min(motion :: Motion) = min(motion.start, motion.stop)
+
+Base.max(motion :: Motion) =
+    if motion.motiontype == inclusive
+        max(motion.start, motion.stop + 1)
+    else
+        max(motion.start, motion.stop)
+    end
 
 is_stationary(motion :: Motion) :: Bool = motion.start == motion.stop
 
@@ -133,7 +140,7 @@ function word_next(buf :: IO) :: Motion
     skip(buf, -1)
     endd = position(buf)
     reset(buf)
-    return Motion(start, endd)
+    return Motion(start, endd, exclusive)
 end
 
 """
@@ -155,7 +162,7 @@ function word_big_next(buf :: IO) :: Motion
     skip(buf, -1)
     endd = position(buf)
     reset(buf)
-    return Motion(start, endd)
+    return Motion(start, endd, exclusive)
 end
 
 
@@ -188,7 +195,7 @@ function word_end(buf :: IO) :: Motion
     @log endd = position(buf)
     @log typeof(endd)
     reset(buf)
-    return Motion(start, endd)
+    return Motion(start, endd, inclusive)
 end
 
 function word_back(buf :: IO) :: Motion
@@ -215,7 +222,7 @@ function word_back(buf :: IO) :: Motion
     end
     endd = position(buf)
     seek(buf, start)
-    return Motion(start, endd)
+    return Motion(start, endd, exclusive)
 end
 
 function word_big_back(buf :: IO) :: Motion
@@ -236,7 +243,7 @@ function word_big_back(buf :: IO) :: Motion
     end
     endd = position(buf)
     seek(buf, start)
-    return Motion(start, endd)
+    return Motion(start, endd, exclusive)
 end
 
 function word_big_end(buf :: IO) :: Motion
@@ -265,7 +272,7 @@ function word_big_end(buf :: IO) :: Motion
     @log endd = position(buf)
     @log typeof(endd)
     reset(buf)
-    return Motion(start, endd)
+    return Motion(start, endd, inclusive)
 end
 
 function line_end(buf :: IO) :: Motion
@@ -281,7 +288,7 @@ function line_end(buf :: IO) :: Motion
     skip(buf, -1)
     endd = position(buf)
     reset(buf)
-    return Motion(start, endd)
+    return Motion(start, endd, inclusive)
 end
 
 function line_begin(buf :: IO) :: Motion
@@ -318,7 +325,7 @@ function line_begin(buf :: IO) :: Motion
 
     endd = first_line_char
     seek(buf, start)
-    return Motion(start, endd)
+    return Motion(start, endd, exclusive)
 end
 
 """
@@ -396,8 +403,8 @@ insert_motions = Dict{Char, Any}(
 )
 
 motions = Dict{Char, Any}(
-    'h' => (buf) -> Motion(position(buf), max(position(buf) - 1, 0)), # , exclusive
-    'l' => (buf) -> Motion(position(buf), min(position(buf) + 1, buf.size)),# exclusive
+    'h' => (buf) -> Motion(position(buf), max(position(buf) - 1, 0), exclusive), # , exclusive
+    'l' => (buf) -> Motion(position(buf), min(position(buf) + 1, buf.size), exclusive),# exclusive
     'j' => down,
     'k' => up,
     'w' => word_next, # exclusive),
@@ -505,4 +512,5 @@ end
 
 
 
+LE.char_move_left(vb :: VimBuffer) = LE.char_move_left(vb.buf)
 end
