@@ -1,12 +1,14 @@
 module TextUtils
 import Base: *
 using REPL
+include("buffer.jl")
+using .Buffer
+export VimBuffer, mode, VimMode, normal_mode, insert_mode, testbuf, readall
 const LE = REPL.LineEdit
 export is_linebreak, is_whitespace, is_word_char, TextChar, WordChar, WhitespaceChar, PunctuationChar, ObjectChar
 export chars_by_cursor, junction_type, Text, NonWhitespace, Word, Whitespace, Junction, Start, End
 export is_alphanumeric, is_alphabetic, is_uppercase, is_lowercase, is_punctuation
 export is_object_end, is_object_start, is_non_whitespace_start, is_non_whitespace_end,  is_whitespace_end, is_whitespace_start
-export testbuf
 
 """
     Determine whether the buffer is currently at the start of a text object.
@@ -26,16 +28,6 @@ is_non_whitespace_start(buf) = at_junction_type(buf, Start{>:NonWhitespace})
 is_object_end(buf) = at_junction_type(buf, End{>:Word})
 is_non_whitespace_end(buf) = at_junction_type(buf, End{>:NonWhitespace})
 is_whitespace_end(buf) = at_junction_type(buf, End{>:Whitespace})
-
-"""
-    Generate a buffer from s, but place its position where the pipe operator occurs in `s`
-"""
-function testbuf(s :: AbstractString) :: IOBuffer
-    a, b = split(s, '|')
-    buf = IOBuffer(a * b)
-    seek(buf, length(a))
-    return buf
-end
 
 """
 Get the 

@@ -1,7 +1,15 @@
-using .Commands
-using .TextObjects
-using .Util
+module Execution
+using ..Commands
+using ..TextObjects
+using ..Util
+using ..TextUtils
+using ..Motions
+using ..Parse
+using ..Operators
+
 using Match
+
+export execute
 
 
 """
@@ -85,8 +93,9 @@ function execute(buf, command :: OperatorCommand) :: Union{VimMode, Nothing}
         # 5d*2*w
         for r2 in 1:command.r2
             @log r2
-            motion = gen_motion(buf, command.action)
-            @log result = eval(Expr(:call, op_fn, buf, motion))
+            @log motion = gen_motion(buf, command.action)
+            # @log result = eval(Expr(:call, op_fn, buf, motion))
+            @log result = op_fn(buf, motion)
         end
     end
     if op_fn == change
@@ -104,4 +113,6 @@ function execute(buf, command :: SynonymCommand) :: Union{VimMode, Nothing}
     new_command = parse_command("$(command.r1)$(synonyms[command.operator])")
     
     return execute(buf, new_command)
+end
+
 end

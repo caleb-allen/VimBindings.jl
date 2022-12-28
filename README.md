@@ -7,7 +7,7 @@ VimBindings is early in development and is not yet recommended for daily use. Fo
 # Features
 - [x] Normal mode
 - [x] Basic navigation (`h`, `j`, `k`, `l`,)
-- [x] Binding escape key from Julia REPL (see https://github.com/caleb-allen/VimBindings.jl/issues/8)
+- [x] Binding escape key from Julia REPL (see https://github.com/caleb-allen/VimBindings.jl/issues/19)
 - [x] Basic editing (e.g. `dw`, `cw`, `x`)
 - [x] Editing basic text objects (e.g. `diw`)
 - [x] History integration (partial)

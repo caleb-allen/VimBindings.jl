@@ -1,4 +1,17 @@
-using .TextUtils
+module Motions
+
+using REPL
+using REPL.LineEdit
+const LE = LineEdit
+using ..TextUtils
+using ..Util
+using ..TextObjects
+
+export Motion, MotionType, motions, insert_motions, gen_motion, is_stationary,
+        down, up, word_next, word_big_next, word_end, word_back,
+        word_big_back, word_big_end, line_end, line_begin, line_zero,
+        find_c, get_safe_name, all_keys, special_keys
+
 struct Motion
     start :: Int64
     stop :: Int64
@@ -6,8 +19,8 @@ struct Motion
 end
 
 Motion(start :: Int64, stop :: Int64) = Motion(start, stop, nothing)
-Motion(buf :: IOBuffer, change :: Int64) = Motion(position(buf), position(buf) + change)
-Motion(buf :: IOBuffer) = Motion(buf, 0)
+Motion(buf :: IO, change :: Int64) = Motion(position(buf), position(buf) + change)
+Motion(buf :: IO) = Motion(buf, 0)
 Motion(tup :: Tuple{Int64, Int64}) = Motion(tup[1], tup[2], nothing)
 """
     A character motion is either inclusive or exclusive.  When inclusive, the
@@ -26,16 +39,14 @@ function (m::Motion)(s :: LE.MIState)
     seek(buf, m.stop)
 end
 
-function (m::Motion)(buf :: IOBuffer)
+function (m::Motion)(buf :: IO)
     seek(buf, m.stop)
 end
 
-
-
 # Motion(to :: TextObject) = Motion(to.start, to.stop)
 
-min(motion :: Motion) = Base.min(motion.start, motion.stop)
-max(motion :: Motion) = Base.max(motion.start, motion.stop)
+Base.min(motion :: Motion) = Base.min(motion.start, motion.stop)
+Base.max(motion :: Motion) = Base.max(motion.start, motion.stop)
 
 is_stationary(motion :: Motion) :: Bool = motion.start == motion.stop
 
@@ -53,7 +64,7 @@ function Base.:+(motion1 :: Motion, motion2 :: Motion)
     return Motion(low, high)
 end
 
-function down(buf :: IOBuffer) :: Motion
+function down(buf :: IO) :: Motion
     start = position(buf)
     npos = something(findprev(isequal(UInt8('\n')), buf.data[1:buf.size], position(buf)), 0)
     # We're interested in character count, not byte count
@@ -76,7 +87,7 @@ function down(buf :: IOBuffer) :: Motion
     return Motion(start, endd)
 end
 
-function up(buf :: IOBuffer) :: Motion
+function up(buf :: IO) :: Motion
     start = position(buf)
     npos = findprev(isequal(UInt8('\n')), buf.data, position(buf))
     npos === nothing && return Motion(start, start) # we're in the first line
@@ -102,7 +113,7 @@ end
     2. Going from alphanumeric to punctuation
     3. Going from punctuation to alphanumeric
 """
-function word_next(buf :: IOBuffer) :: Motion
+function word_next(buf :: IO) :: Motion
     mark(buf)
     start = position(buf)
 
@@ -128,7 +139,7 @@ end
 """
     The motion to the next big word, e.g. using the `W` command
 """
-function word_big_next(buf :: IOBuffer) :: Motion
+function word_big_next(buf :: IO) :: Motion
     mark(buf)
     start = position(buf)
 
@@ -148,7 +159,7 @@ function word_big_next(buf :: IOBuffer) :: Motion
 end
 
 
-function word_end(buf :: IOBuffer) :: Motion
+function word_end(buf :: IO) :: Motion
     start = position(buf)
     eof(buf) && return Motion(start, start)
 
@@ -180,7 +191,7 @@ function word_end(buf :: IOBuffer) :: Motion
     return Motion(start, endd)
 end
 
-function word_back(buf :: IOBuffer) :: Motion
+function word_back(buf :: IO) :: Motion
     start = position(buf)
     position(buf) == 0 && return Motion(start, start)
 
@@ -207,7 +218,7 @@ function word_back(buf :: IOBuffer) :: Motion
     return Motion(start, endd)
 end
 
-function word_big_back(buf :: IOBuffer) :: Motion
+function word_big_back(buf :: IO) :: Motion
     start = position(buf)
     position(buf) == 0 && return Motion(start, start)
 
@@ -228,7 +239,7 @@ function word_big_back(buf :: IOBuffer) :: Motion
     return Motion(start, endd)
 end
 
-function word_big_end(buf :: IOBuffer) :: Motion
+function word_big_end(buf :: IO) :: Motion
     start = position(buf)
     eof(buf) && return Motion(buf)
 
@@ -257,7 +268,7 @@ function word_big_end(buf :: IOBuffer) :: Motion
     return Motion(start, endd)
 end
 
-function line_end(buf :: IOBuffer) :: Motion
+function line_end(buf :: IO) :: Motion
     mark(buf)
     start = position(buf)
 
@@ -273,7 +284,7 @@ function line_end(buf :: IOBuffer) :: Motion
     return Motion(start, endd)
 end
 
-function line_begin(buf :: IOBuffer) :: Motion
+function line_begin(buf :: IO) :: Motion
     start = position(buf)
     position(buf) == 0 && return Motion(start, start)
 
@@ -313,7 +324,7 @@ end
 """
     The beginning of a line, including whitespace
 """
-function line_zero(buf :: IOBuffer) :: Motion
+function line_zero(buf :: IO) :: Motion
     start = position(buf)
     position(buf) == 0 && return Motion(start, start)
 
@@ -343,11 +354,11 @@ end
 #     return Motion(start, endd)
 # end
 
-function endd(buf :: IOBuffer) :: Motion
+function endd(buf :: IO) :: Motion
 
 end
 
-function find_c(buf :: IOBuffer, query_c :: Char) :: Motion
+function find_c(buf :: IO, query_c :: Char) :: Motion
     start = position(buf)
     endd = start
 
@@ -362,4 +373,136 @@ function find_c(buf :: IOBuffer, query_c :: Char) :: Motion
         end
     end
     return Motion(start, endd)
+end
+
+insert_motions = Dict{Char, Any}(
+    'i' => (buf) -> Motion(buf),
+    'I' => (buf) -> line_begin(buf),
+    'a' => (buf) -> begin
+        return if !eof(buf)
+            return Motion(position(buf), position(buf) + 1)
+        else
+            return Motion(buf)
+        end
+    end,
+    'A' => (buf) -> begin
+        motion = line_end(buf)
+        return if !eof(buf)
+            return Motion(motion.start, motion.stop + 1)
+        else
+            return motion
+        end
+    end
+)
+
+motions = Dict{Char, Any}(
+    'h' => (buf) -> Motion(position(buf), max(position(buf) - 1, 0)), # , exclusive
+    'l' => (buf) -> Motion(position(buf), min(position(buf) + 1, buf.size)),# exclusive
+    'j' => down,
+    'k' => up,
+    'w' => word_next, # exclusive),
+    'W' => word_big_next, # exclusive),
+    'e' => word_end, # inclusive,
+    'E' => word_big_end, # )
+    'b' => word_back, # exclusive)
+    'B' => word_big_back, # exclusive)
+    '^' => line_begin, # exclusive)
+    '$' => line_end, # inclusive)
+    '0' => line_zero, # TODO how to parse this? it's a digit, not an alphabetical character.
+    '{' => nothing,
+    '}' => nothing,
+    '(' => nothing,
+    ')' => nothing,
+    'G' => nothing,
+    'H' => nothing,
+    'L' => nothing
+)
+
+"""
+    Generate a Motion object for the given `name`
+"""
+function gen_motion(buf, name :: Char) :: Motion
+    # motions = Motion[]
+    fn_name = get_safe_name(name)
+    fn = if name in keys(motions)
+        motions[name]
+    else
+        log("$name has no mapped function")
+        (buf) -> Motion(buf)
+    end
+    # call the command's function to generate the motion object
+    motion = fn(buf)
+    return motion
+end
+"""
+Generate motion for the given `name` which is a TextObject
+"""
+function gen_motion(buf, name :: String) :: Motion
+    return Motion(textobject(buf, name))
+end
+
+
+# function double_quote(mode::NormalMode, s::LE.MIState) :: Action
+    # @log vim.mode = SelectRegister()
+# end
+special_keys = Dict(
+    '`' => "backtic",
+    '~' => "tilde",
+    '!' => "bang",
+    '@' => "at",
+    '#' => "hash",
+    '$' => "dollar",
+    '%' => "percent",
+    '^' => "caret",
+    '&' => "ampersand",
+    '*' => "asterisk",
+    '(' => "open_paren",
+    ')' => "close_paren",
+    '-' => "dash",
+    '_' => "underscore",
+    '=' => "equals",
+    '+' => "plus",
+    '\\' => "backslash",
+    '|' => "bar",
+    '[' => "open_bracket",
+    ']' => "close_bracket",
+    '{' => "open_curly_brace",
+    '}' => "close_curly_brace",
+    "'"[1] => "single_quote",
+    '"' => "double_quote",
+    ';' => "semicolon",
+    ':' => "colon",
+    ',' => "comma",
+    '<' => "open_angle_bracket",
+    '>' => "close_angle_bracket",
+    '.' => "dot",
+    '/' => "slash",
+    '?' => "question_mark"
+)
+
+all_keys = Char[collect(keys(special_keys));
+                collect('a':'z');
+                collect('A':'Z');
+                collect('0':'9')]
+
+"""
+    Get the function-safe name for the character c
+"""
+function get_safe_name(c :: Char) :: Symbol
+    get(special_keys, c, string(c)) |> Symbol
+end
+
+"""
+    Get the function-safe name for the string s, which must be
+a 1 character string
+"""
+function get_safe_name(s :: AbstractString) :: Symbol
+    if length(s) != 1
+        error("length of given name is $(length(s)). Length must be 1")
+    end
+    return get_safe_name(s[1])
+end
+
+
+
 end

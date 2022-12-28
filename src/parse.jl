@@ -1,7 +1,7 @@
 module Parse
 import DataStructures: OrderedDict
 using ..Commands
-import ..VimBindings: motions
+using ..Motions
 using ..Util
 import ..Util.log
 

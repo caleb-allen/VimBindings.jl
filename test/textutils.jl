@@ -1,21 +1,47 @@
 using VimBindings.TextUtils
-@testset "text object end" begin
-    # buf = IOBuffer("hello world")
+@testset "VimBuffer" begin
+    s = "Sample|n| buffer"
+    iobuf = IOBuffer()
+    expected = " VimBuffer(\"$s\")"
+    show(iobuf, MIME("text/plain"), testbuf(s))
 
-    # @test is_object_end(buf) == false
+    seek(iobuf, 0)
+    printed = read(iobuf, String)
+    @test printed == expected
+    
 
-    # seek(buf, 4)
-    # @assert peek(buf, Char) == 'o'
+    s = "|n|Sample buffer"
+    iobuf = IOBuffer()
+    expected = " VimBuffer(\"$s\")"
+    show(iobuf, MIME("text/plain"), testbuf(s))
+    seek(iobuf, 0)
+    printed = read(iobuf, String)
+    @test printed == expected
+    
+    s = "Sample buffer|n|"
+    iobuf = IOBuffer()
+    expected = " VimBuffer(\"$s\")"
+    show(iobuf, MIME("text/plain"), testbuf(s))
+    seek(iobuf, 0)
+    printed = read(iobuf, String)
+    @test printed == expected
+    
+    
+    @test_throws ArgumentError testbuf("")
+end
 
-    # @test is_object_end(buf) == true
+@testset "test buffer with mode" begin
 
-    # seek(buf, 5)
-    # @test is_object_end(buf) == false
+    buf = testbuf("asdf|fdsa")
+    @test buf.size == 8
+    @test position(buf) == 4
 
-    # seek(buf, 10)
-    # @assert peek(buf, Char) == 'd'
+    buf = testbuf("hello worl|d this is a test")
+    @test position(buf) == 10
 
-    # @test is_object_end(buf) == true
+    buf = testbuf("|hello world")
+    @test position(buf) == 0
+    @test buf.size == 11
 end
 
 @testset "chars by cursor" begin

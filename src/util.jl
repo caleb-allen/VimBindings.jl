@@ -1,4 +1,5 @@
 module Util
+using Sockets
 export log, getsocket, @log
 import Base: show_unquoted
 
@@ -33,22 +34,23 @@ end
 # end
 
 
-function log(s...)
+# TODO this is terrible to overload
+function Base.log(s...)
     println(getsocket(), s...)
 end
 
+function __init__()
+    global socket = devnull
+end
+function enable_logging()
+    global socket = connect(1234)
+end
+
 function getsocket()
-    if !isdefined(Util, :socket)# || isa(socket, Base.DevNull)
-        try
-            global socket = connect(1234)
-        catch e
-            global socket = devnull
-        end
-    end
     return socket
 end
 
-function log(any::Any)
+function Base.log(any::Any)
     socket = getsocket()
     println(socket, any)
 end

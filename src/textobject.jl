@@ -25,7 +25,7 @@ end
 """
 Create a text object
 """
-function textobject(buf::IOBuffer, name::String)::Tuple{Int, Int}
+function textobject(buf::IO, name::String)::Tuple{Int, Int}
     m = match(r"^([ai])(.)$", name)
     selection = @match m[1] begin
         "i" => inner
@@ -94,7 +94,7 @@ sequence of other non-blank characters, separated with white space (spaces,
 tabs, <EOL>).  This can be changed with the 'iskeyword' option.  An empty line
 is also considered to be a word.
 """
-function word(buf::IOBuffer)::Tuple{Int,Int}
+function word(buf::IO)::Tuple{Int,Int}
     origin = position(buf)
 
     eof(buf) && return (origin, origin)
@@ -122,7 +122,7 @@ A WORD consists of a sequence of non-blank characters, separated with white
 space.  An empty line is also considered to be a WORD.
 
 """
-function WORD(buf::IOBuffer)::Tuple{Int,Int}
+function WORD(buf::IO)::Tuple{Int,Int}
     origin = position(buf)
 
     eof(buf) && return (origin, origin)
@@ -148,7 +148,7 @@ end
 """
     Identify the text object surrounding a space
 """
-function space(buf::IOBuffer)::Tuple{Int, Int}
+function space(buf::IO)::Tuple{Int, Int}
     # use origin rather than `mark` because
     # methods called below use their own marks
     origin = position(buf)
@@ -171,7 +171,7 @@ function space(buf::IOBuffer)::Tuple{Int, Int}
     return (start, endd)
 end
 
-function line(buf::IOBuffer)::Tuple{Int,Int}
+function line(buf::IO)::Tuple{Int,Int}
     # find the line start
     mark(buf)
     if eof(buf)

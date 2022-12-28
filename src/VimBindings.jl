@@ -22,24 +22,24 @@ using .Util
 import .Util.log
 
 include("textutils.jl")
-include("types.jl")
 include("command.jl")
 include("textobject.jl")
-include("execute.jl")
 include("motion.jl")
+include("registers.jl")
 include("operator.jl")
-include("keys.jl")
 include("parse.jl")
+include("execute.jl")
 include("lineeditalt.jl")
 
 using .Parse
 using .Commands
+using .Execution
+using .Motions
+using .TextUtils
+using .Operators
+using .Registers
 
-@enum VimMode begin
-    normal_mode
-    insert_mode
-    # visual
-end
+
 mutable struct VimState
     registers :: Dict{Char, String}
     register :: Char
@@ -48,8 +48,6 @@ end
 
 
 VimState() = VimState(Dict{Char, String}(), '"')
-
-const vim = VimState()
 
 global key_stack = Char[]
 global initialized = false
@@ -196,10 +194,6 @@ function init()
     push!(repl.interface.modes, normalmode)
     log("initialized")
     return
-end
-function vim_reset()
-    vim.mode = normal
-    return true
 end
 
 function edit_move_end(s::LE.MIState)
