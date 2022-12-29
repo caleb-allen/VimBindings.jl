@@ -40,7 +40,7 @@ Grammar for Vim's language:
 repeat = "(?:[1-9]\\d*)?"
 # motion="[\$%^\\(\\)wWeE{}hjklGHLbB]"
 motion=begin
-    implemented_keys = join(keys(motions))
+    implemented_keys = join([k for k in keys(motions) if k != '0'])
     "[$implemented_keys]"
     # a = "[\$%^\\(\\)]"
     # a = "[
@@ -52,7 +52,7 @@ rules = OrderedDict(
     # insert commands
     r"^(?<c>[aAiIoO])$" => InsertCommand,
     # Special case: `0` is a motion command:
-    "^(?<n1>)(?<motion>0)\$" |> Regex => MotionCommand,
+    "^0\$" |> Regex => (() -> MotionCommand(nothing, '0')),
     # synonym commands
     "^(?<n1>$repeat)(?<c>[xX])\$" |> Regex => SynonymCommand,
     "^(?<n1>$repeat)(?<motion>$motion)\$" |> Regex => MotionCommand,
