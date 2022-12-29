@@ -37,7 +37,7 @@ Grammar for Vim's language:
         dd
         3dd
 """
-repeat = "\\d*"
+repeat = "(?:[1-9]\\d*)?"
 # motion="[\$%^\\(\\)wWeE{}hjklGHLbB]"
 motion=begin
     implemented_keys = join(keys(motions))
@@ -51,6 +51,8 @@ operator="[ydc]"
 rules = OrderedDict(
     # insert commands
     r"^(?<c>[aAiIoO])$" => InsertCommand,
+    # Special case: `0` is a motion command:
+    "^(?<n1>)(?<motion>0)\$" |> Regex => MotionCommand,
     # synonym commands
     "^(?<n1>$repeat)(?<c>[xX])\$" |> Regex => SynonymCommand,
     "^(?<n1>$repeat)(?<motion>$motion)\$" |> Regex => MotionCommand,
