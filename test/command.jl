@@ -29,7 +29,7 @@ end
 
 @testset "0: beginning of line" begin
 
-    @test_broken run("an exampl|e sentence", "0") == testbuf("|an example sentence")
+    @test run("an exampl|e sentence", "0") == testbuf("|an example sentence")
 end
 
 
