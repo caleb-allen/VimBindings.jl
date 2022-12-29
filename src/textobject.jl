@@ -36,6 +36,9 @@ function textobject(buf::IO, name::String)::Tuple{Int, Int}
         "w" => word
         "W" => WORD
     end
+    if selection === nothing || text_object_fn === nothing
+        error("Could not create a text object with \"$name\"")
+    end
     to = selection(buf, text_object_fn)
     return (to[1], to[2])
 end

@@ -40,10 +40,19 @@ Grammar for Vim's language:
 repeat = "(?:[1-9]\\d*)?"
 # motion="[\$%^\\(\\)wWeE{}hjklGHLbB]"
 motion=begin
-    implemented_keys = join([k for k in keys(motions) if k != '0'])
+    implemented_keys = join([k for k in keys(simple_motions) if k != '0'])
     "[$implemented_keys]"
     # a = "[\$%^\\(\\)]"
     # a = "[
+end
+# motions with multiple keystrokes e.g. 'fx'
+# complex_motion = "[$(join(keys(complex_motions)))]."
+function complex_motion() :: String
+    local motion_regexes = keys(complex_motions) |> collect
+    patterns = map(motion_regexes) do regex
+        regex.pattern
+    end
+    join(patterns, "|")
 end
 # r_motion=r"([$%^\(\)wWeE{}hjklGHLbB]"
 textobject="$repeat[ai][wWsp]"
@@ -55,7 +64,8 @@ rules = OrderedDict(
     "^0\$" |> Regex => (() -> MotionCommand(nothing, '0')),
     # synonym commands
     "^(?<n1>$repeat)(?<c>[xX])\$" |> Regex => SynonymCommand,
-    "^(?<n1>$repeat)(?<motion>$motion)\$" |> Regex => MotionCommand,
+    "^(?<n1>$repeat)(?<motion>$motion)\$" |> Regex => SimpleMotionCommand,
+    "^(?<n1>$repeat)((?|$(complex_motion())))\$" |> Regex => CompositeMotionCommand,
     "^(?<n1>$repeat)(?<op>$operator)(?<n2>$repeat)(?:(?<motion>$motion)|(?<to>$textobject))\$" |> Regex => OperatorCommand,
     "^(?<n1>$repeat)(?<op>$operator)(\\k<op>)\$" |> Regex => LineOperatorCommand
 )
@@ -112,7 +122,6 @@ function parse_command(s :: AbstractString) :: Union{Command, Nothing}
     end
 
     m = match(r, s)
-
     args = [ parse_value(capture) for capture in m.captures ]
     # command_dict = Dict(m)
 
@@ -124,45 +133,6 @@ end
 """
     Return a struct corresponding to a regex match's Vim command
 """
-
-
-function MotionCommand(n1 :: Union{Integer, Nothing}, m :: Char) :: MotionCommand
-    r1 = if n1 === nothing 1 else n1 end
-    return MotionCommand(r1, m)
-end
-
-function SynonymCommand(n1 :: Union{Integer, Nothing}, m :: Char) :: SynonymCommand
-    r1 = if n1 === nothing 1 else n1 end
-    return SynonymCommand(r1, m)
-end
-
-function LineOperatorCommand(n1 :: Union{Integer, Nothing},
-                 operator1 :: Char,
-                 operator2 :: Char) :: LineOperatorCommand
-    r1 = if n1 === nothing 1 else n1 end
-    if operator1 != operator2
-        error("operator1 is not equal to operator2: $operator1 != $operator2")
-    end
-    return LineOperatorCommand(r1, operator1)
-end
-
-# OperatorCommand
-function OperatorCommand(n1 :: Union{Integer, Nothing},
-                 operator :: Char,
-                 n2 :: Union{Integer, Nothing},
-                 motion :: Union{Char, Nothing},
-                 textobject :: Union{String, Nothing}) :: OperatorCommand
-    r1 = if n1 === nothing 1 else n1 end
-    r2 = if n2 === nothing 1 else n2 end
-    if motion === nothing && textobject === nothing
-        error("Both `motion` and `textobject` are empty.")
-    end
-    action = if motion !== nothing motion else textobject end
-    return OperatorCommand(r1,
-                           operator,
-                           r2,
-                           action)
-end
 
 function synonym(command :: SynonymCommand) :: Command
     synonyms = Dict(

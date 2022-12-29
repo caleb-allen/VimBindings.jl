@@ -6,11 +6,12 @@ const LE = LineEdit
 using ..TextUtils
 using ..Util
 using ..TextObjects
+using ..Commands
 
-export Motion, MotionType, motions, insert_motions, gen_motion, is_stationary,
+export Motion, MotionType, simple_motions, complex_motions, insert_motions, gen_motion, is_stationary,
         down, up, word_next, word_big_next, word_end, word_back,
         word_big_back, word_big_end, line_end, line_begin, line_zero,
-        find_c, get_safe_name, all_keys, special_keys, exclusive, inclusive
+        find_c, find_c_back, get_safe_name, all_keys, special_keys, exclusive, inclusive, endd
 
 @enum MotionType begin
     linewise
@@ -28,6 +29,7 @@ Motion(start :: Int64, stop :: Int64) = Motion(start, stop, nothing)
 Motion(buf :: IO, change :: Int64) = Motion(position(buf), position(buf) + change)
 Motion(buf :: IO) = Motion(buf, 0)
 Motion(tup :: Tuple{Int64, Int64}) = Motion(tup[1], tup[2], nothing)
+Motion(motion :: Motion, motion_type :: MotionType) = Motion(motion.start, motion.stop, motion_type)
 """
     A character motion is either inclusive or exclusive.  When inclusive, the
 start and end position of the motion are included in the operation.  When
@@ -37,22 +39,40 @@ exclusive, the last character towards the end of the buffer is not included.
 
 function (m::Motion)(s :: LE.MIState)
     buf = LE.buffer(s)
-    seek(buf, m.stop)
+    seek(buf, endd(m))
 end
 
 function (m::Motion)(buf :: IO)
-    seek(buf, m.stop)
+    seek(buf, endd(m))
 end
 
 # Motion(to :: TextObject) = Motion(to.start, to.stop)
 
-Base.min(motion :: Motion) = min(motion.start, motion.stop)
-
+Base.min(motion :: Motion) =
+    if motion.motiontype == inclusive && motion.stop <= motion.start
+        min(motion.start, motion.stop - 1)
+    else
+        min(motion.start, motion.stop)
+    end
 Base.max(motion :: Motion) =
-    if motion.motiontype == inclusive
+    if motion.motiontype == inclusive && motion.stop > motion.start
         max(motion.start, motion.stop + 1)
     else
         max(motion.start, motion.stop)
+    end
+    
+"""
+The end position of the motion, adjusted for inclusive/exclusive behavior
+"""
+endd(motion :: Motion) :: Int =
+    if motion.motiontype == inclusive
+        if motion.stop <= motion.start
+            motion.stop - 1
+        else
+            motion.stop + 1
+        end
+    else
+        motion.stop
     end
 
 is_stationary(motion :: Motion) :: Bool = motion.start == motion.stop
@@ -382,6 +402,27 @@ function find_c(buf :: IO, query_c :: Char) :: Motion
     return Motion(start, endd)
 end
 
+function find_c_back(buf :: IO, query_c :: Char) :: Motion
+    start = position(buf)
+    position(buf) == 0 && return Motion(start, start)
+
+    skip(buf, -1)
+    # last_c = peek(buf, Char)
+
+    while position(buf) >= 0
+        c = peek(buf, Char)
+        if c == query_c
+            skip(buf, 1)
+            break
+        end
+        # last_c = c
+        LE.char_move_left(buf)
+    end
+    endd = position(buf)
+    seek(buf, start)
+    return Motion(start, endd)
+end
+
 insert_motions = Dict{Char, Any}(
     'i' => (buf) -> Motion(buf),
     'I' => (buf) -> line_begin(buf),
@@ -401,8 +442,7 @@ insert_motions = Dict{Char, Any}(
         end
     end
 )
-
-motions = Dict{Char, Any}(
+simple_motions = Dict{Char, Any}(
     'h' => (buf) -> Motion(position(buf), max(position(buf) - 1, 0), exclusive), # , exclusive
     'l' => (buf) -> Motion(position(buf), min(position(buf) + 1, buf.size), exclusive),# exclusive
     'j' => down,
@@ -425,14 +465,37 @@ motions = Dict{Char, Any}(
     'L' => nothing
 )
 
+complex_motions = Dict{Regex, Any}(
+    r"f(.)" => (buf, char :: Union{Char, Int}) -> begin
+        m = find_c(buf, char)
+        Motion(m, exclusive)
+    end,
+    r"F(.)" => (buf, char :: Union{Char, Int}) -> begin
+        m = find_c_back(buf, char)
+        Motion(m, inclusive)
+    end,
+    r"t(.)" => (buf, char :: Union{Char, Int}) -> begin
+        m = find_c(buf, char)
+        adjusted_stop = max(m.start, m.stop - 1)
+        return Motion(m.start, adjusted_stop, exclusive)
+    end,
+    r"T(.)" => (buf, char :: Union{Char, Int}) -> begin
+        m = find_c_back(buf, char)
+        adjusted_stop = min(m.start, m.stop + 1)
+        return Motion(m.start, adjusted_stop, inclusive)
+    end,
+    # r"g(.)" => (buf, char :: Union{Char, Int}) -> begin
+    #     m = find_c(buf, char)
+    #     Motion(m, inclusive)
+    # end,
+)
 """
     Generate a Motion object for the given `name`
 """
 function gen_motion(buf, name :: Char) :: Motion
-    # motions = Motion[]
     fn_name = get_safe_name(name)
-    fn = if name in keys(motions)
-        motions[name]
+    fn = if name in keys(simple_motions)
+        simple_motions[name]
     else
         log("$name has no mapped function")
         (buf) -> Motion(buf)
@@ -442,10 +505,24 @@ function gen_motion(buf, name :: Char) :: Motion
     return motion
 end
 """
-Generate motion for the given `name` which is a TextObject
+Generate motion for the given `name` which is either a complex motion (e.g. "fX") or a TextObject
 """
 function gen_motion(buf, name :: String) :: Motion
     return Motion(textobject(buf, name))
+end
+
+function gen_motion(buf, cmd :: String, captures) :: Motion
+    local fn = nothing
+    for m in keys(complex_motions)
+        reg_match = match(m, cmd)
+        if reg_match !== nothing
+            fn = complex_motions[m]
+            break
+        end
+    end
+
+    return fn(buf, captures...)
+    # TODO
 end
 
 

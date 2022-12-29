@@ -60,3 +60,26 @@ end
     @test run("a as|n|df b", "ciw") == testbuf("a |i| b")
 
 end
+
+@testset "fFtT" begin
+    @test run("|aaaa bbbb ccc ddd", "fd") == testbuf("aaaa bbbb ccc |ddd")
+    @test run("aaaa bbbb |ccc ddd", "Fb") == testbuf("aaaa bbb|b ccc ddd")
+    @test run("aaaa bbbb |ccc ddd", "Tb") == testbuf("aaaa bbbb| ccc ddd")
+    @test run("aaaa bbbb |ccc ddd", "td") == testbuf("aaaa bbbb ccc| ddd")
+end
+
+@testset "d[fFtT]x" begin
+    @test_broken run("|aaaa bbbb ccc ddd", "dfd") == testbuf("aaaa bbbb ccc |ddd")
+    @test_broken run("aaaa bbbb |ccc ddd", "dFb") == testbuf("aaaa bbb|b ccc ddd")
+    @test_broken run("aaaa bbbb |ccc ddd", "dTb") == testbuf("aaaa bbbb| ccc ddd")
+    @test_broken run("aaaa bbbb |ccc ddd", "dtd") == testbuf("aaaa bbbb ccc| ddd")
+end
+
+@testset "c[fFtT]x" begin
+    # TODO
+    # @test run("|aaaa bbbb ccc ddd", "cfd") == testbuf("aaaa bbbb ccc |i|ddd")
+    # @test run("aaaa bbbb |ccc ddd", "cFb") == testbuf("aaaa bbb|i|b ccc ddd")
+    # @test run("aaaa bbbb |ccc ddd", "cTb") == testbuf("aaaa bbbb|i| ccc ddd")
+    # @test run("aaaa bbbb |ccc ddd", "ctd") == testbuf("aaaa bbbb ccc|i| ddd")
+    # 
+end

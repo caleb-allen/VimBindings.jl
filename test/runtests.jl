@@ -7,8 +7,8 @@ using Test
 # include("action.jl")
 include("parse.jl")
 include("textutils.jl")
-include("command.jl")
 include("motion.jl")
+include("command.jl")
 include("textobject.jl")
 include("registers.jl")
 

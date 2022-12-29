@@ -32,6 +32,26 @@ function execute(buf, command :: MotionCommand) :: Union{VimMode, Nothing}
     end
     return nothing
 end
+"""
+    Execute the given command, and return whether to refresh the displayed line
+"""
+function execute(buf, command :: CompositeMotionCommand) :: Union{VimMode, Nothing}
+    log("executing composite motion command: $(command.motion)")
+    # buf = buffer(s)
+    for iteration in 1:command.r1
+        # call the command's function to generate the motion object
+        motion = gen_motion(buf, command.motion, command.captures)
+        if is_stationary(motion)
+            # @match key(command) begin
+            #     'j' => history_next(s, mode(s).hist)
+            #     'k' => history_prev(s, mode(s).hist)
+            # end
+        end
+        # execute the motion object
+        motion(buf)
+    end
+    return nothing
+end
 function execute(buf, command :: LineOperatorCommand) :: Union{VimMode, Nothing}
     for r in 1:command.r1
         # buf = buffer(s)

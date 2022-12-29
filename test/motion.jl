@@ -80,3 +80,32 @@ First line
     @test line_begin(buf) == Motion(4, 0, exclusive)
 end
 
+@testset "exclusive / inclusive motions" begin
+    m = Motion(1, 2, exclusive)
+    @test min(m) == 1
+    @test max(m) == 2
+    
+    m = Motion(1, 2, inclusive)
+    @test min(m) == 1
+    @test max(m) == 3
+    
+    m = Motion(2, 1, exclusive)
+    @test min(m) == 1
+    @test max(m) == 2
+
+    m = Motion(2, 1, inclusive)
+    @test min(m) == 0
+    @test max(m) == 2
+
+end
+
+@testset "find c" begin
+    @test find_c(testbuf("|asdfe"), 'e') == Motion(0, 4, nothing)
+    @test find_c(testbuf("|asdf1e"), '1') == Motion(0, 4, nothing)
+    @test find_c(testbuf("|asdfe"), 'a') == Motion(0, 0, nothing)
+end
+
+@testset "find c backwards" begin
+    @test find_c_back(testbuf("asdfe|"), 'a') == Motion(5, 1, nothing)
+    @test find_c_back(testbuf("asdfe|"), 's') == Motion(5, 2, nothing)
+end
