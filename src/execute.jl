@@ -16,31 +16,11 @@ export execute
     Execute the given command, and return whether to refresh the displayed line
 """
 function execute(buf, command :: MotionCommand) :: Union{VimMode, Nothing}
-    log("executing motion command: $(command.motion)")
+    log("executing motion command: $(command.name)")
     # buf = buffer(s)
     for iteration in 1:command.r1
         # call the command's function to generate the motion object
-        motion = gen_motion(buf, command.motion)
-        if is_stationary(motion)
-            # @match key(command) begin
-            #     'j' => history_next(s, mode(s).hist)
-            #     'k' => history_prev(s, mode(s).hist)
-            # end
-        end
-        # execute the motion object
-        motion(buf)
-    end
-    return nothing
-end
-"""
-    Execute the given command, and return whether to refresh the displayed line
-"""
-function execute(buf, command :: CompositeMotionCommand) :: Union{VimMode, Nothing}
-    log("executing composite motion command: $(command.motion)")
-    # buf = buffer(s)
-    for iteration in 1:command.r1
-        # call the command's function to generate the motion object
-        motion = gen_motion(buf, command.motion, command.captures)
+        motion = gen_motion(buf, command)
         if is_stationary(motion)
             # @match key(command) begin
             #     'j' => history_next(s, mode(s).hist)
@@ -97,7 +77,7 @@ function execute(buf, command :: InsertCommand) :: Union{VimMode, Nothing}
                 motion
             end
         end
-        _ => gen_motion(buf, command.c)
+        _ => gen_motion(buf, command)
     end
     if motion isa Motion
         motion(buf)
@@ -115,17 +95,17 @@ function execute(buf, command :: OperatorCommand) :: Union{VimMode, Nothing}
     # because Vim interprets "cw" as change-word, and a word does not include the
     # following white space.
     # see vim help :h cw regarding this exception
-    if command.operator == 'c' && command.action in ['w', 'W']
+    if command.operator == 'c' && command.action.name in ['w', 'W']
         # in the middle of a word
         if at_junction_type(buf, In{>:Word})
-            new_action = if command.action == 'w' 'e' else 'E' end
-            log("altering 'c$(command.action)' command to 'c$new_action'")
-            command = OperatorCommand(command.r1, command.operator, command.r2, new_action)
+            new_name = if command.action.name == 'w' 'e' else 'E' end
+            log("altering 'c$(command.action)' command to 'c$new_name'")
+            command = OperatorCommand(command.r1, command.operator, command.action.r1, new_name)
         end
     end
     for r1 in 1:command.r1
-        # 5d*2*w
-        for r2 in 1:command.r2
+        # TODO the iteration on `action.r1` should probably happen in `gen_motion`
+        for r2 in 1:command.action.r1
             @log r2
             @log motion = gen_motion(buf, command.action)
             # @log result = eval(Expr(:call, op_fn, buf, motion))

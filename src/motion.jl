@@ -39,11 +39,11 @@ exclusive, the last character towards the end of the buffer is not included.
 
 function (m::Motion)(s :: LE.MIState)
     buf = LE.buffer(s)
-    seek(buf, endd(m))
+    seek(buf, m.stop)
 end
 
 function (m::Motion)(buf :: IO)
-    seek(buf, endd(m))
+    seek(buf, m.stop)
 end
 
 # Motion(to :: TextObject) = Motion(to.start, to.stop)
@@ -399,6 +399,7 @@ function find_c(buf :: IO, query_c :: Char) :: Motion
             break
         end
     end
+    seek(buf, start)
     return Motion(start, endd)
 end
 
@@ -468,21 +469,23 @@ simple_motions = Dict{Char, Any}(
 complex_motions = Dict{Regex, Any}(
     r"f(.)" => (buf, char :: Union{Char, Int}) -> begin
         m = find_c(buf, char)
-        Motion(m, exclusive)
+        Motion(m, inclusive)
     end,
     r"F(.)" => (buf, char :: Union{Char, Int}) -> begin
         m = find_c_back(buf, char)
-        Motion(m, inclusive)
+        # adjusted_stop = min(m.start, m.stop - 1)
+        return Motion(m.start, m.stop - 1, exclusive)
     end,
     r"t(.)" => (buf, char :: Union{Char, Int}) -> begin
         m = find_c(buf, char)
         adjusted_stop = max(m.start, m.stop - 1)
-        return Motion(m.start, adjusted_stop, exclusive)
+        return Motion(m.start, adjusted_stop, inclusive)
     end,
     r"T(.)" => (buf, char :: Union{Char, Int}) -> begin
         m = find_c_back(buf, char)
-        adjusted_stop = min(m.start, m.stop + 1)
-        return Motion(m.start, adjusted_stop, inclusive)
+        # adjusted_stop = min(m.start, m.stop + 1)
+        return Motion(m, exclusive)
+        # return Motion(m.start, adjusted_stop, exclusive)
     end,
     # r"g(.)" => (buf, char :: Union{Char, Int}) -> begin
     #     m = find_c(buf, char)
@@ -492,36 +495,40 @@ complex_motions = Dict{Regex, Any}(
 """
     Generate a Motion object for the given `name`
 """
-function gen_motion(buf, name :: Char) :: Motion
-    fn_name = get_safe_name(name)
-    fn = if name in keys(simple_motions)
-        simple_motions[name]
+function gen_motion(buf, cmd :: SimpleMotionCommand) :: Motion
+    fn_name = get_safe_name(cmd.name)
+    fn = if cmd.name in keys(simple_motions)
+        simple_motions[cmd.name]
     else
-        log("$name has no mapped function")
+        log("$(cmd.name) has no mapped function")
         (buf) -> Motion(buf)
     end
     # call the command's function to generate the motion object
     motion = fn(buf)
     return motion
 end
+
+
+function gen_motion(buf, command :: TextObjectCommand) :: Motion
+    return Motion(textobject(buf, command.name))
+end
+
 """
 Generate motion for the given `name` which is either a complex motion (e.g. "fX") or a TextObject
 """
-function gen_motion(buf, name :: String) :: Motion
-    return Motion(textobject(buf, name))
-end
-
-function gen_motion(buf, cmd :: String, captures) :: Motion
+# function gen_motion(buf, cmd :: String, captures :: Tuple) :: Motion
+function gen_motion(buf, cmd :: CompositeMotionCommand) :: Motion
     local fn = nothing
     for m in keys(complex_motions)
-        reg_match = match(m, cmd)
+        reg_match = match(m, cmd.name)
         if reg_match !== nothing
             fn = complex_motions[m]
             break
         end
     end
 
-    return fn(buf, captures...)
+    
+    return fn(buf, cmd.captures...)
     # TODO
 end
 

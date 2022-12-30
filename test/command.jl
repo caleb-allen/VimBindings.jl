@@ -44,6 +44,7 @@ end
 
 @testset "de" begin
     @test run("a|sdf", "de") == testbuf("a|")
+    @test run("a|sdf abcd", "de") == testbuf("a| abcd")
 end
 @testset "distinct behavior of dw and cw" begin
     @test run("fi|rst second third", "cw") == testbuf("fi|i| second third")
@@ -63,16 +64,18 @@ end
 
 @testset "fFtT" begin
     @test run("|aaaa bbbb ccc ddd", "fd") == testbuf("aaaa bbbb ccc |ddd")
-    @test run("aaaa bbbb |ccc ddd", "Fb") == testbuf("aaaa bbb|b ccc ddd")
-    @test run("aaaa bbbb |ccc ddd", "Tb") == testbuf("aaaa bbbb| ccc ddd")
+    @test run("aaaa bbbb |ccc ddd", "Fa") == testbuf("aaa|a bbbb ccc ddd")
+    @test run("aaaa bbbb |ccc ddd", "Ta") == testbuf("aaaa| bbbb ccc ddd")
     @test run("aaaa bbbb |ccc ddd", "td") == testbuf("aaaa bbbb ccc| ddd")
+    @test run("aaaa bbbb |ccc .ddd", "t.") == testbuf("aaaa bbbb ccc| .ddd")
 end
 
 @testset "d[fFtT]x" begin
-    @test_broken run("|aaaa bbbb ccc ddd", "dfd") == testbuf("aaaa bbbb ccc |ddd")
-    @test_broken run("aaaa bbbb |ccc ddd", "dFb") == testbuf("aaaa bbb|b ccc ddd")
-    @test_broken run("aaaa bbbb |ccc ddd", "dTb") == testbuf("aaaa bbbb| ccc ddd")
-    @test_broken run("aaaa bbbb |ccc ddd", "dtd") == testbuf("aaaa bbbb ccc| ddd")
+    @test run("|aaaa bbbb ccc ddd", "dfd") == testbuf("|dd")
+    @test run("aaaa bbbb |ccc ddd", "dFb") == testbuf("aaaa bbb|ccc ddd")
+    @test run("aaaa bbbb |ccc ddd", "dTb") == testbuf("aaaa bbbb|ccc ddd")
+    @test run("aaaa bbbb |ccc ddd", "dtd") == testbuf("aaaa bbbb |ddd")
+    @test run("aaaa bbbb |ccc .ddd", "dt.") == testbuf("aaaa bbbb |.ddd")
 end
 
 @testset "c[fFtT]x" begin

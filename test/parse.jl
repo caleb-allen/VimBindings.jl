@@ -28,6 +28,13 @@ import VimBindings.Parse: command, parse_command
 # end
 
 
+@testset "parse values" begin
+    @test Parse.parse_value("10") == 10
+    @test Parse.parse_value("0") == 0
+    @test Parse.parse_value(".") == '.'
+    @test Parse.parse_value("asdf") == "asdf"
+    @test Parse.parse_value("10ten") == "10ten"
+end
 @testset "verbs from strings" begin
     @test verb_part("dw") == 'd'
     @test verb_part("y") == 'y'
@@ -70,9 +77,10 @@ end
 
 @testset "parse specific values" begin
     @test parse_value("10") == 10
+    @test parse_value("") === nothing
     @test parse_value("d") == 'd'
     @test parse_value("aw") == "aw"
-    @test parse_value(nothing) == nothing
+    @test parse_value(nothing) === nothing
 end
 
 @testset "parse commands into parts" begin
@@ -102,6 +110,18 @@ end
     @test parse_command("B") == MotionCommand(1, 'B')
     @test parse_command("^") == MotionCommand(1, '^')
     @test parse_command("10w") == MotionCommand(10, 'w')
+
+    a = parse_command("fd")
+    b = MotionCommand(1, "fd", ('d',))
+    #@show a, b
+    #@show a.captures b.captures
+    #@show typeof(a.captures) typeof(b.captures)
+    #@show a.name == b.name
+    #@show typeof(a.name) typeof(b.name)
+    #@show a.r1 == b.r1
+    #@show a.captures == b.captures
+    #@show a == b
+    @test parse_command("fd") == MotionCommand(1, "fd", ('d',))
 end
 
 @testset "parse singular commands" begin
@@ -111,4 +131,9 @@ end
     @test synonym(parse_command("X")) == OperatorCommand(1, 'd', 1, 'h')
     @test parse_command("4x") == SynonymCommand(4, 'x')
     @test synonym(parse_command("4x")) == OperatorCommand(4, 'd', 1, 'l')
+end
+
+@testset "parse complex commands" begin
+    @test parse_command("dtl") == OperatorCommand(1, 'd', 1, "tl", 'l')
+    @test parse_command("dtl") == OperatorCommand(1, 'd', 1, "tl", 'l')
 end

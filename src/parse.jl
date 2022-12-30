@@ -38,15 +38,11 @@ Grammar for Vim's language:
         3dd
 """
 repeat = "(?:[1-9]\\d*)?"
-# motion="[\$%^\\(\\)wWeE{}hjklGHLbB]"
 motion=begin
     implemented_keys = join([k for k in keys(simple_motions) if k != '0'])
     "[$implemented_keys]"
-    # a = "[\$%^\\(\\)]"
-    # a = "[
 end
 # motions with multiple keystrokes e.g. 'fx'
-# complex_motion = "[$(join(keys(complex_motions)))]."
 function complex_motion() :: String
     local motion_regexes = keys(complex_motions) |> collect
     patterns = map(motion_regexes) do regex
@@ -54,7 +50,6 @@ function complex_motion() :: String
     end
     join(patterns, "|")
 end
-# r_motion=r"([$%^\(\)wWeE{}hjklGHLbB]"
 textobject="$repeat[ai][wWsp]"
 operator="[ydc]"
 rules = OrderedDict(
@@ -64,9 +59,10 @@ rules = OrderedDict(
     "^0\$" |> Regex => (() -> MotionCommand(nothing, '0')),
     # synonym commands
     "^(?<n1>$repeat)(?<c>[xX])\$" |> Regex => SynonymCommand,
-    "^(?<n1>$repeat)(?<motion>$motion)\$" |> Regex => SimpleMotionCommand,
+    "^(?<n1>$repeat)($motion)\$" |> Regex => SimpleMotionCommand,
     "^(?<n1>$repeat)((?|$(complex_motion())))\$" |> Regex => CompositeMotionCommand,
-    "^(?<n1>$repeat)(?<op>$operator)(?<n2>$repeat)(?:(?<motion>$motion)|(?<to>$textobject))\$" |> Regex => OperatorCommand,
+    "^(?<n1>$repeat)(?<op>$operator)(?<n2>$repeat)(?|($textobject)|($motion))\$" |> Regex => OperatorCommand,
+    "^(?<n1>$repeat)(?<op>$operator)(?<n2>$repeat)((?|$(complex_motion())))\$" |> Regex => OperatorCommand,
     "^(?<n1>$repeat)(?<op>$operator)(\\k<op>)\$" |> Regex => LineOperatorCommand
 )
 
@@ -94,21 +90,17 @@ end
 """
     Get the typed value of `item`
 """
-function parse_value(item :: Union{Nothing, AbstractString}) :: Union{Integer, Char, String, Nothing}
-    if item === nothing
+function parse_value(item :: Union{Nothing, AbstractString}) :: Union{Integer, Char, AbstractString, Nothing}
+    if item === nothing || isempty(item)
         return nothing
     end
-    val = Meta.parse(item)
-    if typeof(val) <: Integer
-        return val
-    elseif typeof(val) <: Symbol
-        s = String(val)
-        if length(s) == 1
-            return s[1]
-        else
-            return s
-        end
+    if match(r"^\d+$", item) !== nothing
+        return parse(Int, item)
     end
+    if length(item) == 1
+        return item[1]
+    end
+    return item
 end
 
 """
@@ -123,7 +115,6 @@ function parse_command(s :: AbstractString) :: Union{Command, Nothing}
 
     m = match(r, s)
     args = [ parse_value(capture) for capture in m.captures ]
-    # command_dict = Dict(m)
 
     command_type = rules[r]
     command_type(args...)
@@ -149,12 +140,12 @@ function lookup_synonym(n :: Integer, c :: Char)
 end
 
 
-function parse(cmd :: String)
-    rule = matched_rule(cmd)
-    @assert rule !== nothing
-    m = match(rule, cmd)
-    return m
-end
+# function parse(cmd :: String)
+#     rule = matched_rule(cmd)
+#     @assert rule !== nothing
+#     m = match(rule, cmd)
+#     return m
+# end
 
 function Base.Dict(m :: RegexMatch)
     d = OrderedDict{Symbol, Any}()

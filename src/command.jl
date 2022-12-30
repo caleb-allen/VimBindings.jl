@@ -1,6 +1,6 @@
 module Commands
 export Command, MotionCommand, OperatorCommand, LineOperatorCommand, InsertCommand,
-        SynonymCommand, SimpleMotionCommand, CompositeMotionCommand
+        SynonymCommand, SimpleMotionCommand, CompositeMotionCommand, TextObjectCommand
 export key
 
 abstract type Command end
@@ -12,25 +12,46 @@ Command which is a motion made up of 1 character
 """
 struct SimpleMotionCommand <: MotionCommand
     r1 :: Int
-    motion :: Char
+    name :: Char
 end
 
-SimpleMotionCommand(::Nothing, motion :: Char) = SimpleMotionCommand(1, motion)
+SimpleMotionCommand(::Nothing, name :: Char) = SimpleMotionCommand(1, name)
+
+function Base.:(==)(cmd1 :: Command, cmd2 :: Command)
+    typeof(cmd1) == typeof(cmd2) || return false
+    for name in propertynames(cmd1)
+        if getproperty(cmd1, name) != getproperty(cmd2, name)
+            return false
+        end
+    end
+    return true
+end
 
 struct CompositeMotionCommand <: MotionCommand
     r1 :: Int
-    motion :: String
-    captures
+    name :: AbstractString
+    captures :: Tuple
 end
     
-CompositeMotionCommand(::Nothing, motion :: String, captures :: Vararg) = CompositeMotionCommand(1, motion, captures)
+CompositeMotionCommand(::Nothing, name :: AbstractString, captures :: Tuple) = CompositeMotionCommand(1, name, captures)
+CompositeMotionCommand(::Nothing, name :: AbstractString, captures :: Vararg) = CompositeMotionCommand(1, name, captures)
+
+# Base.:(==)(cmd1 :: CompositeMotionCommand, cmd2 :: CompositeMotionCommand) =
+#     cmd1.r1 == cmd2.r1 &&
+#         cmd1.name == cmd2.name &&
+#         cmd1.captures == cmd2.captures
 
 MotionCommand(r1 :: Int, motion :: Char) = SimpleMotionCommand(r1, motion)
-MotionCommand(r1 :: Int, motion :: String, captures :: Vararg) = CompositeMotionCommand(r1, motion, captures)
+MotionCommand(r1 :: Int, motion :: AbstractString, captures :: Tuple) = CompositeMotionCommand(r1, motion, captures)
 
-function MotionCommand(n1 :: Union{Integer, Nothing}, m :: Union{String, Char}) :: MotionCommand
+function MotionCommand(n1 :: Union{Integer, Nothing}, m :: Union{AbstractString, Char}) :: MotionCommand
     r1 = if n1 === nothing 1 else n1 end
     return MotionCommand(r1, m)
+end
+
+struct TextObjectCommand <: Command
+    r1 :: Int
+    name :: AbstractString
 end
 
 """
@@ -40,28 +61,48 @@ struct OperatorCommand <: Command
     r1 :: Int
     # one of 'y', 'd', 'c'
     operator :: Char
-    r2 :: Int
-    # e.g. 'iw' or 'w'
-    # char = motion, string = textobject
-    action :: Union{Char, String}
+
+    # either a motion command or a tuple with (count, text object)
+    action :: Union{MotionCommand, TextObjectCommand}
 end
 
-# OperatorCommand
+# char action = motion
 function OperatorCommand(n1 :: Union{Integer, Nothing},
                  operator :: Char,
                  n2 :: Union{Integer, Nothing},
-                 motion :: Union{Char, Nothing},
-                 textobject :: Union{String, Nothing}) :: OperatorCommand
+                 action :: Char) :: OperatorCommand
     r1 = if n1 === nothing 1 else n1 end
     r2 = if n2 === nothing 1 else n2 end
-    if motion === nothing && textobject === nothing
-        error("Both `motion` and `textobject` are empty.")
-    end
-    action = if motion !== nothing motion else textobject end
+    motion_command = MotionCommand(r2, action) 
     return OperatorCommand(r1,
                            operator,
-                           r2,
-                           action)
+                           motion_command)
+end
+# string action + captures = complex motion
+function OperatorCommand(n1 :: Union{Integer, Nothing},
+                 operator :: Char,
+                 n2 :: Union{Integer, Nothing},
+                 action :: AbstractString,
+                 captures :: Vararg) :: OperatorCommand
+    r1 = if n1 === nothing 1 else n1 end
+    r2 = if n2 === nothing 1 else n2 end
+    motion_command = MotionCommand(r2, action, captures)
+    return OperatorCommand(r1,
+                           operator,
+                           motion_command)
+end
+
+# string action + no captures = text object
+function OperatorCommand(n1 :: Union{Integer, Nothing},
+                 operator :: Char,
+                 n2 :: Union{Integer, Nothing},
+                 action :: AbstractString) :: OperatorCommand
+    r1 = if n1 === nothing 1 else n1 end
+    r2 = if n2 === nothing 1 else n2 end
+    text_object_command = TextObjectCommand(r2, action)
+    return OperatorCommand(r1,
+                           operator,
+                           text_object_command)
 end
 
 """

@@ -25,7 +25,7 @@ end
 """
 Create a text object
 """
-function textobject(buf::IO, name::String)::Tuple{Int, Int}
+function textobject(buf::IO, name::AbstractString)::Tuple{Int, Int}
     m = match(r"^([ai])(.)$", name)
     selection = @match m[1] begin
         "i" => inner
