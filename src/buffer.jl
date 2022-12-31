@@ -2,7 +2,6 @@ module Buffer
 using Match
 export VimBuffer, mode, VimMode, normal_mode, insert_mode, testbuf, readall
 
-
 @enum VimMode begin
     normal_mode
     insert_mode

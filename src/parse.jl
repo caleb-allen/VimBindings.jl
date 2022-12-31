@@ -58,7 +58,7 @@ rules = OrderedDict(
     # Special case: `0` is a motion command:
     "^0\$" |> Regex => (() -> MotionCommand(nothing, '0')),
     # synonym commands
-    "^(?<n1>$repeat)(?<c>[xX])\$" |> Regex => SynonymCommand,
+    "^(?<n1>$repeat)(?<c>[xXC])\$" |> Regex => SynonymCommand,
     "^(?<n1>$repeat)($motion)\$" |> Regex => SimpleMotionCommand,
     "^(?<n1>$repeat)((?|$(complex_motion())))\$" |> Regex => CompositeMotionCommand,
     "^(?<n1>$repeat)(?<op>$operator)(?<n2>$repeat)(?|($textobject)|($motion))\$" |> Regex => OperatorCommand,

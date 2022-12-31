@@ -9,28 +9,34 @@ using ..Operators
 
 using Match
 
-export execute
+export execute, ReplAction, history_up, history_down
 
+@enum ReplAction begin
+    history_up
+    history_down
+end
 
 """
     Execute the given command, and return whether to refresh the displayed line
 """
-function execute(buf, command :: MotionCommand) :: Union{VimMode, Nothing}
+function execute(buf, command :: MotionCommand) :: Union{VimMode, ReplAction, Nothing}
     log("executing motion command: $(command.name)")
     # buf = buffer(s)
+    repl_action = nothing
     for iteration in 1:command.r1
         # call the command's function to generate the motion object
-        motion = gen_motion(buf, command)
+        @log motion = gen_motion(buf, command)
         if is_stationary(motion)
-            # @match key(command) begin
-            #     'j' => history_next(s, mode(s).hist)
-            #     'k' => history_prev(s, mode(s).hist)
-            # end
+            @log repl_action = @match key(command) begin
+                'j' => history_down
+                'k' => history_up
+            end
+        else
+            # execute the motion object
+            motion(buf)
         end
-        # execute the motion object
-        motion(buf)
     end
-    return nothing
+    return repl_action
 end
 function execute(buf, command :: LineOperatorCommand) :: Union{VimMode, Nothing}
     for r in 1:command.r1
@@ -122,7 +128,8 @@ function execute(buf, command :: SynonymCommand) :: Union{VimMode, Nothing}
 
     synonyms = Dict(
         'x' => "dl",
-        'X' => "dh"
+        'X' => "dh",
+        'C' => "c\$"
     )
     new_command = parse_command("$(command.r1)$(synonyms[command.operator])")
     

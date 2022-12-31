@@ -12,6 +12,7 @@ using REPL: history_next, history_prev
 using Base: AnyDict
 using REPL
 using REPL.LineEdit
+using Match
 import REPL.LineEdit: KeyAlias, edit_splice!, buffer, refresh_line
 import Base: AnyDict, show_unquoted
 using Sockets
@@ -65,14 +66,19 @@ function strike_key(c, s::LE.MIState)
         @log cmd = parse_command(s_cmd)
         if cmd !== nothing
             buf = buffer(s)
-            new_mode :: Union{VimMode, Nothing} = execute(buf, cmd)
-            if new_mode !== nothing
-                trigger_mode(s, new_mode)
+            repl_action :: Union{VimMode, ReplAction, Nothing} = execute(buf, cmd)
+            if repl_action isa VimMode
+                log("trigger mode...")
+                trigger_mode(s, repl_action)
+            elseif repl_action isa ReplAction
+                if repl_action == history_down
+                    history_next(s, mode(s).hist)
+                elseif repl_action == history_up
+                    history_prev(s, mode(s).hist)
+                end
+            else
+                LE.refresh_line(s)
             end
-
-            # if refresh
-            LE.refresh_line(s)
-            # end
         end
     else
         @log key_stack
@@ -92,16 +98,8 @@ function init()
     historymode = repl.interface.modes[4]
     prefixhistorymode = repl.interface.modes[5]
     juliamode.prompt = "julia[i]> "
-    # juliamode.keymap_dict['`'] = trigger_normal_mode
     LE.add_nested_key!(juliamode.keymap_dict, "\e\e", trigger_normal_mode)
-    # LE.add_nested_key!(historymode.keymap_dict, "\e\e", trigger_normal_mode)
     LE.add_nested_key!(prefixhistorymode.keymap_dict, "\e\e", trigger_normal_mode)
-    # julia_mode_new_keys = AnyDict(
-    #     "\e\e" =>  trigger_normal_mode,
-    #     '`' =>  trigger_normal_mode
-    # ) |> LE.normalize_key
-    # juliamode.keymap_dict = merge(juliamode.keymap_dict, julia_mode_new_keys)
-    # juliamode.keymap_dict["\e\e"] = trigger_normal_mode
 
     # remove normal mode if it's already added
     normalindex = 0
@@ -271,10 +269,6 @@ function trigger_normal_mode(state::LineEdit.MIState, o...)
     end
 end
 
-
-function key_press(state::REPL.LineEdit.MIState, repl::LineEditREPL, char::String)
-end
-
 function debug_mode(state::REPL.LineEdit.MIState, repl::LineEditREPL, char::String)
     socket = getsocket()
     # iobuffer is not displayed to the user
@@ -296,9 +290,6 @@ function debug_mode(state::REPL.LineEdit.MIState, repl::LineEditREPL, char::Stri
     println(socket, "character: ", char)
 end
 
-#= juliamode.keymap_dict['9'] = debug_mode =#
-
-
 function funcdump(args...)
     socket = getsocket()
     for (i, arg) in enumerate(args)
@@ -306,6 +297,10 @@ function funcdump(args...)
         println(socket, string("\t", propertynames(arg)))
         println(socket)
     end
+end
+
+function enable_logging()
+    Util.enable_logging()
 end
 
 end

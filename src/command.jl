@@ -149,7 +149,7 @@ function key(cmd :: Command) :: Char
     error("method `key` not implemented for type $(typeof(cmd))")
 end
 
-key(cmd :: MotionCommand) = cmd.motion
+key(cmd :: MotionCommand) = cmd.name
 key(cmd :: OperatorCommand) = cmd.operator
 key(cmd :: LineOperatorCommand) = cmd.operator
 key(cmd :: InsertCommand) = cmd.c
