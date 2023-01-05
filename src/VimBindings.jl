@@ -40,7 +40,6 @@ using .TextUtils
 using .Operators
 using .Registers
 
-
 mutable struct VimState
     registers :: Dict{Char, String}
     register :: Char

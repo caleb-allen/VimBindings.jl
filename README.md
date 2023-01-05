@@ -69,3 +69,5 @@ You may experience lag when you begin to use VimBindings.jl as Julia compiles fu
 # Feedback
 
 VimBindings.jl is early in development and likely has bugs! Issues with bug reports or general feedback is welcome.
+
+Is your favorite vim binding missing? Open an issue with the tag "keybind request" to let me know!

@@ -86,3 +86,9 @@ end
     # @test run("aaaa bbbb |ccc ddd", "ctd") == testbuf("aaaa bbbb ccc|i| ddd")
     # 
 end
+
+@testset "line operators" begin
+    @test run("aaaa bbbb |n|ccc ddd", "C") == testbuf("aaaa bbbb |i|")
+    @test run("aaaa bbbb |n|ccc ddd", "cc") == testbuf("|i|")
+    @test run("aaaa bbbb |n|ccc ddd", "S") == testbuf("|i|")
+end

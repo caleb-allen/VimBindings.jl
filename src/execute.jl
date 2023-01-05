@@ -17,7 +17,7 @@ export execute, ReplAction, history_up, history_down
 end
 
 """
-    Execute the given command, and return whether to refresh the displayed line
+    Execute the given command, and return
 """
 function execute(buf, command :: MotionCommand) :: Union{VimMode, ReplAction, Nothing}
     log("executing motion command: $(command.name)")
@@ -39,12 +39,16 @@ function execute(buf, command :: MotionCommand) :: Union{VimMode, ReplAction, No
     return repl_action
 end
 function execute(buf, command :: LineOperatorCommand) :: Union{VimMode, Nothing}
+    local op_fn = nothing
     for r in 1:command.r1
         # buf = buffer(s)
         line_textobject = line(buf)
         line_motion = Motion(line_textobject...)
         op_fn = operator_fn(command.operator)
         op_fn(buf, line_motion)
+    end
+    if op_fn == change
+        return insert_mode
     end
     return nothing
 end
@@ -129,7 +133,8 @@ function execute(buf, command :: SynonymCommand) :: Union{VimMode, Nothing}
     synonyms = Dict(
         'x' => "dl",
         'X' => "dh",
-        'C' => "c\$"
+        'C' => "c\$",
+        'S' => "cc"
     )
     new_command = parse_command("$(command.r1)$(synonyms[command.operator])")
     

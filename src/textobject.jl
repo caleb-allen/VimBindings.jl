@@ -176,7 +176,7 @@ end
 
 function line(buf::IO)::Tuple{Int,Int}
     # find the line start
-    mark(buf)
+    origin = position(buf)
     if eof(buf)
         if position(buf) > 0
             LE.char_move_left(buf)
@@ -192,12 +192,9 @@ function line(buf::IO)::Tuple{Int,Int}
         LE.char_move_left(buf)
     end
     start = position(buf)
-    if ismarked(buf)
-        reset(buf)
-    end
+    seek(buf, origin)
 
     # find the line end
-    mark(buf)
     while !eof(buf)
         c = read(buf, Char)
         if is_linebreak(c)
@@ -206,7 +203,7 @@ function line(buf::IO)::Tuple{Int,Int}
         end
     end
     stop = position(buf)
-    reset(buf)
+    seek(buf, origin)
 
     return (start, stop)
 end
