@@ -6,7 +6,7 @@ run a vim command on a buffer of text. Return a buffer of the result of the comm
 """
 function run(buf :: VimBuffer, cmd :: String) :: VimBuffer
     if !well_formed(cmd)
-        error("Command not well formed", command)
+        error("Command not well formed: $cmd")
     end
 
     command = parse_command(cmd)
