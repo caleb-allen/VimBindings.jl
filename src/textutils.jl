@@ -156,9 +156,9 @@ function at_junction_type(buf, junc_type)
 end
 # Text helpers
 is_linebreak(c::Char) = c in """\n"""
-is_whitespace(c::Char) = c in """ \t\n"""
+is_whitespace(c::Char) = isspace(c)
 # non_word(c::Char) = LE.is_non_word_char(c)
-is_word_char(c::Char) = is_alphanumeric(c) || c == '_'
+is_word_char(c::Char) = is_alphanumeric(c) || isletter(c) || c == '_'
 # punct_char(c::Char) = LE.is_non_word_char(c) && !is_non_phrase_char(c)
 
 function is_alphanumeric(c :: Char) :: Bool
@@ -180,7 +180,12 @@ function is_lowercase(c :: Char) :: Bool
 end
 
 function is_punctuation(c :: Char) :: Bool
-    return c in """`!@#\$%^&*()-_=+[]{}'\"/?\\|<>,.:;"""
+    return ispunct(c)
+    # return c in """`!@#\$%^&*()-_=+[]{}'\"/?\\|<>,.:;"""
+end
+
+function is_unicode_letter(c :: Char) :: Bool
+    return isletter(c)
 end
 
 

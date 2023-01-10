@@ -63,7 +63,8 @@ rules = OrderedDict(
     "^(?<n1>$repeat)((?|$(complex_motion())))\$" |> Regex => CompositeMotionCommand,
     "^(?<n1>$repeat)(?<op>$operator)(?<n2>$repeat)(?|($textobject)|($motion))\$" |> Regex => OperatorCommand,
     "^(?<n1>$repeat)(?<op>$operator)(?<n2>$repeat)((?|$(complex_motion())))\$" |> Regex => OperatorCommand,
-    "^(?<n1>$repeat)(?<op>$operator)(\\k<op>)\$" |> Regex => LineOperatorCommand
+    "^(?<n1>$repeat)(?<op>$operator)(\\k<op>)\$" |> Regex => LineOperatorCommand,
+    "^(?<n1>$repeat)r(.)\$" |> Regex => ReplaceCommand
 )
 
 """

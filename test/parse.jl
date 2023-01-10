@@ -137,3 +137,11 @@ end
     @test parse_command("dtl") == OperatorCommand(1, 'd', 1, "tl", 'l')
     @test parse_command("dtl") == OperatorCommand(1, 'd', 1, "tl", 'l')
 end
+
+@testset "parse replace command" begin
+    @test parse_command("rx") == ReplaceCommand(1, 'x')
+    @test parse_command("r%") == ReplaceCommand(1, '%')
+    @test parse_command("5rx") == ReplaceCommand(5, 'x')
+    @test parse_command("r5") == ReplaceCommand(1, '5')
+    @test parse_command("10rx") == ReplaceCommand(10, 'x')
+end

@@ -6,13 +6,15 @@ VimBindings is early in development and is not yet recommended for daily use. Fo
 
 ![latest ci](https://github.com/caleb-allen/VimBindings.jl/actions/workflows/test.yaml/badge.svg)
 
-# Features
+# Feature development for 1.0
 - [x] Normal mode
 - [x] Basic navigation (`h`, `j`, `k`, `l`,)
 - [x] Binding escape key from Julia REPL (see https://github.com/caleb-allen/VimBindings.jl/issues/19)
 - [x] Basic editing (e.g. `dw`, `cw`, `x`)
-- [x] Editing basic text objects (e.g. `diw`)
+- [x] More advanced editing with text objects (e.g. `diw`)
 - [x] History integration (partial)
+- [ ] Full support for Unicode characters
+- 
 <!-- - [ ] Visual mode -->
 <!-- - [ ] Registers -->
 <!-- - [ ] Undo/Redo -->

@@ -11,7 +11,8 @@ using ..Commands
 export Motion, MotionType, simple_motions, complex_motions, insert_motions, gen_motion, is_stationary,
         down, up, word_next, word_big_next, word_end, word_back,
         word_big_back, word_big_end, line_end, line_begin, line_zero,
-        find_c, find_c_back, get_safe_name, all_keys, special_keys, exclusive, inclusive, endd
+        find_c, find_c_back, get_safe_name, all_keys, special_keys, exclusive, inclusive, endd,
+        left, right
 
 @enum MotionType begin
     linewise
@@ -89,6 +90,37 @@ function Base.:+(motion1 :: Motion, motion2 :: Motion)
         max(motion2)
     )
     return Motion(low, high)
+end
+
+function right(buf :: IO) :: Motion
+    start = position(buf)
+    while !eof(buf)
+        c = read(buf, Char)
+        eof(buf) && break
+        pos = position(buf)
+        nextc = read(buf, Char)
+        seek(buf, pos)
+        (textwidth(nextc) != 0 || nextc == '\n') && break
+    end
+    endd = position(buf)
+    
+    seek(buf, start)
+    return Motion(start, endd, exclusive)
+end
+
+function left(buf :: IO) :: Motion
+    start = position(buf)
+    while position(buf) > 0
+        seek(buf, position(buf)-1)
+        c = peek(buf)
+        (((c & 0x80) == 0) || ((c & 0xc0) == 0xc0)) && break
+    end
+    pos = position(buf)
+    c = read(buf, Char)
+    seek(buf, pos)
+    endd = position(buf)
+    seek(buf, start)
+    return Motion(start, endd, exclusive)
 end
 
 function down(buf :: IO) :: Motion
@@ -444,8 +476,8 @@ insert_motions = Dict{Char, Any}(
     end
 )
 simple_motions = Dict{Char, Any}(
-    'h' => (buf) -> Motion(position(buf), max(position(buf) - 1, 0), exclusive), # , exclusive
-    'l' => (buf) -> Motion(position(buf), min(position(buf) + 1, buf.size), exclusive),# exclusive
+    'h' => left,
+    'l' => right,
     'j' => down,
     'k' => up,
     'w' => word_next, # exclusive),
@@ -473,7 +505,6 @@ complex_motions = Dict{Regex, Any}(
     end,
     r"F(.)" => (buf, char :: Union{Char, Int}) -> begin
         m = find_c_back(buf, char)
-        # adjusted_stop = min(m.start, m.stop - 1)
         return Motion(m.start, m.stop - 1, exclusive)
     end,
     r"t(.)" => (buf, char :: Union{Char, Int}) -> begin
@@ -483,9 +514,7 @@ complex_motions = Dict{Regex, Any}(
     end,
     r"T(.)" => (buf, char :: Union{Char, Int}) -> begin
         m = find_c_back(buf, char)
-        # adjusted_stop = min(m.start, m.stop + 1)
         return Motion(m, exclusive)
-        # return Motion(m.start, adjusted_stop, exclusive)
     end,
     # r"g(.)" => (buf, char :: Union{Char, Int}) -> begin
     #     m = find_c(buf, char)

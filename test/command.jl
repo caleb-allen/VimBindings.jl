@@ -24,6 +24,7 @@ end
     @test run("asdf|", "h") == testbuf("asd|f")
     @test run("asdf|", "l") == testbuf("asdf|")
     @test run("asd|f", "l") == testbuf("asdf|")
+    @test run("asdf|", "\$") == testbuf("asdf|")
 
 end
 
@@ -45,6 +46,11 @@ end
 @testset "de" begin
     @test run("a|sdf", "de") == testbuf("a|")
     @test run("a|sdf abcd", "de") == testbuf("a| abcd")
+end
+
+@testset "dw" begin
+    @test run("a|", "dw") == testbuf("a|")
+    @test run("a|sdf abcd", "dw") == testbuf("a|abcd")
 end
 @testset "distinct behavior of dw and cw" begin
     @test run("fi|rst second third", "cw") == testbuf("fi|i| second third")
@@ -91,4 +97,23 @@ end
     @test run("aaaa bbbb |n|ccc ddd", "C") == testbuf("aaaa bbbb |i|")
     @test run("aaaa bbbb |n|ccc ddd", "cc") == testbuf("|i|")
     @test run("aaaa bbbb |n|ccc ddd", "S") == testbuf("|i|")
+    
+    # @test run(
+        
+    # )
+end
+
+@testset "unicode" begin
+    s = "\u2200 x \u2203 y"
+    s = "∀ x ∃ y"
+    @test_broken run("|∀ x ∃ y", "w") == testbuf("∀ |x ∃ y")
+    @test_broken run("∀ x |∃ y", "w") == testbuf("∀ x |∃ y")
+end
+
+@testset "replace character" begin
+    @test run("abcd|e", "rx") == testbuf("abcd|x")
+    @test run("abcde|", "rx") == testbuf("abcde|")
+    @test run("|", "rx") == testbuf("|")
+    @test run("|abcde", "3rx") == testbuf("xx|xde")
+    @test_broken run("∀ x |∃ y", "rx") == testbuf("∀ x |x y")
 end

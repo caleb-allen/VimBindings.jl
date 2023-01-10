@@ -1,6 +1,6 @@
 module Commands
 export Command, MotionCommand, OperatorCommand, LineOperatorCommand, InsertCommand,
-        SynonymCommand, SimpleMotionCommand, CompositeMotionCommand, TextObjectCommand
+        SynonymCommand, SimpleMotionCommand, CompositeMotionCommand, TextObjectCommand, ReplaceCommand
 export key
 
 abstract type Command end
@@ -141,6 +141,19 @@ Command which changes into Insert mode, possibly preceded by a motion, for examp
 """
 struct InsertCommand <: Command
     c :: Char
+end
+
+struct ReplaceCommand <: Command
+    r1 :: Int
+    replacement :: Char
+end
+
+function ReplaceCommand(r1 :: Nothing, replacement :: Char)
+    return ReplaceCommand(1, replacement)
+end
+
+function ReplaceCommand(r1, replacement :: Int)
+    return ReplaceCommand(r1, string(replacement)[1])
 end
 
 

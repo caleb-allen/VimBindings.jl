@@ -8,6 +8,7 @@ using ..Parse
 using ..Operators
 
 using Match
+import REPL: LineEdit as LE
 
 export execute, ReplAction, history_up, history_down
 
@@ -74,7 +75,7 @@ function execute(buf, command :: InsertCommand) :: Union{VimMode, Nothing}
         'I' => line_begin(buf)
         'a' => begin
             if !eof(buf)
-                Motion(position(buf), position(buf) + 1)
+                right(buf)
             else
                 Motion(buf)
             end
@@ -139,6 +140,18 @@ function execute(buf, command :: SynonymCommand) :: Union{VimMode, Nothing}
     new_command = parse_command("$(command.r1)$(synonyms[command.operator])")
     
     return execute(buf, new_command)
+end
+
+function execute(buf, command :: ReplaceCommand) :: Union{VimMode, Nothing}
+    inserted = 0
+    for r1 in 1:command.r1
+        delete(buf, right(buf))        
+        inserted += LE.edit_insert(buf, command.replacement)
+    end
+    if inserted > 0
+        LE.edit_move_left(buf)
+    end
+    return nothing
 end
 
 end
