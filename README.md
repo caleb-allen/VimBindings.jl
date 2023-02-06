@@ -12,9 +12,8 @@ VimBindings is early in development and is not yet recommended for daily use. Fo
 - [x] Binding escape key from Julia REPL (see https://github.com/caleb-allen/VimBindings.jl/issues/19)
 - [x] Basic editing (e.g. `dw`, `cw`, `x`)
 - [x] More advanced editing with text objects (e.g. `diw`)
-- [x] History integration (partial)
+- [x] History integration
 - [ ] Full support for Unicode characters
-- 
 <!-- - [ ] Visual mode -->
 <!-- - [ ] Registers -->
 <!-- - [ ] Undo/Redo -->
@@ -33,7 +32,7 @@ VimBindings must be initialized when Julia is started, and **before** `startup.j
 
 ```bash
 $ julia -i -e "using VimBindings"
-julia[i]> # You now have vim bindings!
+julia> # You now have vim bindings!
 ```
 
 The VimBindings package must be loaded before the REPL to correctly bind the `Esc` key (see https://github.com/caleb-allen/VimBindings.jl/issues/8 and https://github.com/caleb-allen/VimBindings.jl/issues/19 ). 
@@ -55,13 +54,9 @@ in your `.{ba,z}shrc` file.
 
 
 # Usage
-VimBindings begins in `insert` mode, and the Julia REPL can be used in its original, familiar fasion.
+Once loaded, the Julia REPL can be used in its original, familiar fasion, aside from the styling of the cursor being modified to indicate `insert` mode.
 
 Switch to `normal` mode by pressing Esc, where you can navigate with `h`, `j`, `k`, `l`, etc.
-```julia
-julia[i]> println("Hello world!") # user presses Esc
-julia[n]> println("Hello world!") # normal mode!
-```
 
 # Gotchas
 You may see warnings about method definitions being overwritten. VimBindings.jl overwrites some methods in the standard library in order to hook into REPL functionality, and you can safely ignore these warnings.

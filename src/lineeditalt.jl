@@ -3,8 +3,7 @@
 
 import REPL.LineEdit: TextTerminal, ModalInterface, MIState, activate, keymap, match_input, keymap_data, transition, mode, terminal, refresh_line
 import REPL.Terminals: raw!, enable_bracketed_paste, disable_bracketed_paste
-function LE.prompt!(term::TextTerminal, prompt::ModalInterface, s::MIState = init_state(term, prompt))
-    # log("initializing prompt from VimBindings.jl")
+function LE.prompt!(term::TextTerminal, prompt::ModalInterface, s::MIState=init_state(term, prompt))
     Base.reseteof(term)
     raw!(term, true)
     enable_bracketed_paste(term)
@@ -20,14 +19,14 @@ function LE.prompt!(term::TextTerminal, prompt::ModalInterface, s::MIState = ini
             fcn = match_input(kmap, s)
             kdata = keymap_data(s, prompt)
             s.current_action = :unknown # if the to-be-run action doesn't update this field,
-                                        # :unknown will be recorded in the last_action field
+            # :unknown will be recorded in the last_action field
             local status
             # errors in keymaps shouldn't cause the REPL to fail, so wrap in a
             # try/catch block
             try
-                status = fcn(s, kdata)
+                @log status = fcn(s, kdata)
             catch e
-                @error "Error in the keymap" exception=e,catch_backtrace()
+                @error "Error in the keymap" exception = e, catch_backtrace()
                 # try to cleanup and get `s` back to its original state before returning
                 transition(s, :reset)
                 transition(s, old_state)
@@ -54,7 +53,7 @@ function LE.prompt!(term::TextTerminal, prompt::ModalInterface, s::MIState = ini
 end
 
 function LE.match_input(f::Function, s::Union{Nothing,LE.MIState}, term, cs::Vector{Char}, keymap)
-    # log("match function")
+    log("match function")
     LE.update_key_repeats(s, cs)
     c = String(cs)
     return function (s, p)  # s::Union{Nothing,MIState}; p can be (at least) a LineEditREPL, PrefixSearchState, Nothing
@@ -69,21 +68,24 @@ end
 
 function LE.match_input(k::Nothing, s, term, cs, keymap)
     log("match nothing")
-    # @log cs
-    return (s,p) -> begin
+    @log cs
+    return (s, p) -> begin
         log("nothing")
         return :ok
     end
 end
 LE.match_input(k::KeyAlias, s::Union{Nothing,LE.MIState}, term, cs, keymap::Dict{Char}) = LE.match_input(keymap, s, IOBuffer(k.seq), Char[], keymap)
 
-function LE.match_input(k::Dict{Char}, s::Union{Nothing,LE.MIState}, term::Union{LE.AbstractTerminal,IOBuffer}=terminal(s), cs::Vector{Char}=Char[], keymap::Dict{Char} = k)
+function LE.match_input(k::Dict{Char}, s::Union{Nothing,LE.MIState}, term::Union{LE.AbstractTerminal,IOBuffer}=terminal(s), cs::Vector{Char}=Char[], keymap::Dict{Char}=k)
     # if we run out of characters to match before resolving an action,
     # return an empty keymap function
-    eof(term) && return (s, p) -> :abort
+    eof(term) && return (s, p) -> begin
+        log("eof: aborting")
+        :abort
+    end
     c = read(term, Char)
-    
-    log("Reading byte ", c)
+    log(escape_string("Reading byte $c"))
+    log("cs: " * escape_string(string(cs)))
     if isempty(cs) && c == '\e'
         is_escape_task = @async begin
             sleep(0.03)
@@ -97,22 +99,54 @@ function LE.match_input(k::Dict{Char}, s::Union{Nothing,LE.MIState}, term::Union
             end
         end
         is_escape = fetch(is_escape_task)
-        log("is escape?")
+        log("is escape_key?")
 
         if is_escape
-            @log keys(k['\e'])
-            # short-circuit completion here for Escape key
-            if @log haskey(k['\e'], '\e')
-                return LE.match_input(k['\e']['\e'], s, term, cs, nothing)
+            log("yes escape")
+            if state.mode === normal_mode
+                result = strike_key("\e\e", s)
+            else
+                trigger_normal_mode(s)
             end
+            return (s, p) -> :ok
+        else
+            log("not escape key.")
         end
+    end
+    log(escape_string("matching input for `$c`"))
+    if state.mode == normal_mode
+        local result
+        try
+            @log result = strike_key(c, s)
+        catch e
+            @error "Error while executing vim key strike" exception=e,catch_backtrace()
+            result = NoAction()
+        end
+        @log c, cs
+        result isa Fallback || return (s, p) -> :ok
+        append!(cs, result.cs[begin:end-1])
+        @log c, cs
     end
     # Ignore any `wildcard` as this is used as a
     # placeholder for the wildcard (see normalize_key("*"))
-    c == LE.wildcard && return (s, p) -> :ok
+    c == LE.wildcard && return (s, p) -> begin
+        log("ignoring wildcard character")
+        :ok
+    end
     push!(cs, c)
+    @log escape_string(LE.input_string(s))
+    @log haskey(k, c)
     key = haskey(k, c) ? c : LE.wildcard
+    # if we don't match on the key, look for a default action then fallback on 'nothing' to ignore
     # if we don't match on the key, look for a default action then fallback on 'nothing' to ignore
     return LE.match_input(get(k, key, nothing), s, term, cs, keymap)
 end
 
+LE.prompt_string(t::REPL.TextInterface) = "$(typeof(t))"
+
+abstract type StrikeKeyResult end
+struct NoAction <: StrikeKeyResult end
+struct Fallback <: StrikeKeyResult
+    cs::Vector{Char}
+end
+struct VimAction <: StrikeKeyResult end

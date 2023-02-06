@@ -9,10 +9,10 @@ using ..TextObjects
 using ..Commands
 
 export Motion, MotionType, simple_motions, complex_motions, insert_motions, gen_motion, is_stationary,
-        down, up, word_next, word_big_next, word_end, word_back,
-        word_big_back, word_big_end, line_end, line_begin, line_zero,
-        find_c, find_c_back, get_safe_name, all_keys, special_keys, exclusive, inclusive, endd,
-        left, right
+    down, up, word_next, word_big_next, word_end, word_back,
+    word_big_back, word_big_end, line_end, line_begin, line_zero,
+    find_c, find_c_back, get_safe_name, all_keys, special_keys, exclusive, inclusive, endd,
+    left, right
 
 @enum MotionType begin
     linewise
@@ -21,16 +21,16 @@ export Motion, MotionType, simple_motions, complex_motions, insert_motions, gen_
 end
 
 struct Motion
-    start :: Int64
-    stop :: Int64
-    motiontype :: Union{Nothing, MotionType}
+    start::Int64
+    stop::Int64
+    motiontype::Union{Nothing,MotionType}
 end
 
-Motion(start :: Int64, stop :: Int64) = Motion(start, stop, nothing)
-Motion(buf :: IO, change :: Int64) = Motion(position(buf), position(buf) + change)
-Motion(buf :: IO) = Motion(buf, 0)
-Motion(tup :: Tuple{Int64, Int64}) = Motion(tup[1], tup[2], nothing)
-Motion(motion :: Motion, motion_type :: MotionType) = Motion(motion.start, motion.stop, motion_type)
+Motion(start::Int64, stop::Int64) = Motion(start, stop, nothing)
+Motion(buf::IO, change::Int64) = Motion(position(buf), position(buf) + change)
+Motion(buf::IO) = Motion(buf, 0)
+Motion(tup::Tuple{Int64,Int64}) = Motion(tup[1], tup[2], nothing)
+Motion(motion::Motion, motion_type::MotionType) = Motion(motion.start, motion.stop, motion_type)
 """
     A character motion is either inclusive or exclusive.  When inclusive, the
 start and end position of the motion are included in the operation.  When
@@ -38,34 +38,34 @@ exclusive, the last character towards the end of the buffer is not included.
     Linewise motions always include the start and end position.
 """
 
-function (m::Motion)(s :: LE.MIState)
+function (m::Motion)(s::LE.MIState)
     buf = LE.buffer(s)
     seek(buf, m.stop)
 end
 
-function (m::Motion)(buf :: IO)
+function (m::Motion)(buf::IO)
     seek(buf, m.stop)
 end
 
 # Motion(to :: TextObject) = Motion(to.start, to.stop)
 
-Base.min(motion :: Motion) =
+Base.min(motion::Motion) =
     if motion.motiontype == inclusive && motion.stop <= motion.start
         min(motion.start, motion.stop - 1)
     else
         min(motion.start, motion.stop)
     end
-Base.max(motion :: Motion) =
+Base.max(motion::Motion) =
     if motion.motiontype == inclusive && motion.stop > motion.start
         max(motion.start, motion.stop + 1)
     else
         max(motion.start, motion.stop)
     end
-    
+
 """
 The end position of the motion, adjusted for inclusive/exclusive behavior
 """
-endd(motion :: Motion) :: Int =
+endd(motion::Motion)::Int =
     if motion.motiontype == inclusive
         if motion.stop <= motion.start
             motion.stop - 1
@@ -76,11 +76,11 @@ endd(motion :: Motion) :: Int =
         motion.stop
     end
 
-is_stationary(motion :: Motion) :: Bool = motion.start == motion.stop
+is_stationary(motion::Motion)::Bool = motion.start == motion.stop
 
-Base.length(motion :: Motion) = max(motion) - min(motion)
+Base.length(motion::Motion) = max(motion) - min(motion)
 
-function Base.:+(motion1 :: Motion, motion2 :: Motion)
+function Base.:+(motion1::Motion, motion2::Motion)
     low = Base.min(
         min(motion1),
         min(motion2)
@@ -92,7 +92,7 @@ function Base.:+(motion1 :: Motion, motion2 :: Motion)
     return Motion(low, high)
 end
 
-function right(buf :: IO) :: Motion
+function right(buf::IO)::Motion
     start = position(buf)
     while !eof(buf)
         c = read(buf, Char)
@@ -103,32 +103,32 @@ function right(buf :: IO) :: Motion
         (textwidth(nextc) != 0 || nextc == '\n') && break
     end
     endd = position(buf)
-    
+
     seek(buf, start)
     return Motion(start, endd, exclusive)
 end
 
-function left(buf :: IO) :: Motion
+function left(buf::IO)::Motion
     start = position(buf)
     while position(buf) > 0
-        seek(buf, position(buf)-1)
+        seek(buf, position(buf) - 1)
         c = peek(buf)
         (((c & 0x80) == 0) || ((c & 0xc0) == 0xc0)) && break
     end
     pos = position(buf)
-    c = read(buf, Char)
+    # c = read(buf, Char)
     seek(buf, pos)
     endd = position(buf)
     seek(buf, start)
     return Motion(start, endd, exclusive)
 end
 
-function down(buf :: IO) :: Motion
+function down(buf::IO)::Motion
     start = position(buf)
     npos = something(findprev(isequal(UInt8('\n')), buf.data[1:buf.size], position(buf)), 0)
     # We're interested in character count, not byte count
     offset = length(String(buf.data[(npos+1):(position(buf))]))
-    npos2 = findnext(isequal(UInt8('\n')), buf.data[1:buf.size], position(buf)+1)
+    npos2 = findnext(isequal(UInt8('\n')), buf.data[1:buf.size], position(buf) + 1)
     if npos2 === nothing #we're in the last line
         return Motion(start, start)
     end
@@ -146,13 +146,13 @@ function down(buf :: IO) :: Motion
     return Motion(start, endd)
 end
 
-function up(buf :: IO) :: Motion
+function up(buf::IO)::Motion
     start = position(buf)
     npos = findprev(isequal(UInt8('\n')), buf.data, position(buf))
     npos === nothing && return Motion(start, start) # we're in the first line
     # We're interested in character count, not byte count
     offset = length(LE.content(buf, npos => position(buf)))
-    npos2 = something(findprev(isequal(UInt8('\n')), buf.data, npos-1), 0)
+    npos2 = something(findprev(isequal(UInt8('\n')), buf.data, npos - 1), 0)
     seek(buf, npos2)
     for _ = 1:offset
         pos = position(buf)
@@ -172,7 +172,7 @@ end
     2. Going from alphanumeric to punctuation
     3. Going from punctuation to alphanumeric
 """
-function word_next(buf :: IO) :: Motion
+function word_next(buf::IO)::Motion
     mark(buf)
     start = position(buf)
 
@@ -198,7 +198,7 @@ end
 """
     The motion to the next big word, e.g. using the `W` command
 """
-function word_big_next(buf :: IO) :: Motion
+function word_big_next(buf::IO)::Motion
     mark(buf)
     start = position(buf)
 
@@ -218,7 +218,7 @@ function word_big_next(buf :: IO) :: Motion
 end
 
 
-function word_end(buf :: IO) :: Motion
+function word_end(buf::IO)::Motion
     start = position(buf)
     eof(buf) && return Motion(start, start)
 
@@ -250,7 +250,7 @@ function word_end(buf :: IO) :: Motion
     return Motion(start, endd, inclusive)
 end
 
-function word_back(buf :: IO) :: Motion
+function word_back(buf::IO)::Motion
     start = position(buf)
     position(buf) == 0 && return Motion(start, start)
 
@@ -277,7 +277,7 @@ function word_back(buf :: IO) :: Motion
     return Motion(start, endd, exclusive)
 end
 
-function word_big_back(buf :: IO) :: Motion
+function word_big_back(buf::IO)::Motion
     start = position(buf)
     position(buf) == 0 && return Motion(start, start)
 
@@ -298,7 +298,7 @@ function word_big_back(buf :: IO) :: Motion
     return Motion(start, endd, exclusive)
 end
 
-function word_big_end(buf :: IO) :: Motion
+function word_big_end(buf::IO)::Motion
     start = position(buf)
     eof(buf) && return Motion(buf)
 
@@ -327,7 +327,7 @@ function word_big_end(buf :: IO) :: Motion
     return Motion(start, endd, inclusive)
 end
 
-function line_end(buf :: IO) :: Motion
+function line_end(buf::IO)::Motion
     mark(buf)
     start = position(buf)
 
@@ -343,7 +343,7 @@ function line_end(buf :: IO) :: Motion
     return Motion(start, endd, inclusive)
 end
 
-function line_begin(buf :: IO) :: Motion
+function line_begin(buf::IO)::Motion
     start = position(buf)
     position(buf) == 0 && return Motion(start, start)
 
@@ -383,7 +383,7 @@ end
 """
     The beginning of a line, including whitespace
 """
-function line_zero(buf :: IO) :: Motion
+function line_zero(buf::IO)::Motion
     start = position(buf)
     position(buf) == 0 && return Motion(start, start)
 
@@ -413,11 +413,11 @@ end
 #     return Motion(start, endd)
 # end
 
-function endd(buf :: IO) :: Motion
+function endd(buf::IO)::Motion
 
 end
 
-function find_c(buf :: IO, query_c :: Char) :: Motion
+function find_c(buf::IO, query_c::Char)::Motion
     start = position(buf)
     endd = start
 
@@ -435,7 +435,7 @@ function find_c(buf :: IO, query_c :: Char) :: Motion
     return Motion(start, endd)
 end
 
-function find_c_back(buf :: IO, query_c :: Char) :: Motion
+function find_c_back(buf::IO, query_c::Char)::Motion
     start = position(buf)
     position(buf) == 0 && return Motion(start, start)
 
@@ -456,7 +456,7 @@ function find_c_back(buf :: IO, query_c :: Char) :: Motion
     return Motion(start, endd)
 end
 
-insert_motions = Dict{Char, Any}(
+insert_motions = Dict{Char,Any}(
     'i' => (buf) -> Motion(buf),
     'I' => (buf) -> line_begin(buf),
     'a' => (buf) -> begin
@@ -475,7 +475,7 @@ insert_motions = Dict{Char, Any}(
         end
     end
 )
-simple_motions = Dict{Char, Any}(
+simple_motions = Dict{Char,Any}(
     'h' => left,
     'l' => right,
     'j' => down,
@@ -498,21 +498,21 @@ simple_motions = Dict{Char, Any}(
     'L' => nothing
 )
 
-complex_motions = Dict{Regex, Any}(
-    r"f(.)" => (buf, char :: Union{Char, Int}) -> begin
+complex_motions = Dict{Regex,Any}(
+    r"f(.)" => (buf, char::Union{Char,Int}) -> begin
         m = find_c(buf, char)
         Motion(m, inclusive)
     end,
-    r"F(.)" => (buf, char :: Union{Char, Int}) -> begin
+    r"F(.)" => (buf, char::Union{Char,Int}) -> begin
         m = find_c_back(buf, char)
         return Motion(m.start, m.stop - 1, exclusive)
     end,
-    r"t(.)" => (buf, char :: Union{Char, Int}) -> begin
+    r"t(.)" => (buf, char::Union{Char,Int}) -> begin
         m = find_c(buf, char)
         adjusted_stop = max(m.start, m.stop - 1)
         return Motion(m.start, adjusted_stop, inclusive)
     end,
-    r"T(.)" => (buf, char :: Union{Char, Int}) -> begin
+    r"T(.)" => (buf, char::Union{Char,Int}) -> begin
         m = find_c_back(buf, char)
         return Motion(m, exclusive)
     end,
@@ -524,7 +524,7 @@ complex_motions = Dict{Regex, Any}(
 """
     Generate a Motion object for the given `name`
 """
-function gen_motion(buf, cmd :: SimpleMotionCommand) :: Motion
+function gen_motion(buf, cmd::SimpleMotionCommand)::Motion
     fn_name = get_safe_name(cmd.name)
     fn = if cmd.name in keys(simple_motions)
         simple_motions[cmd.name]
@@ -538,7 +538,7 @@ function gen_motion(buf, cmd :: SimpleMotionCommand) :: Motion
 end
 
 
-function gen_motion(buf, command :: TextObjectCommand) :: Motion
+function gen_motion(buf, command::TextObjectCommand)::Motion
     return Motion(textobject(buf, command.name))
 end
 
@@ -546,7 +546,7 @@ end
 Generate motion for the given `name` which is either a complex motion (e.g. "fX") or a TextObject
 """
 # function gen_motion(buf, cmd :: String, captures :: Tuple) :: Motion
-function gen_motion(buf, cmd :: CompositeMotionCommand) :: Motion
+function gen_motion(buf, cmd::CompositeMotionCommand)::Motion
     local fn = nothing
     for m in keys(complex_motions)
         reg_match = match(m, cmd.name)
@@ -556,14 +556,14 @@ function gen_motion(buf, cmd :: CompositeMotionCommand) :: Motion
         end
     end
 
-    
+
     return fn(buf, cmd.captures...)
     # TODO
 end
 
 
 # function double_quote(mode::NormalMode, s::LE.MIState) :: Action
-    # @log vim.mode = SelectRegister()
+# @log vim.mode = SelectRegister()
 # end
 special_keys = Dict(
     '`' => "backtic",
@@ -600,15 +600,15 @@ special_keys = Dict(
     '?' => "question_mark"
 )
 
-all_keys = Char[collect(keys(special_keys));
-                collect('a':'z');
-                collect('A':'Z');
-                collect('0':'9')]
+all_keys = Char[collect(keys(special_keys))
+    collect('a':'z')
+    collect('A':'Z')
+    collect('0':'9')]
 
 """
     Get the function-safe name for the character c
 """
-function get_safe_name(c :: Char) :: Symbol
+function get_safe_name(c::Char)::Symbol
     get(special_keys, c, string(c)) |> Symbol
 end
 
@@ -616,7 +616,7 @@ end
     Get the function-safe name for the string s, which must be
 a 1 character string
 """
-function get_safe_name(s :: AbstractString) :: Symbol
+function get_safe_name(s::AbstractString)::Symbol
     if length(s) != 1
         error("length of given name is $(length(s)). Length must be 1")
     end
@@ -625,5 +625,5 @@ end
 
 
 
-LE.char_move_left(vb :: VimBuffer) = LE.char_move_left(vb.buf)
+LE.char_move_left(vb::VimBuffer) = LE.char_move_left(vb.buf)
 end

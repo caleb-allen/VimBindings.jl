@@ -41,31 +41,76 @@ using .Operators
 using .Registers
 
 mutable struct VimState
-    registers :: Dict{Char, String}
-    register :: Char
+    registers::Dict{Char,String}
+    register::Char
+    mode::VimMode
 end
 
 
 
-VimState() = VimState(Dict{Char, String}(), '"')
+VimState() = VimState(Dict{Char,String}(), '"', insert_mode)
+
+global state = VimState()
 
 global key_stack = Char[]
 global initialized = false
 
-function strike_key(c, s::LE.MIState)
-    # if(c == '`')
-    #     empty!(key_stack)
-    #     @log key_stack
-    # else
+const VTE_CURSOR_STYLE_STEADY_IBEAM = "\033[6 q"
+const VTE_CURSOR_STYLE_TERMINAL_DEFAULT = "\033[0 q"
+
+function strike_key(c, s::LE.MIState)::StrikeKeyResult
+    log(escape_string("Strike key: $c"))
+    if c == "\e\e"
+        empty!(key_stack)
+        return VimAction()
+    end
     append!(key_stack, c)
     s_cmd = String(key_stack)
+    # keys to copy from `mode`
+    fallback_keys = [
+        # enter
+        "\r",
+        # tab
+        # '\t',
+        # newline
+        "\n",
+        # home
+        "\e[H",
+        # end
+        "\e[F",
+        # clear
+        "^L",
+        # right arrow
+        "\e[C",
+        # left arrow
+        "\e[D",
+        # up arrow
+        "\e[A",
+        # down arrow
+        "\e[B",
+        # delete
+        "\e[3~",
+        # C-c
+        "\x03",
+        # C-d
+        "\x04",
+        # C-l
+        "\f"
+    ]
+
+    s_cmd in fallback_keys && begin
+        log(escape_string("falling back for cmd `$s_cmd`"))
+        cs = copy(key_stack)
+        empty!(key_stack)
+        return Fallback(cs)
+    end
     if well_formed(s_cmd)
-        log("well formed command: $s_cmd")
+        log(escape_string("well formed command: $s_cmd"))
         empty!(key_stack)
         @log cmd = parse_command(s_cmd)
         if cmd !== nothing
             buf = buffer(s)
-            repl_action :: Union{VimMode, ReplAction, Nothing} = execute(buf, cmd)
+            repl_action::Union{VimMode,ReplAction,Nothing} = execute(buf, cmd)
             if repl_action isa VimMode
                 log("trigger mode...")
                 trigger_mode(s, repl_action)
@@ -79,71 +124,65 @@ function strike_key(c, s::LE.MIState)
                 LE.refresh_line(s)
             end
         end
+        return VimAction()
     else
         @log key_stack
+        return NoAction()
     end
-    # end
 end
 
 function init()
     if initialized
         return
     end
+    enable_logging()
     log("initializing...")
     @log current_task()
-    global initialized = true
     repl = Base.active_repl
-    global juliamode = repl.interface.modes[1]
-    historymode = repl.interface.modes[4]
-    prefixhistorymode = repl.interface.modes[5]
-    juliamode.prompt = "julia[i]> "
-    LE.add_nested_key!(juliamode.keymap_dict, "\e\e", trigger_normal_mode)
-    LE.add_nested_key!(prefixhistorymode.keymap_dict, "\e\e", trigger_normal_mode)
+    trigger_insert_mode(repl.mistate)
+    global initialized = true
+    log("initialized")
+    return
+end
 
-    # remove normal mode if it's already added
-    normalindex = 0
-    for (i, m) in enumerate(repl.interface.modes)
-        if hasproperty(m, :prompt) && m.prompt == "julia[n]> "
-            normalindex = i
-        end
-    end
-    if normalindex != 0
-        deleteat!(repl.interface.modes, normalindex)
-    end
-
+function add_vim_keybinds!(mode::LE.TextInterface)
+    repl = Base.active_repl
+    prior_keybinds = mode.keymap_dict
     binds = AnyDict()
     for c in all_keys
-        bind = (s::LE.MIState, o...)->begin
-            strike_key(c, s)
+        bind = (s::LE.MIState, o...) -> begin
+            if state.mode == normal_mode
+                log("normal mode. Dispatching vim key strike")
+                strike_key(c, s)
+            else
+                log("insert mode")
+                log("Defaulting to existing key binding.")
+                if c in keys(prior_keybinds)
+                    prior_keybinds[c](s, o...)
+                else
+                    log("No existing keybind. Writing char `$c`")
+                    @log term = LE.terminal(s)
+                    write(term, c)
+                end
+            end
         end
         binds[c] = bind
     end
 
     keymap = AnyDict(
-        '*' => (s::LE.MIState, o...)->begin
+        '*' => (s::LE.MIState, o...) -> begin
             log("keymap fallthrough: *")
             # @log o
         end,
-        # "\e" => (s, o...)->begin
-        #     log("keymap: \\e, escape")
-        # end,
-
-        "\e\e" => (s, o...)->begin
+        "\e\e" => (s, o...) -> begin
             log("key: \\e\\e")
             empty!(key_stack)
         end,
-        # "\e[A" => (s::LE.MIState, o...)->begin
-            # log("Up Arrow")
-            # @log o
-        # end,
-        # backspace
-        # '\b' => (s::LE.MIState, o...)->LE.edit_move_left(s),
-             # '`' => (s::LE.MIState, o...)->vim_reset(),
     )
     keymap = merge(keymap,
-                   AnyDict(binds))
+        AnyDict(binds))
 
-    # keys to copy from `juliamode`
+    # keys to copy from `mode`
     copy_keys = [
         # enter
         '\r',
@@ -162,35 +201,27 @@ function init()
         # left arrow
         "\e[D",
         # up arrow
-        # "\e[A",
+        "\e[A",
         # down arrow
-        # "\e[B",
+        "\e[B",
         # delete
         "\e[3~",
+        # C-c
+        "\x03",
+        # C-d
+        "\x04"
     ]
 
     for c in copy_keys
+        (c in keys(keymap) || c in keys(mode.keymap_dict)) && continue
         keymap[c] = LE.default_keymap[c]
     end
-    global normalmode =
-        REPL.Prompt("julia[n]> ",
-                    keymap_dict = LE.keymap([keymap]),
-                    # on_done = REPL.respond(split, repl, juliamode),
-                    on_done = (s, o...) -> begin
-                        log("on_done")
-                        @log s.last_action
-                        @log s.current_action
-                    end
-                    # on_enter = juliamode.on_enter,
-                    )
-    normalmode.on_done = juliamode.on_done
-    normalmode.on_enter = juliamode.on_enter
-    normalmode.hist = juliamode.hist
-    normalmode.hist.mode_mapping[:julia] = normalmode
+    keymap = merge(keymap, mode.keymap_dict)
 
-    push!(repl.interface.modes, normalmode)
-    log("initialized")
+    # mode.keymap_dict = LE.keymap([keymap])
+    log("initialized for $(LE.prompt_string(mode))")
     return
+
 end
 
 function edit_move_end(s::LE.MIState)
@@ -203,8 +234,8 @@ function edit_move_end(s::LE.MIState)
         end
     end
     pos = max(position(buf) - 1, # correcting adjustment
-              0)
-    seek(buf,pos)
+        0)
+    seek(buf, pos)
     LE.refresh_line(s)
     return true
 end
@@ -218,7 +249,7 @@ function edit_move_start(s::LE.MIState)
         end
     end
     pos = position(buf)
-    seek(buf,pos)
+    seek(buf, pos)
     LE.refresh_line(s)
     return true
 end
@@ -242,7 +273,7 @@ function edit_move_phrase_left(s::LE.MIState)
     return true
 end
 
-function trigger_mode(state :: LE.MIState, mode :: VimMode)
+function trigger_mode(state::LE.MIState, mode::VimMode)
     if mode == normal_mode
         trigger_normal_mode(state)
     elseif mode == insert_mode
@@ -251,21 +282,24 @@ function trigger_mode(state :: LE.MIState, mode :: VimMode)
         log("Could not trigger mode ", mode)
     end
 end
-function trigger_insert_mode(state::LineEdit.MIState)
-    iobuffer = LineEdit.buffer(state)
-    LineEdit.transition(state, juliamode) do
-        prompt_state = LineEdit.state(state, juliamode)
-        prompt_state.input_buffer = copy(iobuffer)
-    end
+function trigger_insert_mode(s::LE.MIState)
+    # iobuffer = LineEdit.buffer(s)
+    state.mode = insert_mode
+    print(stdout, VTE_CURSOR_STYLE_STEADY_IBEAM)
+    log("trigger insert mode")
+    LE.refresh_line(s)
 end
 
-function trigger_normal_mode(state::LineEdit.MIState, o...)
-    iobuffer = LineEdit.buffer(state)
+function trigger_normal_mode(s::LE.MIState)
+    iobuffer = LineEdit.buffer(s)
     # vim.mode = NormalMode()
-    LineEdit.transition(state, normalmode) do
-        prompt_state = LineEdit.state(state, normalmode)
-        prompt_state.input_buffer = copy(iobuffer)
+    if state.mode !== normal_mode
+        state.mode = normal_mode
+        left(iobuffer)(iobuffer)
+        print(stdout, VTE_CURSOR_STYLE_TERMINAL_DEFAULT)
     end
+    log("trigger normal mode")
+    LE.refresh_line(s)
 end
 
 function debug_mode(state::REPL.LineEdit.MIState, repl::LineEditREPL, char::String)
@@ -275,7 +309,7 @@ function debug_mode(state::REPL.LineEdit.MIState, repl::LineEditREPL, char::Stri
 
     # write character typed into line buffer
     #= LineEdit.edit_insert(iobuffer, char) =#
-    
+
     # write character typed into repl
     #= LineEdit.edit_insert(state, char) =#
     #
@@ -300,6 +334,18 @@ end
 
 function enable_logging()
     Util.enable_logging()
+end
+
+function debug_info()
+
+end
+
+function change_mode_line()
+    ansi_disablecursor = "\e[?25l"
+    newtext = "vjulia>"
+    ansi_enablecursor = "\e[?25h"
+    ansi_clearline = "\e[2K"
+    printstyled()
 end
 
 end
