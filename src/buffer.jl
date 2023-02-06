@@ -1,5 +1,6 @@
 module Buffer
 using Match
+import REPL.LineEdit as LE
 export VimBuffer, mode, VimMode, normal_mode, insert_mode, testbuf, readall
 
 @enum VimMode begin
@@ -31,7 +32,8 @@ function testbuf(s :: AbstractString) :: VimBuffer
         throw(ArgumentError("could not construct VimBuffer with string \"$s\"\n   Expecting a string with a pipe (|) indicating cursor position"))
     end
     (a, mode, b) = (m[1], m[2], m[3])
-    buf = IOBuffer(a * b)
+    buf = IOBuffer(;read=true, write=true, append=true)
+    write(buf, a * b)
     seek(buf, length(a))
     vim_mode = VimMode(mode)
     return VimBuffer(buf, vim_mode)
@@ -55,6 +57,7 @@ Base.read(vb :: VimBuffer, ::Type{Char}) = read(vb.buf, Char)
 Base.read(vb :: VimBuffer, ::Type{String}) = read(vb.buf, String)
 Base.eof(vb :: VimBuffer) = eof(vb.buf)
 Base.skip(vb :: VimBuffer, o) = skip(vb.buf, o)
+
 
 function Base.getproperty(vb::VimBuffer, sym::Symbol)
    if sym === :size

@@ -135,7 +135,7 @@ function init()
     if initialized
         return
     end
-    enable_logging()
+    # enable_logging()
     log("initializing...")
     @log current_task()
     repl = Base.active_repl

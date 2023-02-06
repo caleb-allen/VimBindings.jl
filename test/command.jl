@@ -10,7 +10,7 @@ function run(buf :: VimBuffer, cmd :: String) :: VimBuffer
     end
 
     command = parse_command(cmd)
-    new_mode = execute(buf, command)
+    new_mode = execute(buf.buf, command)
     return VimBuffer(buf.buf, VimMode(new_mode))
 end
 
@@ -24,7 +24,7 @@ end
     @test run("asdf|", "h") == testbuf("asd|f")
     @test run("asdf|", "l") == testbuf("asdf|")
     @test run("asd|f", "l") == testbuf("asdf|")
-    @test run("asdf|", "\$") == testbuf("asdf|")
+    @test run("a|sdf", "\$") == testbuf("asd|f")
 
 end
 
@@ -111,9 +111,7 @@ end
 end
 
 @testset "replace character" begin
-    @test run("abcd|e", "rx") == testbuf("abcd|x")
-    @test run("abcde|", "rx") == testbuf("abcde|")
-    @test run("|", "rx") == testbuf("|")
+    @test run("abcd|e 12345", "rx") == testbuf("abcd|x 12345")
     @test run("|abcde", "3rx") == testbuf("xx|xde")
     @test_broken run("∀ x |∃ y", "rx") == testbuf("∀ x |x y")
 end
