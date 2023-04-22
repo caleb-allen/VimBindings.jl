@@ -44,10 +44,10 @@ The VimBindings package must be loaded before the REPL to correctly bind the `Es
 > 
 > `VimBindings.jl` relies on a few important alterations to the REPL code which handles key input events. If these changes are loaded after the REPL code is started (as is the case with `startup.jl`), then the REPL code operates unmodified. Thus, the current solution is to evaluate the module before any REPL code is run at all.
 
-You can define `vjulia` as an alias with:
+You can define `juliavim` as an alias with:
 
 ```bash
-alias vjulia='julia -i -e "using VimBindings"'
+alias juliavim='julia -i -e "using VimBindings"'
 ```
 
 in your `.{ba,z}shrc` file.
