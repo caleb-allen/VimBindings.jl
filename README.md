@@ -5,7 +5,9 @@ VimBindings is an experimental Julia package which brings some vim keybindings t
 VimBindings is early in development and is not yet recommended for daily use. For the brave, feel free to give it a try!
 
 > **Warning**
-> There is an open bug which may corrupt your Julia REPL history! If you experience this bug, run the script in [this issue](https://github.com/caleb-allen/VimBindings.jl/issues/36) to restore your history.
+> There is an open bug which may corrupt your Julia REPL history! This causes the REPL to exhibit unpredictable behavior when you navigate through a corrupted history entry, even when VimBindings.jl is not loaded. 
+> Please see [this issue](https://github.com/caleb-allen/VimBindings.jl/issues/36) for more info. 
+> If you experience this bug, run the `fix_history.jl` script in the issue to restore your history.
 
 ![latest ci](https://github.com/caleb-allen/VimBindings.jl/actions/workflows/test.yaml/badge.svg)
 
