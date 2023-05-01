@@ -8,7 +8,7 @@ e.g:
 """
 module VimBindings
 
-using REPL: history_next, history_prev
+using REPL
 using Base: AnyDict
 using REPL
 using REPL.LineEdit
@@ -130,12 +130,12 @@ function strike_key(c, s::LE.MIState)::StrikeKeyResult
                 trigger_mode(s, repl_action)
             elseif repl_action isa ReplAction
                 global debug = s
-                @log typeof(mode(s))
-                @log typeof(s)
-                if repl_action == history_down
-                    history_next(s, mode(s).hist)
-                elseif repl_action == history_up
-                    history_prev(s, mode(s).hist)
+                @log typeof(mode(s)) # REPL.LineEdit.PrefixHistoryPrompt
+                @log typeof(s) # REPL.LineEdit.MIState
+                if repl_action == history_up
+                    return FallbackAlternate("\e[A")
+                elseif repl_action == history_down
+                    return FallbackAlternate("\e[B")
                 end
             else
                 LE.refresh_line(s)
@@ -151,25 +151,6 @@ function strike_key(c, s::LE.MIState)::StrikeKeyResult
         return NoAction()
     end
 end
-
-# function mode_history_next(s::MIState, data::REPL.LineEdit.PrefixHistoryPrompt)
-#     LE.history_next_prefix(data, data.hp, data.prefix)
-# end
-
-# function mode_history_next(s::MIState, mode)
-#     LE.history_next(s, mode(s).hist))
-# end
-
-# function mode_history_prev(s::MIState, data::REPL.LineEdit.PrefixHistoryPrompt)
-#     LE.history_prev_prefix(data, data.histprompt.hp, data.prefix)
-# end
-
-# function mode_history_prev(s::MIState, mode)
-#     LE.history_prev(s, mode(s).hist))
-# end
-
-
-
 
 function init()
     if initialized

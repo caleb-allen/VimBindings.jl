@@ -1,6 +1,6 @@
 # This file contains alterations to LineEdit.jl
 
-
+import .Threads.@spawn
 import REPL.LineEdit: TextTerminal, ModalInterface, MIState, activate, keymap, match_input, keymap_data, transition, mode, terminal, refresh_line
 import REPL.Terminals: raw!, enable_bracketed_paste, disable_bracketed_paste
 function LE.prompt!(term::TextTerminal, prompt::ModalInterface, s::MIState=init_state(term, prompt))
@@ -66,7 +66,7 @@ function LE.match_input(f::Function, s::Union{Nothing,LE.MIState}, term, cs::Vec
         end
     end
     if state.mode == normal_mode
-        return function(s, p)
+        return function (s, p)
             local result
             try
                 @log result = strike_key(c, s)
@@ -76,6 +76,15 @@ function LE.match_input(f::Function, s::Union{Nothing,LE.MIState}, term, cs::Vec
             end
             if result isa Fallback
                 return fallback_fn(s, p)
+            end
+            if result isa FallbackAlternate
+                alt_fn = get_fn(keymap, result.cs)
+                r = Base.invokelatest(alt_fn, s, p, c)
+                if isa(r, Symbol)
+                    return r
+                else
+                    return :ok
+                end
             end
             return :ok
         end
@@ -176,6 +185,19 @@ end
 
 LE.prompt_string(t::REPL.TextInterface) = "$(typeof(t))"
 
+"""
+Get the key binding function `key` from `keymap`
+"""
+get_fn(keymap::Dict, key::String) = get_fn(keymap, collect(key))
+function get_fn(keymap::Dict, cs::Vector{Char})::Function
+    map = keymap
+    for c in cs
+        map = map[c]
+    end
+    fn = map
+    return fn
+end
+
 abstract type StrikeKeyResult end
 # No action was appiled
 struct NoAction <: StrikeKeyResult end
@@ -183,6 +205,11 @@ struct NoAction <: StrikeKeyResult end
 struct Fallback <: StrikeKeyResult
     cs::Vector{Char}
 end
+# An alternate key strike to use
+struct FallbackAlternate <: StrikeKeyResult
+    cs::Vector{Char}
+end
+FallbackAlternate(s::AbstractString) = FallbackAlternate(collect(s))
 struct VimAction <: StrikeKeyResult end
 # e.g. invalid/incomplete vim command
 # struct InvalidAction <: StrikeKeyResult end
