@@ -25,6 +25,7 @@ end
     @test run("asdf|", "l") == testbuf("asdf|")
     @test run("asd|f", "l") == testbuf("asdf|")
     @test run("a|sdf", "\$") == testbuf("asd|f")
+    @test run("asd|f", "\$") == testbuf("asd|f")
 
 end
 

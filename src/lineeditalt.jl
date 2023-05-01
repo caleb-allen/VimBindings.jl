@@ -54,9 +54,10 @@ end
 
 function LE.match_input(f::Function, s::Union{Nothing,LE.MIState}, term, cs::Vector{Char}, keymap)
     log("match function")
+    @log cs
     LE.update_key_repeats(s, cs)
     c = String(cs)
-    return function (s, p)  # s::Union{Nothing,MIState}; p can be (at least) a LineEditREPL, PrefixSearchState, Nothing
+    fallback_fn = function (s, p)  # s::Union{Nothing,MIState}; p can be (at least) a LineEditREPL, PrefixSearchState, Nothing
         r = Base.invokelatest(f, s, p, c)
         if isa(r, Symbol)
             return r
@@ -64,6 +65,23 @@ function LE.match_input(f::Function, s::Union{Nothing,LE.MIState}, term, cs::Vec
             return :ok
         end
     end
+    if state.mode == normal_mode
+        return function(s, p)
+            local result
+            try
+                @log result = strike_key(c, s)
+            catch e
+                @error "Error while executing vim key strike" exception = e, catch_backtrace()
+                result = NoAction()
+            end
+            if result isa Fallback
+                return fallback_fn(s, p)
+            end
+            return :ok
+        end
+    end
+
+    return fallback_fn
 end
 
 function LE.match_input(k::Nothing, s, term, cs, keymap)
@@ -114,19 +132,6 @@ function LE.match_input(k::Dict{Char}, s::Union{Nothing,LE.MIState}, term::Union
         end
     end
     log(escape_string("matching input for `$c`"))
-    if state.mode == normal_mode
-        local result
-        try
-            @log result = strike_key(c, s)
-        catch e
-            @error "Error while executing vim key strike" exception=e,catch_backtrace()
-            result = NoAction()
-        end
-        @log c, cs
-        result isa Fallback || return (s, p) -> :ok
-        append!(cs, result.cs[begin:end-1])
-        @log c, cs
-    end
     # Ignore any `wildcard` as this is used as a
     # placeholder for the wildcard (see normalize_key("*"))
     c == LE.wildcard && return (s, p) -> begin
@@ -134,6 +139,33 @@ function LE.match_input(k::Dict{Char}, s::Union{Nothing,LE.MIState}, term::Union
         :ok
     end
     push!(cs, c)
+    # if state.mode == normal_mode
+    #     local result
+    #     try
+    #         @log result = strike_key(c, s)
+    #     catch e
+    #         @error "Error while executing vim key strike" exception = e, catch_backtrace()
+    #         result = NoAction()
+    #     end
+    #     # @log c, cs
+    #     # if result isa Fallback
+    #     # append!(cs, result.cs[begin:end-1])
+    #     cs = result.cs
+    #     x = k
+    #     for char in cs
+    #         if @log haskey(x, char)
+    #             x = x[char]
+    #         end
+    #         # @log k[char]
+    #     end
+    #     # return LE.match_input(x, s, term, cs, keymap)
+    #     # else
+    #     if result isa NoAction
+    #         return (s, p) -> :ok
+    #     end
+    #     # result isa Fallback || 
+    #     @log c, cs
+    # end
     @log escape_string(LE.input_string(s))
     @log haskey(k, c)
     key = haskey(k, c) ? c : LE.wildcard
@@ -145,11 +177,15 @@ end
 LE.prompt_string(t::REPL.TextInterface) = "$(typeof(t))"
 
 abstract type StrikeKeyResult end
+# No action was appiled
 struct NoAction <: StrikeKeyResult end
+# REPL should run default command
 struct Fallback <: StrikeKeyResult
     cs::Vector{Char}
 end
 struct VimAction <: StrikeKeyResult end
+# e.g. invalid/incomplete vim command
+# struct InvalidAction <: StrikeKeyResult end
 
 
 

@@ -5,7 +5,7 @@ using ..Motions
 using ..Util
 import ..Util.log
 
-export well_formed, matched_rule, parse_command, synonym
+export well_formed, matched_rule, parse_command, synonym, partial_well_formed
 
 REGS = (
     text_object = r"^.?([ai][wWsp])$",
@@ -67,11 +67,37 @@ rules = OrderedDict(
     "^(?<n1>$repeat)r(.)\$" |> Regex => ReplaceCommand
 )
 
+# same as above, but valid for partially completed string commands. This is to determine when the key stack should be cleared.
+partial_rules() = OrderedDict(
+    # insert commands
+    r"^(?<c>[aAiIoO])" => InsertCommand,
+    # Special case: `0` is a motion command:
+    "^0\$" |> Regex => (() -> MotionCommand(nothing, '0')),
+    # synonym commands
+    "^(?<n1>$repeat)(?<c>[xXCS])" |> Regex => SynonymCommand,
+    "^(?<n1>$repeat)($motion)" |> Regex => SimpleMotionCommand,
+    "^(?<n1>$repeat)((?|$(complex_motion())))" |> Regex => CompositeMotionCommand,
+    "^(?<n1>$repeat)(?<op>$operator)(?<n2>$repeat)(?|($textobject)|($motion))" |> Regex => OperatorCommand,
+    "^(?<n1>$repeat)(?<op>$operator)(?<n2>$repeat)((?|$(complex_motion())))" |> Regex => OperatorCommand,
+    "^(?<n1>$repeat)(?<op>$operator)(\\k<op>)" |> Regex => LineOperatorCommand,
+    "^(?<n1>$repeat)r(.)" |> Regex => ReplaceCommand
+)
+
 """
-Determines whether the given string is accepted and successfully terminates
+Determines whether the given string is accepted as a vim command.
 """
 function well_formed(cmd :: String) :: Bool
     for rule in keys(rules)
+        if occursin(rule, cmd)
+            return true
+        end
+    end
+    return false
+end
+
+function partial_well_formed(cmd :: String) :: Bool
+    for rule in keys(partial_rules())
+        @show match(rule, cmd)
         if occursin(rule, cmd)
             return true
         end

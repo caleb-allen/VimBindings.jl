@@ -55,8 +55,15 @@ global state = VimState()
 global key_stack = Char[]
 global initialized = false
 
-const VTE_CURSOR_STYLE_STEADY_IBEAM = "\033[6 q"
 const VTE_CURSOR_STYLE_TERMINAL_DEFAULT = "\033[0 q"
+const VTE_CURSOR_STYLE_BLINK_BLOCK = "\033[1 q"
+const VTE_CURSOR_STYLE_STEADY_BLOCK = "\033[2 q"
+const VTE_CURSOR_STYLE_BLINK_UNDERLINE = "\033[3 q"
+# TODO use underline for interim cursor for something like `rX`
+const VTE_CURSOR_STYLE_STEADY_UNDERLINE = "\033[4 q"
+# xterm extensions
+const VTE_CURSOR_STYLE_BLINK_IBEAM = "\033[5 q"
+const VTE_CURSOR_STYLE_STEADY_IBEAM = "\033[6 q"
 
 function strike_key(c, s::LE.MIState)::StrikeKeyResult
     log(escape_string("Strike key: $c"))
@@ -65,6 +72,13 @@ function strike_key(c, s::LE.MIState)::StrikeKeyResult
         return VimAction()
     end
     append!(key_stack, c)
+
+    # if state.mode === insert_mode
+    #     cs = copy(key_stack)
+    #     empty!(key_stack)
+    #     return Fallback(cs)
+    # end
+
     s_cmd = String(key_stack)
     # keys to copy from `mode`
     fallback_keys = [
@@ -115,6 +129,9 @@ function strike_key(c, s::LE.MIState)::StrikeKeyResult
                 log("trigger mode...")
                 trigger_mode(s, repl_action)
             elseif repl_action isa ReplAction
+                global debug = s
+                @log typeof(mode(s))
+                @log typeof(s)
                 if repl_action == history_down
                     history_next(s, mode(s).hist)
                 elseif repl_action == history_up
@@ -126,10 +143,33 @@ function strike_key(c, s::LE.MIState)::StrikeKeyResult
         end
         return VimAction()
     else
+        log("WARN: command not well formed!")
         @log key_stack
+        # TODO if command is still a possible match, don't clear the stack.
+        #  In other words, only clear the stack if the stack is definitely invalid.
+        # empty!(key_stack)
         return NoAction()
     end
 end
+
+# function mode_history_next(s::MIState, data::REPL.LineEdit.PrefixHistoryPrompt)
+#     LE.history_next_prefix(data, data.hp, data.prefix)
+# end
+
+# function mode_history_next(s::MIState, mode)
+#     LE.history_next(s, mode(s).hist))
+# end
+
+# function mode_history_prev(s::MIState, data::REPL.LineEdit.PrefixHistoryPrompt)
+#     LE.history_prev_prefix(data, data.histprompt.hp, data.prefix)
+# end
+
+# function mode_history_prev(s::MIState, mode)
+#     LE.history_prev(s, mode(s).hist))
+# end
+
+
+
 
 function init()
     if initialized
@@ -296,7 +336,7 @@ function trigger_normal_mode(s::LE.MIState)
     if state.mode !== normal_mode
         state.mode = normal_mode
         left(iobuffer)(iobuffer)
-        print(stdout, VTE_CURSOR_STYLE_TERMINAL_DEFAULT)
+        print(stdout, VTE_CURSOR_STYLE_STEADY_BLOCK)
     end
     log("trigger normal mode")
     LE.refresh_line(s)
