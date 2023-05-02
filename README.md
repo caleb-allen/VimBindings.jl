@@ -14,10 +14,11 @@ VimBindings is early in development and is not yet recommended for daily use. Fo
 - [x] More advanced editing with text objects (e.g. `diw`)
 - [x] History integration
 - [ ] Full support for Unicode characters
-<!-- - [ ] Visual mode -->
 - [ ] System clipboard integration
 - [ ] Registers
 - [ ] Undo/Redo
+
+See progress with the [1.0 milestone](https://github.com/caleb-allen/VimBindings.jl/milestone/1)
 <!-- - [ ] Macros -->
 
 # Installation
