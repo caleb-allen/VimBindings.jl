@@ -1,6 +1,6 @@
 module Util
 using Sockets
-export log, getsocket, @log
+export log, getsocket, @log, @loop_guard
 import Base: show_unquoted
 
 const MAX_LOOPS = 2^16

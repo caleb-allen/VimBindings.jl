@@ -248,7 +248,7 @@ end
 function edit_move_end(s::LE.MIState)
     buf = LE.buffer(s)
     @show typeof(buf)
-    while !eof(buf)
+    @loop_guard while !eof(buf)
         if linebreak(
             LE.char_move_right(buf))
             break
@@ -263,7 +263,7 @@ end
 
 function edit_move_start(s::LE.MIState)
     buf = LE.buffer(s)
-    while position(buf) > 0
+    @loop_guard while position(buf) > 0
         if linebreak(LE.char_move_left(buf))
             LE.char_move_right(buf)
             break

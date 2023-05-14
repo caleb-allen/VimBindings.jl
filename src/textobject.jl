@@ -1,6 +1,7 @@
 module TextObjects
 using Match
 using ..TextUtils
+using ..Util
 using REPL.LineEdit
 export word, line, space, WORD, textobject
 
@@ -104,7 +105,7 @@ function word(buf::IO)::Tuple{Int,Int}
     !is_word_char(peek(buf, Char)) && return (origin, origin)
 
     local start
-    while !is_object_start(buf)
+    @loop_guard while !is_object_start(buf)
         skip(buf, -1)
     end
     start = position(buf)
@@ -112,7 +113,7 @@ function word(buf::IO)::Tuple{Int,Int}
 
 
     local endd
-    while !is_object_end(buf)
+    @loop_guard while !is_object_end(buf)
         skip(buf, 1)
     end
     endd = position(buf)
@@ -132,7 +133,7 @@ function WORD(buf::IO)::Tuple{Int,Int}
     is_whitespace(peek(buf, Char)) && return (origin, origin)
 
     local start
-    while !is_non_whitespace_start(buf)
+    @loop_guard while !is_non_whitespace_start(buf)
         skip(buf, -1)
     end
     start = position(buf)
@@ -140,7 +141,7 @@ function WORD(buf::IO)::Tuple{Int,Int}
 
 
     local endd
-    while !is_non_whitespace_end(buf)
+    @loop_guard while !is_non_whitespace_end(buf)
         skip(buf, 1)
     end
     endd = position(buf)
@@ -158,7 +159,7 @@ function space(buf::IO)::Tuple{Int, Int}
     local start
     eof(buf) && return (origin, origin)
     !is_whitespace(peek(buf, Char)) && return (origin, origin)
-    while !is_whitespace_start(buf)
+    @loop_guard while !is_whitespace_start(buf)
         skip(buf, -1)
     end
     start = position(buf)
@@ -166,7 +167,7 @@ function space(buf::IO)::Tuple{Int, Int}
 
 
     local endd
-    while !is_whitespace_end(buf)
+    @loop_guard while !is_whitespace_end(buf)
         skip(buf, 1)
     end
     endd = position(buf)
@@ -183,7 +184,7 @@ function line(buf::IO)::Tuple{Int,Int}
         end
     end
 
-    while !eof(buf) && position(buf) > 0
+    @loop_guard while !eof(buf) && position(buf) > 0
         c = peek(buf, Char)
         if is_linebreak(c)
             skip(buf, 1)
@@ -195,7 +196,7 @@ function line(buf::IO)::Tuple{Int,Int}
     seek(buf, origin)
 
     # find the line end
-    while !eof(buf)
+    @loop_guard while !eof(buf)
         c = read(buf, Char)
         if is_linebreak(c)
             LE.char_move_left(buf)
