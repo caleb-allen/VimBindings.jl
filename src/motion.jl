@@ -456,7 +456,7 @@ function find_c_back(buf::IO, query_c::Char)::Motion
     return Motion(start, endd)
 end
 
-insert_motions = Dict{Char,Any}(
+const insert_motions = Dict{Char,Any}(
     'i' => (buf) -> Motion(buf),
     'I' => (buf) -> line_begin(buf),
     'a' => (buf) -> begin
@@ -475,7 +475,7 @@ insert_motions = Dict{Char,Any}(
         end
     end
 )
-simple_motions = Dict{Char,Any}(
+const simple_motions = Dict{Char,Any}(
     'h' => left,
     'l' => right,
     'j' => down,
@@ -498,7 +498,7 @@ simple_motions = Dict{Char,Any}(
     'L' => nothing
 )
 
-complex_motions = Dict{Regex,Any}(
+const complex_motions = Dict{Regex,Any}(
     r"f(.)" => (buf, char::Union{Char,Int}) -> begin
         m = find_c(buf, char)
         Motion(m, inclusive)
@@ -565,7 +565,7 @@ end
 # function double_quote(mode::NormalMode, s::LE.MIState) :: Action
 # @log vim.mode = SelectRegister()
 # end
-special_keys = Dict(
+const special_keys = Dict(
     '`' => "backtic",
     '~' => "tilde",
     '!' => "bang",
@@ -600,7 +600,7 @@ special_keys = Dict(
     '?' => "question_mark"
 )
 
-all_keys = Char[collect(keys(special_keys))
+const all_keys = Char[collect(keys(special_keys))
     collect('a':'z')
     collect('A':'Z')
     collect('0':'9')]
