@@ -94,7 +94,7 @@ end
 
 function right(buf::IO)::Motion
     start = position(buf)
-    while !eof(buf)
+    @loop_guard while !eof(buf)
         c = read(buf, Char)
         eof(buf) && break
         pos = position(buf)
@@ -110,7 +110,7 @@ end
 
 function left(buf::IO)::Motion
     start = position(buf)
-    while position(buf) > 0
+    @loop_guard while position(buf) > 0
         seek(buf, position(buf) - 1)
         c = peek(buf)
         (((c & 0x80) == 0) || ((c & 0xc0) == 0xc0)) && break
@@ -178,7 +178,7 @@ function word_next(buf::IO)::Motion
 
     eof(buf) && return Motion(start, start)
     last_c = read(buf, Char)
-    while !eof(buf)
+    @loop_guard while !eof(buf)
         c = read(buf, Char)
         if is_alphanumeric(last_c) && is_punctuation(c)
             break
@@ -204,7 +204,7 @@ function word_big_next(buf::IO)::Motion
 
     eof(buf) && return Motion(start, start)
     last_c = read(buf, Char)
-    while !eof(buf)
+    @loop_guard while !eof(buf)
         c = read(buf, Char)
         if is_whitespace(last_c) && !is_whitespace(c)
             break
@@ -229,11 +229,11 @@ function word_end(buf::IO)::Motion
 
     @log first_word_char = !eof(buf) && read(buf, Char)
     # find the first character of the word we will be moving to the end of
-    while !eof(buf) && position(buf) != start && is_whitespace(first_word_char)
+    @loop_guard while !eof(buf) && position(buf) != start && is_whitespace(first_word_char)
         @log first_word_char = read(buf, Char)
     end
 
-    while !eof(buf)
+    @loop_guard while !eof(buf)
         c = read(buf, Char)
         if is_punctuation(first_word_char) && !is_punctuation(c)
             LE.char_move_left(buf)
@@ -257,7 +257,7 @@ function word_back(buf::IO)::Motion
     skip(buf, -1)
     last_c = peek(buf, Char)
 
-    while position(buf) > 0
+    @loop_guard while position(buf) > 0
         c = peek(buf, Char)
         if is_alphanumeric(c) && is_punctuation(last_c)
             skip(buf, 1)
@@ -284,7 +284,7 @@ function word_big_back(buf::IO)::Motion
     skip(buf, -1)
     last_c = peek(buf, Char)
 
-    while position(buf) > 0
+    @loop_guard while position(buf) > 0
         c = peek(buf, Char)
         if is_whitespace(c) && !is_whitespace(last_c)
             skip(buf, 1)
@@ -309,11 +309,11 @@ function word_big_end(buf::IO)::Motion
 
     @log first_word_char = !eof(buf) && read(buf, Char)
     # find the first character of the word we will be moving to the end of
-    while !eof(buf) && position(buf) != start && is_whitespace(first_word_char)
+    @loop_guard while !eof(buf) && position(buf) != start && is_whitespace(first_word_char)
         @log first_word_char = read(buf, Char)
     end
 
-    while !eof(buf)
+    @loop_guard while !eof(buf)
         c = read(buf, Char)
         if is_whitespace(c)
             LE.char_move_left(buf)
@@ -331,7 +331,7 @@ function line_end(buf::IO)::Motion
     mark(buf)
     start = position(buf)
 
-    while !eof(buf)
+    @loop_guard while !eof(buf)
         c = read(buf, Char)
         if is_linebreak(c)
             break
@@ -350,7 +350,7 @@ function line_begin(buf::IO)::Motion
     # skip(buf, -1)
 
     first_line_char = start
-    while position(buf) > 0
+    @loop_guard while position(buf) > 0
         LE.char_move_left(buf)
         c = peek(buf, Char)
         if is_linebreak(c)
@@ -362,7 +362,7 @@ function line_begin(buf::IO)::Motion
     end
     if first_line_char == start
         skip(buf, 1)
-        while !eof(buf)
+        @loop_guard while !eof(buf)
             c = read(buf, Char)
             if !is_whitespace(c)
                 skip(buf, -1)
@@ -388,7 +388,7 @@ function line_zero(buf::IO)::Motion
     position(buf) == 0 && return Motion(start, start)
 
     first_line_char = start
-    while position(buf) > 0
+    @loop_guard while position(buf) > 0
         LE.char_move_left(buf)
         c = peek(buf, Char)
         if is_linebreak(c)
@@ -423,7 +423,7 @@ function find_c(buf::IO, query_c::Char)::Motion
 
     # read one char to bump us by 1
     eof(buf) || read(buf, Char)
-    while !eof(buf)
+    @loop_guard while !eof(buf)
         c = read(buf, Char)
         if c == query_c
             skip(buf, -1)
@@ -442,7 +442,7 @@ function find_c_back(buf::IO, query_c::Char)::Motion
     skip(buf, -1)
     # last_c = peek(buf, Char)
 
-    while position(buf) >= 0
+    @loop_guard while position(buf) >= 0
         c = peek(buf, Char)
         if c == query_c
             skip(buf, 1)
