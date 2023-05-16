@@ -154,4 +154,6 @@ function execute(buf, command :: ReplaceCommand) :: Union{VimMode, Nothing}
     return nothing
 end
 
+execute(buf, :: ZeroCommand) = execute(buf, MotionCommand(nothing, '0'))
+
 end

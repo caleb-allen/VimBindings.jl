@@ -158,7 +158,7 @@ function ReplaceCommand(r1, replacement :: Int)
 end
 
 struct ZeroCommand <: Command end
-ZeroCommand(args...) = MotionCommand(nothing, '0')
+ZeroCommand(args...) = ZeroCommand()
 
 function key(cmd :: Command) :: Char
     error("method `key` not implemented for type $(typeof(cmd))")
