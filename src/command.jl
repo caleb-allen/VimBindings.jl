@@ -1,7 +1,7 @@
 module Commands
 export Command, MotionCommand, OperatorCommand, LineOperatorCommand, InsertCommand,
         SynonymCommand, SimpleMotionCommand, CompositeMotionCommand, TextObjectCommand, ReplaceCommand,
-        ZeroCommand
+        ZeroCommand, ParseValue, command_constructor
 export key
 
 abstract type Command end
@@ -168,5 +168,34 @@ key(cmd :: MotionCommand) = cmd.name
 key(cmd :: OperatorCommand) = cmd.operator
 key(cmd :: LineOperatorCommand) = cmd.operator
 key(cmd :: InsertCommand) = cmd.c
+
+Base.@kwdef struct ParseValue
+    type::Symbol
+    i::Int=1
+    c::Char=' '
+    s::String=""
+end
+ParseValue(::Nothing) = ParseValue(type=:nothing)
+ParseValue(i::Int) = ParseValue(type=:int, i=i)
+ParseValue(c::Char) = ParseValue(type=:char, c=c)
+ParseValue(s::AbstractString) = ParseValue(type=:string, s=s)
+
+"""This function unpacks the parsed values into a `Command` object"""
+function command_constructor(f::F, parse_values::ParseValue...) where F
+    if parse_values[1].type == :nothing
+        return command_constructor((x...) -> f(nothing, x...), parse_values[2:end]...)
+    elseif parse_values[1].type == :int
+        return command_constructor((x...) -> f(parse_values[1].i, x...), parse_values[2:end]...)
+    elseif parse_values[1].type == :char
+        return command_constructor((x...) -> f(parse_values[1].c, x...), parse_values[2:end]...)
+    elseif parse_values[1].type == :string
+        return command_constructor((x...) -> f(parse_values[1].s, x...), parse_values[2:end]...)
+    else
+        error("unknown type $(parse_values[1].type)")
+    end
+end
+# Finally, we call it:
+command_constructor(f::F) where F = f()::Command
+
 
 end
