@@ -30,10 +30,10 @@ end
 
 struct CompositeMotionCommand <: MotionCommand
     r1 :: Int
-    name :: AbstractString
+    name :: String
     captures :: Tuple
 end
-    
+
 CompositeMotionCommand(::Nothing, name :: AbstractString, captures :: Tuple) = CompositeMotionCommand(1, name, captures)
 CompositeMotionCommand(::Nothing, name :: AbstractString, captures :: Vararg) = CompositeMotionCommand(1, name, captures)
 
@@ -52,7 +52,7 @@ end
 
 struct TextObjectCommand <: Command
     r1 :: Int
-    name :: AbstractString
+    name :: String
 end
 
 """
