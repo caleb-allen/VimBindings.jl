@@ -20,7 +20,7 @@ using Sockets
 const LE = LineEdit
 include("util.jl")
 using .Util
-import .Util.log
+import .Util.@debug
 
 include("textutils.jl")
 include("command.jl")
@@ -66,7 +66,7 @@ const VTE_CURSOR_STYLE_BLINK_IBEAM = "\033[5 q"
 const VTE_CURSOR_STYLE_STEADY_IBEAM = "\033[6 q"
 
 function strike_key(c, s::LE.MIState)::StrikeKeyResult
-    log(escape_string("Strike key: $c"))
+    @debug(escape_string("Strike key: $c"))
     if c == "\e\e"
         empty!(key_stack)
         return VimAction()
@@ -113,25 +113,25 @@ function strike_key(c, s::LE.MIState)::StrikeKeyResult
     ]
 
     s_cmd in fallback_keys && begin
-        log(escape_string("falling back for cmd `$s_cmd`"))
+        @debug(escape_string("falling back for cmd `$s_cmd`"))
         cs = copy(key_stack)
         empty!(key_stack)
         return Fallback(cs)
     end
     if well_formed(s_cmd)
-        log(escape_string("well formed command: $s_cmd"))
+        @debug(escape_string("well formed command: $s_cmd"))
         empty!(key_stack)
-        @log cmd = parse_command(s_cmd)
+        @debug cmd = parse_command(s_cmd)
         if cmd !== nothing
             buf = buffer(s)
             repl_action::Union{VimMode,ReplAction,Nothing} = execute(buf, cmd)
             if repl_action isa VimMode
-                log("trigger mode...")
+                @debug("trigger mode...")
                 trigger_mode(s, repl_action)
             elseif repl_action isa ReplAction
                 global debug = s
-                @log typeof(mode(s)) # REPL.LineEdit.PrefixHistoryPrompt
-                @log typeof(s) # REPL.LineEdit.MIState
+                @debug typeof(mode(s)) # REPL.LineEdit.PrefixHistoryPrompt
+                @debug typeof(s) # REPL.LineEdit.MIState
                 if repl_action == history_up
                     return FallbackAlternate("\e[A")
                 elseif repl_action == history_down
@@ -143,8 +143,8 @@ function strike_key(c, s::LE.MIState)::StrikeKeyResult
         end
         return VimAction()
     else
-        log("WARN: command not well formed!")
-        @log key_stack
+        @debug("WARN: command not well formed!")
+        @debug key_stack
         # TODO if command is still a possible match, don't clear the stack.
         #  In other words, only clear the stack if the stack is definitely invalid.
         # empty!(key_stack)
@@ -157,12 +157,12 @@ function init()
         return
     end
     # enable_logging()
-    log("initializing...")
-    @log current_task()
+    @debug("initializing...")
+    @debug current_task()
     repl = Base.active_repl
     trigger_insert_mode(repl.mistate)
     global initialized = true
-    log("initialized")
+    @debug("initialized")
     return
 end
 
@@ -173,16 +173,16 @@ function add_vim_keybinds!(mode::LE.TextInterface)
     for c in all_keys
         bind = (s::LE.MIState, o...) -> begin
             if state.mode == normal_mode
-                log("normal mode. Dispatching vim key strike")
+                @debug("normal mode. Dispatching vim key strike")
                 strike_key(c, s)
             else
-                log("insert mode")
-                log("Defaulting to existing key binding.")
+                @debug("insert mode")
+                @debug("Defaulting to existing key binding.")
                 if c in keys(prior_keybinds)
                     prior_keybinds[c](s, o...)
                 else
-                    log("No existing keybind. Writing char `$c`")
-                    @log term = LE.terminal(s)
+                    @debug("No existing keybind. Writing char `$c`")
+                    @debug term = LE.terminal(s)
                     write(term, c)
                 end
             end
@@ -192,11 +192,11 @@ function add_vim_keybinds!(mode::LE.TextInterface)
 
     keymap = AnyDict(
         '*' => (s::LE.MIState, o...) -> begin
-            log("keymap fallthrough: *")
-            # @log o
+            @debug("keymap fallthrough: *")
+            # @debug o
         end,
         "\e\e" => (s, o...) -> begin
-            log("key: \\e\\e")
+            @debug("key: \\e\\e")
             empty!(key_stack)
         end,
     )
@@ -240,7 +240,7 @@ function add_vim_keybinds!(mode::LE.TextInterface)
     keymap = merge(keymap, mode.keymap_dict)
 
     # mode.keymap_dict = LE.keymap([keymap])
-    log("initialized for $(LE.prompt_string(mode))")
+    @debug("initialized for $(LE.prompt_string(mode))")
     return
 
 end
@@ -300,14 +300,14 @@ function trigger_mode(state::LE.MIState, mode::VimMode)
     elseif mode == insert_mode
         trigger_insert_mode(state)
     else
-        log("Could not trigger mode ", mode)
+        @debug("Could not trigger mode ", mode)
     end
 end
 function trigger_insert_mode(s::LE.MIState)
     # iobuffer = LineEdit.buffer(s)
     state.mode = insert_mode
     print(stdout, VTE_CURSOR_STYLE_STEADY_IBEAM)
-    log("trigger insert mode")
+    @debug("trigger insert mode")
     LE.refresh_line(s)
 end
 
@@ -319,7 +319,7 @@ function trigger_normal_mode(s::LE.MIState)
         left(iobuffer)(iobuffer)
         print(stdout, VTE_CURSOR_STYLE_STEADY_BLOCK)
     end
-    log("trigger normal mode")
+    @debug("trigger normal mode")
     LE.refresh_line(s)
 end
 

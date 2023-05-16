@@ -227,10 +227,10 @@ function word_end(buf::IO)::Motion
     # move at least 1 (or else it is EOF)
     read(buf, Char)
 
-    @log first_word_char = !eof(buf) && read(buf, Char)
+    @debug first_word_char = !eof(buf) && read(buf, Char)
     # find the first character of the word we will be moving to the end of
     @loop_guard while !eof(buf) && position(buf) != start && is_whitespace(first_word_char)
-        @log first_word_char = read(buf, Char)
+        @debug first_word_char = read(buf, Char)
     end
 
     @loop_guard while !eof(buf)
@@ -244,8 +244,8 @@ function word_end(buf::IO)::Motion
         end
     end
     LE.char_move_left(buf)
-    @log endd = position(buf)
-    @log typeof(endd)
+    @debug endd = position(buf)
+    @debug typeof(endd)
     reset(buf)
     return Motion(start, endd, inclusive)
 end
@@ -307,10 +307,10 @@ function word_big_end(buf::IO)::Motion
     # move at least 1 (or else it is EOF)
     read(buf, Char)
 
-    @log first_word_char = !eof(buf) && read(buf, Char)
+    @debug first_word_char = !eof(buf) && read(buf, Char)
     # find the first character of the word we will be moving to the end of
     @loop_guard while !eof(buf) && position(buf) != start && is_whitespace(first_word_char)
-        @log first_word_char = read(buf, Char)
+        @debug first_word_char = read(buf, Char)
     end
 
     @loop_guard while !eof(buf)
@@ -321,8 +321,8 @@ function word_big_end(buf::IO)::Motion
         end
     end
     LE.char_move_left(buf)
-    @log endd = position(buf)
-    @log typeof(endd)
+    @debug endd = position(buf)
+    @debug typeof(endd)
     reset(buf)
     return Motion(start, endd, inclusive)
 end
@@ -529,7 +529,7 @@ function gen_motion(buf, cmd::SimpleMotionCommand)::Motion
     fn = if cmd.name in keys(simple_motions)
         simple_motions[cmd.name]
     else
-        log("$(cmd.name) has no mapped function")
+        @debug("$(cmd.name) has no mapped function")
         (buf) -> Motion(buf)
     end
     # call the command's function to generate the motion object
@@ -563,7 +563,7 @@ end
 
 
 # function double_quote(mode::NormalMode, s::LE.MIState) :: Action
-# @log vim.mode = SelectRegister()
+# @debug vim.mode = SelectRegister()
 # end
 special_keys = Dict(
     '`' => "backtic",

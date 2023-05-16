@@ -1,6 +1,6 @@
 module Util
 using Sockets
-export log, getsocket, @log, @loop_guard
+export @debug, getsocket, @debug, @loop_guard
 import Base: show_unquoted
 
 const MAX_LOOPS = 2^16
@@ -30,23 +30,25 @@ macro loop_guard(ex)
     end)
 end
 
-macro log(exs...)
+macro @debug(exs...)
     blk = Expr(:block)
     loc = string("\t", __source__.file, "#", __source__.line)
     for ex in exs
         push!(blk.args, :(println(getsocket(),
-                                  $(sprint(show_unquoted,ex)*" = "),
-                                  repr(begin value=$(esc(ex)) end),
-                                  "\n",
-                                  $loc,
-                                  "\n",
-                                  )))
+            $(sprint(show_unquoted, ex) * " = "),
+            repr(begin
+                value = $(esc(ex))
+            end),
+            "\n",
+            $loc,
+            "\n",
+        )))
     end
     isempty(exs) || push!(blk.args, :value)
     return blk
 end
 
-# macro log(str)
+# macro @debug(str)
 #     blk = Expr(:block)
 #     loc = string("\t", __source__.file, "#", __source__.line)
 #     push!(blk.args, :(println(getsocket(),
@@ -62,7 +64,7 @@ end
 
 
 # TODO this is terrible to overload
-function Base.log(s...)
+function Base.@debug(s...)
     println(getsocket(), s...)
 end
 
@@ -80,7 +82,7 @@ function getsocket()
     return devnull
 end
 
-function Base.log(any::Any)
+function Base.@debug(any::Any)
     socket = getsocket()
     println(socket, any)
 end
@@ -97,11 +99,11 @@ macro bindkey(c)
     # char = esc(c)
     # @show sym = Symbol(char)
     return :(
-        ()->eval(Expr(:call, Symbol($(esc(c))))))
-         # pair item 2
-         # (s::LE.MIState, o...)->begin
-         # @show Symbol($(esc(c)))
-         # Expr(:call, Symbol($(esc(c))),(VB.mode, esc(s)))
+        () -> eval(Expr(:call, Symbol($(esc(c))))))
+    # pair item 2
+    # (s::LE.MIState, o...)->begin
+    # @show Symbol($(esc(c)))
+    # Expr(:call, Symbol($(esc(c))),(VB.mode, esc(s)))
 end
 
 # buffer(s :: LE.MIState) = LE.buffer(s)
