@@ -1,6 +1,7 @@
 module Commands
 export Command, MotionCommand, OperatorCommand, LineOperatorCommand, InsertCommand,
-        SynonymCommand, SimpleMotionCommand, CompositeMotionCommand, TextObjectCommand, ReplaceCommand
+        SynonymCommand, SimpleMotionCommand, CompositeMotionCommand, TextObjectCommand, ReplaceCommand,
+        ZeroCommand
 export key
 
 abstract type Command end
@@ -29,10 +30,10 @@ end
 
 struct CompositeMotionCommand <: MotionCommand
     r1 :: Int
-    name :: AbstractString
+    name :: String
     captures :: Tuple
 end
-    
+
 CompositeMotionCommand(::Nothing, name :: AbstractString, captures :: Tuple) = CompositeMotionCommand(1, name, captures)
 CompositeMotionCommand(::Nothing, name :: AbstractString, captures :: Vararg) = CompositeMotionCommand(1, name, captures)
 
@@ -51,7 +52,7 @@ end
 
 struct TextObjectCommand <: Command
     r1 :: Int
-    name :: AbstractString
+    name :: String
 end
 
 """
@@ -156,7 +157,8 @@ function ReplaceCommand(r1, replacement :: Int)
     return ReplaceCommand(r1, string(replacement)[1])
 end
 
-
+struct ZeroCommand <: Command end
+ZeroCommand(args...) = ZeroCommand()
 
 function key(cmd :: Command) :: Char
     error("method `key` not implemented for type $(typeof(cmd))")

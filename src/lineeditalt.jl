@@ -9,7 +9,7 @@ function LE.prompt!(term::TextTerminal, prompt::ModalInterface, s::MIState=init_
     enable_bracketed_paste(term)
     try
         activate(prompt, s, term, term)
-        if !initialized
+        if !INITIALIZED.x
             init()
             refresh_line(s)
         end
@@ -65,7 +65,7 @@ function LE.match_input(f::Function, s::Union{Nothing,LE.MIState}, term, cs::Vec
             return :ok
         end
     end
-    if state.mode == normal_mode
+    if STATE.mode == normal_mode
         return function (s, p)
             local result
             try
@@ -130,8 +130,9 @@ function LE.match_input(k::Dict{Char}, s::Union{Nothing,LE.MIState}, term::Union
 
         if is_escape
             log("yes escape")
-            if state.mode === normal_mode
+            if STATE.mode === normal_mode
                 result = strike_key("\e\e", s)
+                # TODO: Variable assigned but not used
             else
                 trigger_normal_mode(s)
             end
@@ -148,33 +149,6 @@ function LE.match_input(k::Dict{Char}, s::Union{Nothing,LE.MIState}, term::Union
         :ok
     end
     push!(cs, c)
-    # if state.mode == normal_mode
-    #     local result
-    #     try
-    #         @log result = strike_key(c, s)
-    #     catch e
-    #         @error "Error while executing vim key strike" exception = e, catch_backtrace()
-    #         result = NoAction()
-    #     end
-    #     # @log c, cs
-    #     # if result isa Fallback
-    #     # append!(cs, result.cs[begin:end-1])
-    #     cs = result.cs
-    #     x = k
-    #     for char in cs
-    #         if @log haskey(x, char)
-    #             x = x[char]
-    #         end
-    #         # @log k[char]
-    #     end
-    #     # return LE.match_input(x, s, term, cs, keymap)
-    #     # else
-    #     if result isa NoAction
-    #         return (s, p) -> :ok
-    #     end
-    #     # result isa Fallback || 
-    #     @log c, cs
-    # end
     @log escape_string(LE.input_string(s))
     @log haskey(k, c)
     key = haskey(k, c) ? c : LE.wildcard
