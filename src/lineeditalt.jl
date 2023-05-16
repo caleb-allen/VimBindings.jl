@@ -9,7 +9,7 @@ function LE.prompt!(term::TextTerminal, prompt::ModalInterface, s::MIState=init_
     enable_bracketed_paste(term)
     try
         activate(prompt, s, term, term)
-        if !initialized
+        if !INITIALIZED.x
             init()
             refresh_line(s)
         end

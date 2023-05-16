@@ -143,7 +143,7 @@ function strike_key(c, s::LE.MIState)::StrikeKeyResult
 end
 
 function init()
-    if INITIALIZED
+    if INITIALIZED.x
         return
     end
     # enable_logging()
@@ -151,7 +151,7 @@ function init()
     @log current_task()
     repl = Base.active_repl
     trigger_insert_mode(repl.mistate)
-    global initialized = true
+    INITIALIZED.x = true
     log("initialized")
     return
 end
