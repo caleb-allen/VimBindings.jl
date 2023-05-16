@@ -56,7 +56,7 @@ const RULES = TupleDict(
     # insert commands
     r"^(?<c>[aAiIoO])$" => InsertCommand,
     # Special case: `0` is a motion command:
-    "^0\$" |> Regex => (() -> MotionCommand(nothing, '0')),
+    "^0\$" |> Regex => ZeroCommand,
     # synonym commands
     "^(?<n1>$REPEAT)(?<c>[xXCS])\$" |> Regex => SynonymCommand,
     "^(?<n1>$REPEAT)($MOTION)\$" |> Regex => SimpleMotionCommand,
@@ -64,7 +64,7 @@ const RULES = TupleDict(
     "^(?<n1>$REPEAT)(?<op>$OPERATOR)(?<n2>$REPEAT)(?|($TEXTOBJECT)|($MOTION))\$" |> Regex => OperatorCommand,
     "^(?<n1>$REPEAT)(?<op>$OPERATOR)(?<n2>$REPEAT)((?|$(complex_motion())))\$" |> Regex => OperatorCommand,
     "^(?<n1>$REPEAT)(?<op>$OPERATOR)(\\k<op>)\$" |> Regex => LineOperatorCommand,
-    "^(?<n1>$REPEAT)r(.)\$" |> Regex => ReplaceCommand
+    "^(?<n1>$REPEAT)r(.)\$" |> Regex => ReplaceCommand,
 )
 
 # same as above, but valid for partially completed string commands. This is to determine when the key stack should be cleared.
@@ -72,7 +72,7 @@ const PARTIAL_RULES = TupleDict(
     # insert commands
     r"^(?<c>[aAiIoO])" => InsertCommand,
     # Special case: `0` is a motion command:
-    "^0\$" |> Regex => (() -> MotionCommand(nothing, '0')),
+    "^0\$" |> Regex => ZeroCommand,
     # synonym commands
     "^(?<n1>$REPEAT)(?<c>[xXCS])" |> Regex => SynonymCommand,
     "^(?<n1>$REPEAT)($MOTION)" |> Regex => SimpleMotionCommand,
@@ -80,7 +80,7 @@ const PARTIAL_RULES = TupleDict(
     "^(?<n1>$REPEAT)(?<op>$OPERATOR)(?<n2>$REPEAT)(?|($TEXTOBJECT)|($MOTION))" |> Regex => OperatorCommand,
     "^(?<n1>$REPEAT)(?<op>$OPERATOR)(?<n2>$REPEAT)((?|$(complex_motion())))" |> Regex => OperatorCommand,
     "^(?<n1>$REPEAT)(?<op>$OPERATOR)(\\k<op>)" |> Regex => LineOperatorCommand,
-    "^(?<n1>$REPEAT)r(.)" |> Regex => ReplaceCommand
+    "^(?<n1>$REPEAT)r(.)" |> Regex => ReplaceCommand,
 )
 
 """
@@ -139,13 +139,12 @@ function parse_command(s :: AbstractString) :: Union{Command, Nothing}
         log("command not well formed", s)
         return nothing
     end
+    r::Regex
 
     m = match(r, s)
     m === nothing && return nothing
-    args = [ parse_value(capture) for capture in m.captures ]
-
-    command_type = RULES[r]
-    command_type(args...)
+    m::RegexMatch
+    return RULES[r](parse_value.(m.captures)...)
 end
 
 
