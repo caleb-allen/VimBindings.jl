@@ -52,7 +52,7 @@ function complex_motion() :: String
 end
 const TEXTOBJECT = "$REPEAT[ai][wWsp]"
 const OPERATOR = "[ydc]"
-const RULES = OrderedDict(
+const RULES = OrderedDict{Regex,Union{Function,Type{<:Command}}}(
     # insert commands
     r"^(?<c>[aAiIoO])$" => InsertCommand,
     # Special case: `0` is a motion command:
@@ -68,7 +68,7 @@ const RULES = OrderedDict(
 )
 
 # same as above, but valid for partially completed string commands. This is to determine when the key stack should be cleared.
-partial_rules() = OrderedDict(
+partial_rules() = OrderedDict{Regex,Union{Function,Type{<:Command}}}(
     # insert commands
     r"^(?<c>[aAiIoO])" => InsertCommand,
     # Special case: `0` is a motion command:
@@ -141,6 +141,7 @@ function parse_command(s :: AbstractString) :: Union{Command, Nothing}
     end
 
     m = match(r, s)
+    m === nothing && return nothing
     args = [ parse_value(capture) for capture in m.captures ]
 
     command_type = RULES[r]
