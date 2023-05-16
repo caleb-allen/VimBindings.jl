@@ -74,7 +74,10 @@ function enable_logging()
 end
 
 function getsocket()
-    return socket
+    if @isdefined(socket)
+        return socket
+    end
+    return devnull
 end
 
 function Base.log(any::Any)
