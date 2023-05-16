@@ -1,6 +1,6 @@
 module Util
 using Sockets
-export log, getsocket, @log, @loop_guard
+export log, getsocket, @log, @loop_guard, TupleDict
 import Base: show_unquoted
 
 const MAX_LOOPS = 2^16
@@ -104,5 +104,24 @@ end
 # buffer(s :: LE.MIState) = LE.buffer(s)
 
 # alpha_keymap = AnyDict()
+
+"""
+Simple NamedTuple-like type allowing custom key types (like regex)
+"""
+struct TupleDict{T1<:Tuple,T2<:Tuple}
+    keys::T1
+    values::T2
+end
+TupleDict(d::AbstractDict) = TupleDict(Tuple(keys(d)), Tuple(values(d)))
+TupleDict(pair::Pair...) = TupleDict(Tuple(first.(pair)), Tuple(last.(pair)))
+Base.keys(d::TupleDict) = d.keys
+Base.values(d::TupleDict) = d.values
+function Base.getindex(d::TupleDict, k)
+    i = findfirst(==(k), keys(d))
+    i == 0 && error("key not found")
+    return @inbounds(values(d)[i])
+end
+
+
 
 end
