@@ -358,4 +358,7 @@ function change_mode_line()
     printstyled()
 end
 
+
+include("precompile.jl")
+
 end

@@ -85,12 +85,17 @@ end
     @test run("aaaa bbbb |ccc .ddd", "dt.") == testbuf("aaaa bbbb |.ddd")
 end
 
+@testset "D" begin
+    @test run("aaaa bbbb |ccc ddd", "d\$") == testbuf("aaaa bbbb |")
+    @test run("aaaa bbbb |ccc ddd", "D") == testbuf("aaaa bbbb |")
+    @test run("aaaa bbbb |ccc ddd", "D") == run("aaaa bbbb |ccc ddd", "d\$") 
+end
+
 @testset "c[fFtT]x" begin
-    # TODO
-    # @test run("|aaaa bbbb ccc ddd", "cfd") == testbuf("aaaa bbbb ccc |i|ddd")
-    # @test run("aaaa bbbb |ccc ddd", "cFb") == testbuf("aaaa bbb|i|b ccc ddd")
-    # @test run("aaaa bbbb |ccc ddd", "cTb") == testbuf("aaaa bbbb|i| ccc ddd")
-    # @test run("aaaa bbbb |ccc ddd", "ctd") == testbuf("aaaa bbbb ccc|i| ddd")
+    @test run("|aaaa bbbb ccc ddd", "cfd") == testbuf("|i|dd")
+    @test run("aaaa bbbb |ccc ddd", "cFb") == testbuf("aaaa bbb|i|ccc ddd")
+    @test run("aaaa bbbb |ccc ddd", "cTb") == testbuf("aaaa bbbb|i|ccc ddd")
+    @test run("aaaa bbbb |ccc ddd", "ctd") == testbuf("aaaa bbbb |i|ddd")
     # 
 end
 
@@ -98,10 +103,6 @@ end
     @test run("aaaa bbbb |n|ccc ddd", "C") == testbuf("aaaa bbbb |i|")
     @test run("aaaa bbbb |n|ccc ddd", "cc") == testbuf("|i|")
     @test run("aaaa bbbb |n|ccc ddd", "S") == testbuf("|i|")
-    
-    # @test run(
-        
-    # )
 end
 
 @testset "unicode" begin

@@ -58,13 +58,13 @@ const RULES = TupleDict(
     # Special case: `0` is a motion command:
     "^0\$" |> Regex => ZeroCommand,
     # synonym commands
-    "^(?<n1>$REPEAT)(?<c>[xXCS])\$" |> Regex => SynonymCommand,
+    "^(?<n1>$REPEAT)(?<c>[xXDCS])\$" |> Regex => SynonymCommand,
     "^(?<n1>$REPEAT)($MOTION)\$" |> Regex => SimpleMotionCommand,
     "^(?<n1>$REPEAT)((?|$(complex_motion())))\$" |> Regex => CompositeMotionCommand,
     "^(?<n1>$REPEAT)(?<op>$OPERATOR)(?<n2>$REPEAT)(?|($TEXTOBJECT)|($MOTION))\$" |> Regex => OperatorCommand,
     "^(?<n1>$REPEAT)(?<op>$OPERATOR)(?<n2>$REPEAT)((?|$(complex_motion())))\$" |> Regex => OperatorCommand,
     "^(?<n1>$REPEAT)(?<op>$OPERATOR)(\\k<op>)\$" |> Regex => LineOperatorCommand,
-    "^(?<n1>$REPEAT)r(.)\$" |> Regex => ReplaceCommand,
+    "^(?<n1>$REPEAT)r(.)\$" |> Regex => ReplaceCommand
 )
 
 # same as above, but valid for partially completed string commands. This is to determine when the key stack should be cleared.
