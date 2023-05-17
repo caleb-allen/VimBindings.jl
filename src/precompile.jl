@@ -6,7 +6,7 @@ using PrecompileTools
     """
     function run(buf::VimBuffer, cmd::String)
         command = parse_command(cmd)
-        (buf.buf, command)
+        execute(buf.buf, command)
     end
 
     function run(test_string::String, command::String)
@@ -20,7 +20,7 @@ using PrecompileTools
     end
 
     function precompile_vim_commands()::Vector{String}
-        s = """h j k l dh 5w daw ciw caW caw daW ct" fa a A i I o O x X C S dd D"""
+        s = """h j k l w W e E dh 5w daw cw ciw caW caw daW cW ct" fa a A i I o O x X C S dd D"""
         String.(split(s))
     end
 
