@@ -359,6 +359,6 @@ function change_mode_line()
 end
 
 
-include("precompile.jl")
+include("pkgtools.jl")
 
 end

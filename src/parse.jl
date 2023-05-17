@@ -12,7 +12,7 @@ const REGS = (
     # complete = 
 )
 """
-Grammar for Vim's language:
+Vim's language:
     1. Insert commands:
         a
         A
