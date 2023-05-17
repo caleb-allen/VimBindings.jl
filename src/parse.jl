@@ -145,7 +145,7 @@ function parse_command(s :: AbstractString) :: Union{Command, Nothing}
     m === nothing && return nothing
     m::RegexMatch
     dtype = RULES[r]
-    return command_constructor((x...) -> dtype(x...), parse_value.(m.captures)...)
+    return command_constructor(dtype, parse_value.(m.captures)...)
 end
 
 

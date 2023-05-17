@@ -189,12 +189,15 @@ ReplaceCommand(1, 'c')
 ```
 is equivalent to the code:
 ```
-command_constructor((x...) -> ReplaceCommand(x...), ParseValue(1), ParseValue('c'))
+command_constructor(ReplaceCommand, ParseValue(1), ParseValue('c'))
 ```
 The reason to use this second approach is better type stability.
 (Though, a refactor with a single type-stable command struct would be better.)
 """
-function command_constructor(f::F, parse_values::ParseValue...) where F
+function command_constructor(::Type{C}, parse_values::ParseValue...) where {C<:Command}
+    return command_constructor((x...) -> C(x...), parse_values...)::C
+end
+function command_constructor(f::F, parse_values::ParseValue...) where {F<:Function}
     if parse_values[1].type == :nothing
         return command_constructor((x...) -> f(nothing, x...), parse_values[2:end]...)
     elseif parse_values[1].type == :int
@@ -208,7 +211,7 @@ function command_constructor(f::F, parse_values::ParseValue...) where F
     end
 end
 # Finally, we call it:
-command_constructor(f::F) where F = f()::Command
+command_constructor(f::F) where {F<:Function} = f()::Command
 
 
 end
