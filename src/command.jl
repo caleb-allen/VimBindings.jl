@@ -180,7 +180,20 @@ ParseValue(i::Int) = ParseValue(type=:int, i=i)
 ParseValue(c::Char) = ParseValue(type=:char, c=c)
 ParseValue(s::AbstractString) = ParseValue(type=:string, s=s)
 
-"""This function unpacks the parsed values into a `Command` object"""
+"""
+This function unpacks the parsed values into a `Command` object.
+
+For example, the code:
+```
+ReplaceCommand(1, 'c')
+```
+is equivalent to the code:
+```
+command_constructor((x...) -> ReplaceCommand(x...), ParseValue(1), ParseValue('c'))
+```
+The reason to use this second approach is better type stability.
+(Though, a refactor with a single type-stable command struct would be better.)
+"""
 function command_constructor(f::F, parse_values::ParseValue...) where F
     if parse_values[1].type == :nothing
         return command_constructor((x...) -> f(nothing, x...), parse_values[2:end]...)
