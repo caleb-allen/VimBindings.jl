@@ -2,6 +2,7 @@
 # import VimBindings: verb_part, text_object_part, well_formed, parse_value
 import VimBindings.Parse: verb_part, text_object_part, well_formed, parse_value
 using VimBindings.Commands
+import VimBindings.Commands: ParseValue
 using VimBindings.Parse
 import VimBindings.Parse: command, parse_command
 
@@ -29,11 +30,11 @@ import VimBindings.Parse: command, parse_command
 
 
 @testset "parse values" begin
-    @test Parse.parse_value("10") == 10
-    @test Parse.parse_value("0") == 0
-    @test Parse.parse_value(".") == '.'
-    @test Parse.parse_value("asdf") == "asdf"
-    @test Parse.parse_value("10ten") == "10ten"
+    @test Parse.parse_value("10") == ParseValue(10)
+    @test Parse.parse_value("0") == ParseValue(0)
+    @test Parse.parse_value(".") == ParseValue('.')
+    @test Parse.parse_value("asdf") == ParseValue("asdf")
+    @test Parse.parse_value("10ten") == ParseValue("10ten")
 end
 @testset "verbs from strings" begin
     @test verb_part("dw") == 'd'
@@ -76,11 +77,11 @@ end
 end
 
 @testset "parse specific values" begin
-    @test parse_value("10") == 10
-    @test parse_value("") === nothing
-    @test parse_value("d") == 'd'
-    @test parse_value("aw") == "aw"
-    @test parse_value(nothing) === nothing
+    @test parse_value("10") == ParseValue(10)
+    @test parse_value("") == ParseValue(nothing)
+    @test parse_value("d") == ParseValue('d')
+    @test parse_value("aw") == ParseValue("aw")
+    @test parse_value(nothing) == ParseValue(nothing)
 end
 
 @testset "parse commands into parts" begin

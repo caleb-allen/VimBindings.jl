@@ -117,17 +117,17 @@ end
 """
     Get the typed value of `item`
 """
-function parse_value(item :: Union{Nothing, AbstractString}) :: Union{Integer, Char, AbstractString, Nothing}
+function parse_value(item :: Union{Nothing, AbstractString}) :: ParseValue
     if item === nothing || isempty(item)
-        return nothing
+        return ParseValue(nothing)
     end
     if match(r"^\d+$", item) !== nothing
-        return parse(Int, item)
+        return ParseValue(parse(Int, item))
     end
     if length(item) == 1
-        return item[1]
+        return ParseValue(item[1])
     end
-    return item
+    return ParseValue(item)
 end
 
 """
@@ -144,7 +144,8 @@ function parse_command(s :: AbstractString) :: Union{Command, Nothing}
     m = match(r, s)
     m === nothing && return nothing
     m::RegexMatch
-    return RULES[r](parse_value.(m.captures)...)
+    dtype = RULES[r]
+    return command_constructor(dtype, parse_value.(m.captures)...)
 end
 
 
