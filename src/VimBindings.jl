@@ -13,6 +13,7 @@ using Base: AnyDict
 using REPL
 using REPL.LineEdit
 using Match
+using Logging
 import REPL.LineEdit: KeyAlias, edit_splice!, buffer, refresh_line
 import Base: AnyDict, show_unquoted
 using Sockets
@@ -20,7 +21,6 @@ using Sockets
 const LE = LineEdit
 include("util.jl")
 using .Util
-import .Util.log
 
 include("textutils.jl")
 include("command.jl")
@@ -48,9 +48,9 @@ end
 
 
 
-global const STATE = VimState(Dict{Char,String}(), '"', insert_mode)
-global const KEY_STACK = Char[]
-global const INITIALIZED = Ref(false)
+const global STATE = VimState(Dict{Char,String}(), '"', insert_mode)
+const global KEY_STACK = Char[]
+const global INITIALIZED = Ref(false)
 
 const VTE_CURSOR_STYLE_TERMINAL_DEFAULT = "\033[0 q"
 const VTE_CURSOR_STYLE_BLINK_BLOCK = "\033[1 q"
@@ -62,8 +62,11 @@ const VTE_CURSOR_STYLE_STEADY_UNDERLINE = "\033[4 q"
 const VTE_CURSOR_STYLE_BLINK_IBEAM = "\033[5 q"
 const VTE_CURSOR_STYLE_STEADY_IBEAM = "\033[6 q"
 
+
+
+
 function strike_key(c, s::LE.MIState)::StrikeKeyResult
-    log(escape_string("Strike key: $c"))
+    @debug(escape_string("Strike key: $c"))
     if c == "\e\e"
         empty!(KEY_STACK)
         return VimAction()
@@ -104,25 +107,26 @@ function strike_key(c, s::LE.MIState)::StrikeKeyResult
     ]
 
     s_cmd in fallback_keys && begin
-        log(escape_string("falling back for cmd `$s_cmd`"))
+        @debug(escape_string("falling back for cmd `$s_cmd`"))
         cs = copy(KEY_STACK)
         empty!(KEY_STACK)
         return Fallback(cs)
     end
     if well_formed(s_cmd)
-        log(escape_string("well formed command: $s_cmd"))
+        @debug(escape_string("well formed command: $s_cmd"))
         empty!(KEY_STACK)
-        @log cmd = parse_command(s_cmd)
+        cmd = parse_command(s_cmd)
+        @debug cmd
         if cmd !== nothing
             buf = buffer(s)
             repl_action::Union{VimMode,ReplAction,Nothing} = execute(buf, cmd)
             if repl_action isa VimMode
-                log("trigger mode...")
+                @debug("trigger mode...")
                 trigger_mode(s, repl_action)
             elseif repl_action isa ReplAction
                 global debug = s
-                @log typeof(mode(s)) # REPL.LineEdit.PrefixHistoryPrompt
-                @log typeof(s) # REPL.LineEdit.MIState
+                @debug typeof(mode(s)) # REPL.LineEdit.PrefixHistoryPrompt
+                @debug typeof(s) # REPL.LineEdit.MIState
                 if repl_action == history_up
                     return FallbackAlternate("\e[A")
                 elseif repl_action == history_down
@@ -134,8 +138,8 @@ function strike_key(c, s::LE.MIState)::StrikeKeyResult
         end
         return VimAction()
     else
-        log("WARN: command not well formed!")
-        @log KEY_STACK
+        @debug("WARN: command not well formed!")
+        @debug KEY_STACK
         # TODO if command is still a possible match, don't clear the stack.
         #  In other words, only clear the stack if the stack is definitely invalid.
         return NoAction()
@@ -147,12 +151,12 @@ function init()
         return
     end
     # enable_logging()
-    log("initializing...")
-    @log current_task()
+    @debug("initializing...")
+    @debug current_task()
     repl = Base.active_repl
     trigger_insert_mode(repl.mistate)
     INITIALIZED.x = true
-    log("initialized")
+    @debug("initialized")
     return
 end
 
@@ -211,13 +215,13 @@ function trigger_mode(state::LE.MIState, mode::VimMode)
     elseif mode == insert_mode
         trigger_insert_mode(state)
     else
-        log("Could not trigger mode ", mode)
+        @debug("Could not trigger mode ", mode)
     end
 end
 function trigger_insert_mode(s::LE.MIState)
     STATE.mode = insert_mode
     print(stdout, VTE_CURSOR_STYLE_STEADY_IBEAM)
-    log("trigger insert mode")
+    @debug("trigger insert mode")
     LE.refresh_line(s)
 end
 
@@ -229,7 +233,7 @@ function trigger_normal_mode(s::LE.MIState)
         LE.refresh_line(s)
         print(stdout, VTE_CURSOR_STYLE_STEADY_BLOCK)
     end
-    log("trigger normal mode")
+    @debug("trigger normal mode")
 end
 
 function reset_term_cursor()
@@ -267,7 +271,11 @@ function funcdump(args...)
 end
 
 function enable_logging()
-    Util.enable_logging()
+    # Util.enable_logging()
+    pipe = connect(1234)
+    io = IOContext(pipe, :color => true)
+    l = ConsoleLogger(io, Debug; right_justify=4)
+    Base.global_logger(l)
 end
 
 function debug_info()

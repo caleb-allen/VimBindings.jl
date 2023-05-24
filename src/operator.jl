@@ -28,7 +28,7 @@ end
 function delete(buf::IO, motion::Motion) #, motion_type :: MotionType)
     yank(buf, motion)
     move(buf, motion) #, motion_type)
-    @log LE.edit_splice!(buf, min(motion) => max(motion))
+    LE.edit_splice!(buf, min(motion) => max(motion))
     return nothing
 end
 

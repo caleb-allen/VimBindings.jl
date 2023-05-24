@@ -24,7 +24,7 @@ function LE.prompt!(term::TextTerminal, prompt::ModalInterface, s::MIState=init_
             # errors in keymaps shouldn't cause the REPL to fail, so wrap in a
             # try/catch block
             try
-                @log status = fcn(s, kdata)
+                status = fcn(s, kdata)
             catch e
                 @error "Error in the keymap" exception = e, catch_backtrace()
                 # try to cleanup and get `s` back to its original state before returning
@@ -32,6 +32,7 @@ function LE.prompt!(term::TextTerminal, prompt::ModalInterface, s::MIState=init_
                 transition(s, old_state)
                 status = :done
             end
+            @debug status
             status !== :ignore && (s.last_action = s.current_action)
             if status === :abort
                 s.aborted = true
@@ -53,8 +54,8 @@ function LE.prompt!(term::TextTerminal, prompt::ModalInterface, s::MIState=init_
 end
 
 function LE.match_input(f::Function, s::Union{Nothing,LE.MIState}, term, cs::Vector{Char}, keymap)
-    log("match function")
-    @log cs
+    @debug("match function")
+    @debug cs
     LE.update_key_repeats(s, cs)
     c = String(cs)
     fallback_fn = function (s, p)  # s::Union{Nothing,MIState}; p can be (at least) a LineEditREPL, PrefixSearchState, Nothing
@@ -69,11 +70,12 @@ function LE.match_input(f::Function, s::Union{Nothing,LE.MIState}, term, cs::Vec
         return function (s, p)
             local result
             try
-                @log result = strike_key(c, s)
+                result = strike_key(c, s)
             catch e
                 @error "Error while executing vim key strike" exception = e, catch_backtrace()
                 result = NoAction()
             end
+            @debug result
             if result isa Fallback
                 return fallback_fn(s, p)
             end
@@ -94,10 +96,10 @@ function LE.match_input(f::Function, s::Union{Nothing,LE.MIState}, term, cs::Vec
 end
 
 function LE.match_input(k::Nothing, s, term, cs, keymap)
-    log("match nothing")
-    @log cs
+    @debug("match nothing")
+    @debug cs
     return (s, p) -> begin
-        log("nothing")
+        @debug("nothing")
         return :ok
     end
 end
@@ -107,29 +109,29 @@ function LE.match_input(k::Dict{Char}, s::Union{Nothing,LE.MIState}, term::Union
     # if we run out of characters to match before resolving an action,
     # return an empty keymap function
     eof(term) && return (s, p) -> begin
-        log("eof: aborting")
+        @debug("eof: aborting")
         :abort
     end
     c = read(term, Char)
-    log(escape_string("Reading byte $c"))
-    log("cs: " * escape_string(string(cs)))
+    @debug(escape_string("Reading byte $c"))
+    @debug("cs: " * escape_string(string(cs)))
     if isempty(cs) && c == '\e'
         is_escape_task = @async begin
             sleep(0.03)
             avail = bytesavailable(term)
             if avail > 0
-                log("bytes available to read: suspected encoded sequence")
+                @debug("bytes available to read: suspected encoded sequence")
                 return false
             else
-                log("no bytes available to read: suspected Escape key")
+                @debug("no bytes available to read: suspected Escape key")
                 return true
             end
         end
         is_escape = fetch(is_escape_task)
-        log("is escape_key?")
+        @debug("is escape_key?")
 
         if is_escape
-            log("yes escape")
+            @debug("yes escape")
             if STATE.mode === normal_mode
                 result = strike_key("\e\e", s)
                 # TODO: Variable assigned but not used
@@ -138,19 +140,19 @@ function LE.match_input(k::Dict{Char}, s::Union{Nothing,LE.MIState}, term::Union
             end
             return (s, p) -> :ok
         else
-            log("not escape key.")
+            @debug("not escape key.")
         end
     end
-    log(escape_string("matching input for `$c`"))
+    @debug(escape_string("matching input for `$c`"))
     # Ignore any `wildcard` as this is used as a
     # placeholder for the wildcard (see normalize_key("*"))
     c == LE.wildcard && return (s, p) -> begin
-        log("ignoring wildcard character")
+        @debug("ignoring wildcard character")
         :ok
     end
     push!(cs, c)
-    @log escape_string(LE.input_string(s))
-    @log haskey(k, c)
+    @debug escape_string(LE.input_string(s))
+    @debug haskey(k, c)
     key = haskey(k, c) ? c : LE.wildcard
     # if we don't match on the key, look for a default action then fallback on 'nothing' to ignore
     # if we don't match on the key, look for a default action then fallback on 'nothing' to ignore

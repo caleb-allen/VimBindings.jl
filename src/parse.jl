@@ -3,12 +3,12 @@ import DataStructures: OrderedDict
 using ..Commands
 using ..Motions
 using ..Util
-import ..Util.log
+import ..Util.@debug
 
 export well_formed, matched_rule, parse_command, synonym, partial_well_formed
 
 const REGS = (
-    text_object = r"^.?([ai][wWsp])$",
+    text_object=r"^.?([ai][wWsp])$",
     # complete = 
 )
 """
@@ -43,7 +43,7 @@ const MOTION = begin
     "[$implemented_keys]"
 end
 # motions with multiple keystrokes e.g. 'fx'
-function complex_motion() :: String
+function complex_motion()::String
     local motion_regexes = keys(complex_motions) |> collect
     patterns = map(motion_regexes) do regex
         regex.pattern
@@ -86,7 +86,7 @@ const PARTIAL_RULES = TupleDict(
 """
 Determines whether the given string is accepted as a vim command.
 """
-function well_formed(cmd :: String) :: Bool
+function well_formed(cmd::String)::Bool
     for rule in keys(RULES)
         if occursin(rule, cmd)
             return true
@@ -95,7 +95,7 @@ function well_formed(cmd :: String) :: Bool
     return false
 end
 
-function partial_well_formed(cmd :: String) :: Bool
+function partial_well_formed(cmd::String)::Bool
     for rule in keys(PARTIAL_RULES)
         @show match(rule, cmd)
         if occursin(rule, cmd)
@@ -105,7 +105,7 @@ function partial_well_formed(cmd :: String) :: Bool
     return false
 end
 
-function matched_rule(cmd :: String)
+function matched_rule(cmd::String)
     for rule in keys(RULES)
         if occursin(rule, cmd)
             return rule
@@ -117,7 +117,7 @@ end
 """
     Get the typed value of `item`
 """
-function parse_value(item :: Union{Nothing, AbstractString}) :: ParseValue
+function parse_value(item::Union{Nothing,AbstractString})::ParseValue
     if item === nothing || isempty(item)
         return ParseValue(nothing)
     end
@@ -133,10 +133,10 @@ end
 """
     Attempt to parse a command, return nothing if `s` could not be parsed into a command
 """
-function parse_command(s :: AbstractString) :: Union{Command, Nothing}
+function parse_command(s::AbstractString)::Union{Command,Nothing}
     r = matched_rule(s)
     if r === nothing
-        log("command not well formed", s)
+        @debug("command not well formed", s)
         return nothing
     end
     r::Regex
@@ -153,18 +153,18 @@ end
     Return a struct corresponding to a regex match's Vim command
 """
 
-function synonym(command :: SynonymCommand) :: Command
+function synonym(command::SynonymCommand)::Command
     synonyms = Dict(
-            'x' => "dl",
-            'X' => "dh"
-        )
+        'x' => "dl",
+        'X' => "dh"
+    )
     return parse_command("$(command.r1)$(synonyms[command.operator])")
 
 end
-    
 
 
-function lookup_synonym(n :: Integer, c :: Char)
+
+function lookup_synonym(n::Integer, c::Char)
 end
 
 
@@ -175,8 +175,8 @@ end
 #     return m
 # end
 
-function Base.Dict(m :: RegexMatch)
-    d = OrderedDict{Symbol, Any}()
+function Base.Dict(m::RegexMatch)
+    d = OrderedDict{Symbol,Any}()
     idx_to_capture_name = Base.PCRE.capture_names(m.regex.regex)
     if !isempty(m.captures)
         for i = 1:Base.length(m.captures)
@@ -190,7 +190,7 @@ end
 
 
 
-function text_object_part(cmd :: AbstractString) :: Union{String, Nothing}
+function text_object_part(cmd::AbstractString)::Union{String,Nothing}
     m = match(REGS.text_object, cmd)
     if m === nothing
         return nothing
@@ -198,7 +198,7 @@ function text_object_part(cmd :: AbstractString) :: Union{String, Nothing}
     return m.captures[1]
 end
 
-function verb_part(cmd :: AbstractString) :: Union{Char, Nothing}
+function verb_part(cmd::AbstractString)::Union{Char,Nothing}
     reg = Regex("\\d*($OPERATOR).*")
     m = match(reg, cmd)
     if m === nothing
