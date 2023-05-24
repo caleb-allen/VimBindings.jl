@@ -7,6 +7,10 @@ The end of this file contains precompilation code
 """
 module PkgTools
 import ..VimBuffer, ..parse_command, ..testbuf, ..execute
+import ..TextUtils: junction_type, TextChar, is_object_start, is_whitespace_start,
+    is_non_whitespace_start, is_object_end, is_non_whitespace_end, is_whitespace_end
+using Combinatorics
+
 const TEST_STRING = """abcdefghijklmnopqrstuvwxyz "' 0987654321 A B C D E F G H| I J K L M N O P Q R S T U V W X Y Z 98 76 54 32 21 !@#%^9^&*() abcdefghijklmnopqrstuvwxyz '" 0987654321"""
 
 
@@ -36,22 +40,44 @@ end
 
 function time_commands()
     map(commands_and_buffers()) do (cmd, buf)
-        @elapsed @eval run($cmd, $buf)        
+        @elapsed @eval run($cmd, $buf)
     end
+end
+
+"""
+Run through the possible method calls to `junction_type` and `at_junction_type`
+"""
+function run_junctions()
+    text_chars = TextChar[TextChar(' '), TextChar('a'), TextChar('!')]
+    for (a, b) in permutations(text_chars)
+        junction_type(a, b)
+    end
+
+    buf = testbuf("Hello Vim|!")
+
+    is_object_start(buf)
+    is_whitespace_start(buf)
+    is_non_whitespace_start(buf)
+    is_object_end(buf)
+    is_non_whitespace_end(buf)
+    is_whitespace_end(buf)
 end
 
 end
 
 using PrecompileTools
 
+# PrecompileTools.verbose[] = true
 # precompilation
 @setup_workload begin
-    # allocate test buffers beforehand to exclude them from precompilation
     commands = PkgTools.commands_and_buffers()
+
     @compile_workload begin
         for (cmd, buf) in commands
             PkgTools.run(cmd, buf)
         end
+
+        PkgTools.run_junctions()
     end
 end
 

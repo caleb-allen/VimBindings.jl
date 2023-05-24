@@ -42,10 +42,10 @@ The REPL begins in Insert mode, which can be used in its familiar fashion.
 
 VimBindings.jl emulates Normal mode, which is accessed by striking the `Escape` key.
 
-## Features
 
 ### Insert mode
-Insert mode is similar to the standard REPL experience. Insert mode is indicated by replacing the terminal cursor, a block █, with a pipe ❘ cursor. If you are using a very old terminal application, it may not support the pipe cursor. However, most modern terminals do.
+Insert mode is similar to the standard REPL experience. Insert mode is indicated with a pipe | cursor.
+
 ### Normal mode
 Navigate to Normal mode by striking `Esc`. Normal mode is indicated with a block █ cursor.
 
@@ -58,6 +58,7 @@ Navigate to Normal mode by striking `Esc`. Normal mode is indicated with a block
 
 <!-- Numbers may be prepended to motion commands, for example `5w` to move 5 words. -->
 
+## Features
 Here are a few of the features of the package, as well as goal features of the package.
 
 - [x] Basic editing (e.g. `dw`, `cw`, `x`)

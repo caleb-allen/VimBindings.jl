@@ -156,86 +156,6 @@ function init()
     return
 end
 
-function add_vim_keybinds!(mode::LE.TextInterface)
-    repl = Base.active_repl
-    # TODO: Variable unused
-    prior_keybinds = mode.keymap_dict
-    binds = AnyDict()
-    for c in all_keys
-        bind = (s::LE.MIState, o...) -> begin
-            if STATE.mode == normal_mode
-                log("normal mode. Dispatching vim key strike")
-                strike_key(c, s)
-            else
-                log("insert mode")
-                log("Defaulting to existing key binding.")
-                if c in keys(prior_keybinds)
-                    prior_keybinds[c](s, o...)
-                else
-                    log("No existing keybind. Writing char `$c`")
-                    @log term = LE.terminal(s)
-                    write(term, c)
-                end
-            end
-        end
-        binds[c] = bind
-    end
-
-    keymap = AnyDict(
-        '*' => (s::LE.MIState, o...) -> begin
-            log("keymap fallthrough: *")
-            # @log o
-        end,
-        "\e\e" => (s, o...) -> begin
-            log("key: \\e\\e")
-            empty!(KEY_STACK)
-        end,
-    )
-    keymap = merge(keymap,
-        AnyDict(binds))
-
-    # keys to copy from `mode`
-    copy_keys = [
-        # enter
-        '\r',
-        # tab
-        # '\t',
-        # newline
-        '\n',
-        # home
-        "\e[H",
-        # end
-        "\e[F",
-        # clear
-        "^L",
-        # right arrow
-        "\e[C",
-        # left arrow
-        "\e[D",
-        # up arrow
-        "\e[A",
-        # down arrow
-        "\e[B",
-        # delete
-        "\e[3~",
-        # C-c
-        "\x03",
-        # C-d
-        "\x04"
-    ]
-
-    for c in copy_keys
-        (c in keys(keymap) || c in keys(mode.keymap_dict)) && continue
-        keymap[c] = LE.default_keymap[c]
-    end
-    keymap = merge(keymap, mode.keymap_dict)
-
-    # mode.keymap_dict = LE.keymap([keymap])
-    log("initialized for $(LE.prompt_string(mode))")
-    return
-
-end
-
 function edit_move_end(s::LE.MIState)
     buf = LE.buffer(s)
     @show typeof(buf)
@@ -306,10 +226,14 @@ function trigger_normal_mode(s::LE.MIState)
     if STATE.mode !== normal_mode
         STATE.mode = normal_mode
         left(iobuffer)(iobuffer)
+        LE.refresh_line(s)
         print(stdout, VTE_CURSOR_STYLE_STEADY_BLOCK)
     end
     log("trigger normal mode")
-    LE.refresh_line(s)
+end
+
+function reset_term_cursor()
+    print(stdout, VTE_CURSOR_STYLE_TERMINAL_DEFAULT)
 end
 
 function debug_mode(state::REPL.LineEdit.MIState, repl::LineEditREPL, char::String)
