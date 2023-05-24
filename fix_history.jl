@@ -14,7 +14,7 @@
 # entries removed. A backup file will be created at `repl_history_backup.jl`
 # prior to any modifications.
 
-history_file = joinpath(homedir(), ".julia/logs/repl_history.jl")
+history_file = joinpath(homedir(), ".julia/@debugs/repl_history.jl")
 delete_entries = false
 if "--delete_corrupted" in ARGS
     delete_entries = true
@@ -86,7 +86,7 @@ function entries()::Vector{HistoryEntry}
                 if time !== nothing && mode !== nothing
                     # create an entry value if necessary
                     push!(entries,
-                          HistoryEntry(time, mode, join(content, "\n")))
+                        HistoryEntry(time, mode, join(content, "\n")))
                 end
                 # reset for a new entry
                 time = line
@@ -105,7 +105,7 @@ function entries()::Vector{HistoryEntry}
 end
 
 function write_history(entries::Vector{HistoryEntry})
-    backup_file = joinpath(homedir(), ".julia/logs/repl_history_backup.jl")
+    backup_file = joinpath(homedir(), ".julia/@debugs/repl_history_backup.jl")
     cp(history_file, backup_file)
     println("copied $history_file to $backup_file")
 
@@ -136,7 +136,7 @@ function Base.show(io::IO, e::HistoryEntry)
     end
 end
 
-function fix_history(;delete_entries=false, escape_entries=false)
+function fix_history(; delete_entries=false, escape_entries=false)
     es = entries()
     corrupt = corrupted(es)
     if isempty(corrupt)
@@ -151,12 +151,12 @@ function fix_history(;delete_entries=false, escape_entries=false)
         entries()
     else
         println(
-"""
-run 
-   `./fix_history.jl --delete_entries`
-or
-   `./fix_history.jl --escape_entries`
-to fix and overwrite $history_file.""")
+            """
+            run 
+               `./fix_history.jl --delete_entries`
+            or
+               `./fix_history.jl --escape_entries`
+            to fix and overwrite $history_file.""")
         return
     end
 
@@ -164,5 +164,5 @@ to fix and overwrite $history_file.""")
     println("Wrote history at $out_file")
 end
 
-fix_history(;delete_entries, escape_entries)
+fix_history(; delete_entries, escape_entries)
 

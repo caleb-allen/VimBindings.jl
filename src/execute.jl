@@ -20,18 +20,20 @@ end
 """
     Execute the given command, and return
 """
-function execute(buf, command :: MotionCommand) :: Union{VimMode, ReplAction, Nothing}
-    log("executing motion command: $(command.name)")
+function execute(buf, command::MotionCommand)::Union{VimMode,ReplAction,Nothing}
+    @debug("executing motion command: $(command.name)")
     # buf = buffer(s)
     repl_action = nothing
     for iteration in 1:command.r1
         # call the command's function to generate the motion object
-        @log motion = gen_motion(buf, command)
+        motion = gen_motion(buf, command)
+        @debug motion
         if is_stationary(motion)
-            @log repl_action = @match key(command) begin
+            repl_action = @match key(command) begin
                 'j' => history_down
                 'k' => history_up
             end
+            @debug repl_action
         else
             # execute the motion object
             motion(buf)
@@ -39,7 +41,7 @@ function execute(buf, command :: MotionCommand) :: Union{VimMode, ReplAction, No
     end
     return repl_action
 end
-function execute(buf, command :: LineOperatorCommand) :: Union{VimMode, Nothing}
+function execute(buf, command::LineOperatorCommand)::Union{VimMode,Nothing}
     local op_fn = nothing
     for r in 1:command.r1
         # buf = buffer(s)
@@ -54,7 +56,7 @@ function execute(buf, command :: LineOperatorCommand) :: Union{VimMode, Nothing}
     return nothing
 end
 
-function execute(buf, command :: InsertCommand) :: Union{VimMode, Nothing}
+function execute(buf, command::InsertCommand)::Union{VimMode,Nothing}
     # cmds = [aAiIoO]
     # buf = buffer(s)
     motion = @match command.c begin
@@ -96,10 +98,10 @@ function execute(buf, command :: InsertCommand) :: Union{VimMode, Nothing}
     return insert_mode
 end
 
-function execute(buf, command :: OperatorCommand) :: Union{VimMode, Nothing}
+function execute(buf, command::OperatorCommand)::Union{VimMode,Nothing}
     # *5*d2w
-    log(command)
-    @log op_fn = operator_fn(command.operator)
+    @debug(command)
+    op_fn = operator_fn(command.operator)
     # From neovim help ":h cw"
     # Special case: When the cursor is in a word, "cw" and "cW" do not include the
     # white space after a word, they only change up to the end of the word.  This is
@@ -109,18 +111,23 @@ function execute(buf, command :: OperatorCommand) :: Union{VimMode, Nothing}
     if command.operator == 'c' && command.action.name in ['w', 'W']
         # in the middle of a word
         if at_junction_type(buf, In{>:Word})
-            new_name = if command.action.name == 'w' 'e' else 'E' end
-            log("altering 'c$(command.action)' command to 'c$new_name'")
+            new_name = if command.action.name == 'w'
+                'e'
+            else
+                'E'
+            end
+            @debug("altering 'c$(command.action)' command to 'c$new_name'")
             command = OperatorCommand(command.r1, command.operator, command.action.r1, new_name)
         end
     end
     for r1 in 1:command.r1
         # TODO the iteration on `action.r1` should probably happen in `gen_motion`
         for r2 in 1:command.action.r1
-            @log r2
-            @log motion = gen_motion(buf, command.action)
-            # @log result = eval(Expr(:call, op_fn, buf, motion))
-            @log result = op_fn(buf, motion)
+            motion = gen_motion(buf, command.action)
+            @debug motion
+            # @debug result = eval(Expr(:call, op_fn, buf, motion))
+            result = op_fn(buf, motion)
+            @debug result
         end
     end
     if op_fn == change
@@ -129,7 +136,7 @@ function execute(buf, command :: OperatorCommand) :: Union{VimMode, Nothing}
     return nothing
 end
 
-function execute(buf, command :: SynonymCommand) :: Union{VimMode, Nothing}
+function execute(buf, command::SynonymCommand)::Union{VimMode,Nothing}
     synonyms = Dict(
         'x' => "dl",
         'X' => "dh",
@@ -138,14 +145,14 @@ function execute(buf, command :: SynonymCommand) :: Union{VimMode, Nothing}
         'S' => "cc"
     )
     new_command = parse_command("$(command.r1)$(synonyms[command.operator])")
-    
+
     return execute(buf, new_command)
 end
 
-function execute(buf, command :: ReplaceCommand) :: Union{VimMode, Nothing}
+function execute(buf, command::ReplaceCommand)::Union{VimMode,Nothing}
     inserted = 0
     for r1 in 1:command.r1
-        delete(buf, right(buf))        
+        delete(buf, right(buf))
         inserted += LE.edit_insert(buf, command.replacement)
     end
     if inserted > 0
@@ -154,6 +161,6 @@ function execute(buf, command :: ReplaceCommand) :: Union{VimMode, Nothing}
     return nothing
 end
 
-execute(buf, :: ZeroCommand) = execute(buf, MotionCommand(nothing, '0'))
+execute(buf, ::ZeroCommand) = execute(buf, MotionCommand(nothing, '0'))
 
 end
