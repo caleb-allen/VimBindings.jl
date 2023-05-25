@@ -29,6 +29,12 @@ is_object_end(buf) = at_junction_type(buf, End{>:Word})
 is_non_whitespace_end(buf) = at_junction_type(buf, End{>:NonWhitespace})
 is_whitespace_end(buf) = at_junction_type(buf, End{>:Whitespace})
 
+
+"""
+Whether the buffer is currently in an object of a continuous type (not between two types)
+"""
+is_in_object(buf) = at_junction_type(buf, In{>:WordChar})
+
 """
 Get the 
 """
@@ -146,8 +152,8 @@ junction_type(char1 :: T, char2 :: T) where T <: WhitespaceChar = Set([In{Whites
 Whether the given buffer is currently at a junction of type junc
 """
 function at_junction_type(buf, junc_type)
-    c0, c1 = chars_by_cursor(buf)
-    for junc in junction_type(c0, c1)
+    c1, c2 = chars_by_cursor(buf)
+    for junc in junction_type(c1, c2)
         if junc isa junc_type
             return true
         end

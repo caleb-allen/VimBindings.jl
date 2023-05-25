@@ -24,7 +24,6 @@ using .Util
 
 include("textutils.jl")
 include("command.jl")
-include("textobject.jl")
 include("motion.jl")
 include("registers.jl")
 include("operator.jl")
@@ -66,7 +65,7 @@ const VTE_CURSOR_STYLE_STEADY_IBEAM = "\033[6 q"
 
 
 function strike_key(c, s::LE.MIState)::StrikeKeyResult
-    @debug(escape_string("Strike key: $c"))
+    @debug "strike key" key=escape_string(c)
     if c == "\e\e"
         empty!(KEY_STACK)
         return VimAction()
@@ -107,16 +106,15 @@ function strike_key(c, s::LE.MIState)::StrikeKeyResult
     ]
 
     s_cmd in fallback_keys && begin
-        @debug(escape_string("falling back for cmd `$s_cmd`"))
+        @debug "falling back for command" command=escape_string(s_cmd)
         cs = copy(KEY_STACK)
         empty!(KEY_STACK)
         return Fallback(cs)
     end
     if well_formed(s_cmd)
-        @debug(escape_string("well formed command: $s_cmd"))
         empty!(KEY_STACK)
         cmd = parse_command(s_cmd)
-        @debug cmd
+        @debug "Well formed command" string=escape_string(s_cmd) command=cmd
         if cmd !== nothing
             buf = buffer(s)
             repl_action::Union{VimMode,ReplAction,Nothing} = execute(buf, cmd)
@@ -259,15 +257,6 @@ function debug_mode(state::REPL.LineEdit.MIState, repl::LineEditREPL, char::Stri
 
     # Show what character user typed
     println(socket, "character: ", char)
-end
-
-function funcdump(args...)
-    socket = getsocket()
-    for (i, arg) in enumerate(args)
-        println(socket, "$i $(typeof(arg))")
-        println(socket, string("\t", propertynames(arg)))
-        println(socket)
-    end
 end
 
 function enable_logging()

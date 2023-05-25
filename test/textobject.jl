@@ -1,13 +1,15 @@
-using VimBindings.TextObjects
+using VimBindings.Motion
+import VimBindings.Motion: word, WORD
 using VimBindings.TextUtils
 @testset "a word textobject" begin
     @test word(testbuf("|word")) == (0, 4)
     @test word(testbuf("|word word")) == (0, 4)
     @test word(testbuf("|word#@!")) == (0, 4)
     @test word(testbuf("|word !##@")) == (0, 4)
+    @test word(testbuf("|!##@ word")) == (0, 4)
+    @test word(testbuf("|!##@word")) == (0, 4)
 
-    # @test word(testbuf("word| !##@")) == (4, 4)
-
+    @test word(testbuf("word|!##@")) == (5, 8)
 end
 
 @testset "a WORD textobject" begin
