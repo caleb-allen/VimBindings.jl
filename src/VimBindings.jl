@@ -271,7 +271,6 @@ function funcdump(args...)
 end
 
 function enable_logging()
-    # Util.enable_logging()
     pipe = connect(1234)
     io = IOContext(pipe, :color => true)
     l = ConsoleLogger(io, Debug; right_justify=4)
