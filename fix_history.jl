@@ -14,7 +14,7 @@
 # entries removed. A backup file will be created at `repl_history_backup.jl`
 # prior to any modifications.
 
-history_file = joinpath(homedir(), ".julia/@debugs/repl_history.jl")
+history_file = joinpath(homedir(), ".julia/logs/repl_history.jl")
 delete_entries = false
 if "--delete_corrupted" in ARGS
     delete_entries = true
@@ -105,7 +105,7 @@ function entries()::Vector{HistoryEntry}
 end
 
 function write_history(entries::Vector{HistoryEntry})
-    backup_file = joinpath(homedir(), ".julia/@debugs/repl_history_backup.jl")
+    backup_file = joinpath(homedir(), ".julia/logs/repl_history_backup.jl")
     cp(history_file, backup_file)
     println("copied $history_file to $backup_file")
 
