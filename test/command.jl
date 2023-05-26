@@ -4,7 +4,7 @@ using VimBindings.Execution
 """
 run a vim command on a buffer of text. Return a buffer of the result of the command
 """
-function run(buf :: VimBuffer, cmd :: String) :: VimBuffer
+function run(buf::VimBuffer, cmd::String)::VimBuffer
     if !well_formed(cmd)
         error("Command not well formed: $cmd")
     end
@@ -14,9 +14,19 @@ function run(buf :: VimBuffer, cmd :: String) :: VimBuffer
     return VimBuffer(buf.buf, VimMode(new_mode))
 end
 
-function run(test_string :: String, command) :: VimBuffer
+function run(test_string::String, command)::VimBuffer
     buf = testbuf(test_string)
     return run(buf, command)
+end
+
+# https://github.com/caleb-allen/VimBindings.jl/issues?q=is%3Aissue+is%3Aopen+label%3Abug
+@testset "bugs from github" begin
+    # https://github.com/caleb-allen/VimBindings.jl/issues/48
+    @test run("b::|Float64", "ciw") == testbuf("b::|i|")
+
+    # https://github.com/caleb-allen/VimBindings.jl/issues/46
+    @test run("|Hello world", "cw") == testbuf("|i| world")
+    @test run("|Hello world", "dw") == testbuf("|world")
 end
 
 
@@ -66,6 +76,9 @@ end
     @test run("as|n|df", "cw") == testbuf("as|i|")
     @test run("a as|n|df b", "cw") == testbuf("a as|i| b")
     @test run("a as|n|df b", "ciw") == testbuf("a |i| b")
+    @test run("a |asdf b", "ciw") == testbuf("a |i| b")
+    @test run("a %%%|asdf b", "ciw") == testbuf("a %%%|i| b")
+    @test run("a |asdf b", "ciw") == testbuf("a |i| b")
 
 end
 
@@ -88,7 +101,7 @@ end
 @testset "D" begin
     @test run("aaaa bbbb |ccc ddd", "d\$") == testbuf("aaaa bbbb |")
     @test run("aaaa bbbb |ccc ddd", "D") == testbuf("aaaa bbbb |")
-    @test run("aaaa bbbb |ccc ddd", "D") == run("aaaa bbbb |ccc ddd", "d\$") 
+    @test run("aaaa bbbb |ccc ddd", "D") == run("aaaa bbbb |ccc ddd", "d\$")
 end
 
 @testset "c[fFtT]x" begin
@@ -117,3 +130,4 @@ end
     @test run("|abcde", "3rx") == testbuf("xx|xde")
     @test_broken run("∀ x |∃ y", "rx") == testbuf("∀ x |x y")
 end
+

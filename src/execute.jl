@@ -1,6 +1,5 @@
 module Execution
 using ..Commands
-using ..TextObjects
 using ..Util
 using ..TextUtils
 using ..Motions
@@ -45,8 +44,7 @@ function execute(buf, command::LineOperatorCommand)::Union{VimMode,Nothing}
     local op_fn = nothing
     for r in 1:command.r1
         # buf = buffer(s)
-        line_textobject = line(buf)
-        line_motion = Motion(line_textobject...)
+        line_motion = line(buf)
         op_fn = operator_fn(command.operator)
         op_fn(buf, line_motion)
     end
@@ -100,7 +98,7 @@ end
 
 function execute(buf, command::OperatorCommand)::Union{VimMode,Nothing}
     # *5*d2w
-    @debug(command)
+    @debug "executing operator command" command
     op_fn = operator_fn(command.operator)
     # From neovim help ":h cw"
     # Special case: When the cursor is in a word, "cw" and "cW" do not include the
@@ -110,21 +108,23 @@ function execute(buf, command::OperatorCommand)::Union{VimMode,Nothing}
     # see vim help :h cw regarding this exception
     if command.operator == 'c' && command.action.name in ['w', 'W']
         # in the middle of a word
-        if at_junction_type(buf, In{>:Word})
+        if at_junction_type(buf, In{>:Word}) || at_junction_type(buf, Start{>:Word})
             new_name = if command.action.name == 'w'
                 'e'
             else
                 'E'
             end
             @debug("altering 'c$(command.action)' command to 'c$new_name'")
-            command = OperatorCommand(command.r1, command.operator, command.action.r1, new_name)
+            new = OperatorCommand(command.r1, command.operator, command.action.r1, new_name)
+            @debug "The operator command is `cw` or `cW`. Modifying to exclude whitespace after a word." previous = command new = new
+            command = new
         end
     end
     for r1 in 1:command.r1
         # TODO the iteration on `action.r1` should probably happen in `gen_motion`
         for r2 in 1:command.action.r1
             motion = gen_motion(buf, command.action)
-            @debug motion
+            @debug "executing motion" command_iteration=r1 action_iteration=r2 motion
             # @debug result = eval(Expr(:call, op_fn, buf, motion))
             result = op_fn(buf, motion)
             @debug result

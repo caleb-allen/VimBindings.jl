@@ -5,14 +5,17 @@ using REPL.LineEdit
 const LE = LineEdit
 using ..TextUtils
 using ..Util
-using ..TextObjects
 using ..Commands
+using Match
 
 export Motion, MotionType, simple_motions, complex_motions, insert_motions, gen_motion, is_stationary,
     down, up, word_next, word_big_next, word_end, word_back,
     word_big_back, word_big_end, line_end, line_begin, line_zero,
     find_c, find_c_back, get_safe_name, all_keys, special_keys, exclusive, inclusive, endd,
     left, right
+
+# text objects
+export line
 
 @enum MotionType begin
     linewise
@@ -532,18 +535,33 @@ function gen_motion(buf, cmd::SimpleMotionCommand)::Motion
     end
     # call the command's function to generate the motion object
     motion = fn(buf)
+    @debug "generated motion for SimpleMotionCommand" cmd motion
     return motion
 end
 
 
-function gen_motion(buf, command::TextObjectCommand)::Motion
-    return Motion(textobject(buf, command.name))
+function gen_motion(buf, cmd::TextObjectCommand)::Motion
+    m = match(r"^([ai])(.)$", cmd.name)
+    selection = @match m[1] begin
+        "i" => inner
+        "a" => a
+    end
+
+    text_object_fn = @match m[2] begin
+        "w" => word
+        "W" => WORD
+    end
+    if selection === nothing || text_object_fn === nothing
+        error("Could not create a text object with \"$name\"")
+    end
+    motion = selection(buf, text_object_fn)
+    @debug "generated motion for TextObjectCommand" cmd motion
+    return motion
 end
 
 """
 Generate motion for the given `name` which is either a complex motion (e.g. "fX") or a TextObject
 """
-# function gen_motion(buf, cmd :: String, captures :: Tuple) :: Motion
 function gen_motion(buf, cmd::CompositeMotionCommand)::Motion
     local fn = nothing
     for m in keys(complex_motions)
@@ -553,10 +571,9 @@ function gen_motion(buf, cmd::CompositeMotionCommand)::Motion
             break
         end
     end
-
-
-    return fn(buf, cmd.captures...)
-    # TODO
+    motion = fn(buf, cmd.captures...)
+    @debug "generating motion for CompositeMotionCommand" cmd motion
+    return motion
 end
 
 
@@ -618,7 +635,172 @@ function get_safe_name(s::AbstractString)::Symbol
     return get_safe_name(s[1])
 end
 
-
-
 LE.char_move_left(vb::VimBuffer) = LE.char_move_left(vb.buf)
+
+
+
+#################
+# Text Objects
+#################
+
+"""
+For the "inner" commands: If the cursor was on the object, the operator applies to 
+the object. If the cursor was on white space, the operator applies to the white 
+space.
+
+Only works with words right now.
+"""
+function inner(buf, selection_fun)::Motion
+    origin = position(buf)
+    if eof(buf)
+        if origin == 0
+            return Motion(origin, origin)
+        else
+            skip(buf, -1)
+        end
+    end
+    c = peek(buf, Char)
+    if is_whitespace(c)
+        return space(buf)
+    else
+        return selection_fun(buf)
+    end
+end
+
+"""
+  For non-block objects: For the "a" commands: The operator applies to the object
+   and the white space after the object. If there is no white space after the object
+    or when the cursor was in the white space before the object, the white space before
+    the object is included.
+"""
+function a(buf, selection_fun)::Motion
+    origin = position(buf)
+    if eof(buf)
+        if origin == 0
+            return Motion(origin, origin)
+        else
+            skip(buf, -1)
+        end
+    end
+    c = peek(buf, Char)
+    if is_whitespace(c)
+        return space(buf)
+    else
+        return selection_fun(buf)
+    end
+end
+
+"""
+    A word consists of a sequence of letters, digits and underscores, or a
+sequence of other non-blank characters, separated with white space (spaces,
+tabs, <EOL>).  This can be changed with the 'iskeyword' option.  An empty line
+is also considered to be a word.
+"""
+function word(buf::IO)::Motion
+    origin = position(buf)
+    start = if is_object_start(buf)
+        Motion(buf)
+    else
+        word_back(buf)
+    end
+    eof(buf) && return start
+    skip(buf, 1)
+    @loop_guard while !eof(buf) && is_in_object(buf)
+        skip(buf, 1)
+    end
+    endd = Motion(buf)
+    seek(buf, origin)
+    motion = start + endd
+    @debug "found word textobject" start endd motion
+    return motion
+end
+
+"""
+A WORD consists of a sequence of non-blank characters, separated with white
+space.  An empty line is also considered to be a WORD.
+
+"""
+function WORD(buf::IO)::Motion
+    origin = position(buf)
+
+    eof(buf) && return Motion(origin, origin)
+    is_whitespace(peek(buf, Char)) && return Motion(origin, origin)
+
+    local start
+    @loop_guard while !is_non_whitespace_start(buf)
+        skip(buf, -1)
+    end
+    start = position(buf)
+    seek(buf, origin)
+
+
+    local endd
+    @loop_guard while !is_non_whitespace_end(buf)
+        skip(buf, 1)
+    end
+    endd = position(buf)
+    seek(buf, origin)
+    return Motion(start, endd)
+end
+
+"""
+    Identify the text object surrounding a space
+"""
+function space(buf::IO)::Motion
+    # use origin rather than `mark` because
+    # methods called below use their own marks
+    origin = position(buf)
+    local start
+    eof(buf) && return Motion(origin, origin)
+    !is_whitespace(peek(buf, Char)) && return Motion(origin, origin)
+    @loop_guard while !is_whitespace_start(buf)
+        skip(buf, -1)
+    end
+    start = position(buf)
+    seek(buf, origin)
+
+
+    local endd
+    @loop_guard while !is_whitespace_end(buf)
+        skip(buf, 1)
+    end
+    endd = position(buf)
+    seek(buf, origin)
+    return Motion(start, endd)
+end
+
+function line(buf::IO)::Motion
+    # find the line start
+    origin = position(buf)
+    if eof(buf)
+        if position(buf) > 0
+            LE.char_move_left(buf)
+        end
+    end
+
+    @loop_guard while !eof(buf) && position(buf) > 0
+        c = peek(buf, Char)
+        if is_linebreak(c)
+            skip(buf, 1)
+            break
+        end
+        LE.char_move_left(buf)
+    end
+    start = position(buf)
+    seek(buf, origin)
+
+    # find the line end
+    @loop_guard while !eof(buf)
+        c = read(buf, Char)
+        if is_linebreak(c)
+            LE.char_move_left(buf)
+            break
+        end
+    end
+    stop = position(buf)
+    seek(buf, origin)
+
+    return Motion(start, stop)
+end
+
 end

@@ -100,6 +100,14 @@ end
 end
 
 
+@testset "is inside object " begin
+    @test is_in_object(testbuf("hello|world")) == true
+    @test is_in_object(testbuf("hello| world")) == false
+    @test is_in_object(testbuf("hello|%%%%")) == false
+    @test is_in_object(testbuf("hello%%|%%")) == true
+    @test is_in_object(testbuf("|hello%%%%")) == false
+end
+
 @testset "test buffer" begin
     buf = testbuf("asdf|fdsa")
     @test buf.size == 8
