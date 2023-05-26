@@ -22,7 +22,7 @@ end
 # https://github.com/caleb-allen/VimBindings.jl/issues?q=is%3Aissue+is%3Aopen+label%3Abug
 @testset "bugs from github" begin
     # https://github.com/caleb-allen/VimBindings.jl/issues/48
-    @test_broken run("b::|Float64", "ciw") == testbuf("b::|i|")
+    @test run("b::|Float64", "ciw") == testbuf("b::|i|")
 
     # https://github.com/caleb-allen/VimBindings.jl/issues/46
     @test run("|Hello world", "cw") == testbuf("|i| world")
@@ -76,6 +76,9 @@ end
     @test run("as|n|df", "cw") == testbuf("as|i|")
     @test run("a as|n|df b", "cw") == testbuf("a as|i| b")
     @test run("a as|n|df b", "ciw") == testbuf("a |i| b")
+    @test run("a |asdf b", "ciw") == testbuf("a |i| b")
+    @test run("a %%%|asdf b", "ciw") == testbuf("a %%%|i| b")
+    @test run("a |asdf b", "ciw") == testbuf("a |i| b")
 
 end
 

@@ -697,50 +697,22 @@ tabs, <EOL>).  This can be changed with the 'iskeyword' option.  An empty line
 is also considered to be a word.
 """
 function word(buf::IO)::Motion
-
-    # if at_junction_type()
-
     origin = position(buf)
     start = if is_object_start(buf)
         Motion(buf)
     else
         word_back(buf)
     end
-    # skip(buf, 1)
-
-    endd = word_end(buf)
-    if min(endd) == min(start)
-        
+    eof(buf) && return start
+    skip(buf, 1)
+    @loop_guard while !eof(buf) && is_in_object(buf)
+        skip(buf, 1)
     end
-    # if min()
-    endd = if is_object_end(buf)
-        Motion(buf)
-    else
-    end
+    endd = Motion(buf)
     seek(buf, origin)
     motion = start + endd
     @debug "found word textobject" start endd motion
     return motion
-    #=
-    eof(buf) && return Motion(origin, origin)
-    !is_word_char(peek(buf, Char)) && return Motion(origin, origin)
-
-    local start
-    @loop_guard while !is_object_start(buf)
-        skip(buf, -1)
-    end
-    start = position(buf)
-    seek(buf, origin)
-
-
-    local endd
-    @loop_guard while !is_object_end(buf)
-        skip(buf, 1)
-    end
-    endd = position(buf)
-    seek(buf, origin)
-    return Motion(start, endd)
-    =#
 end
 
 """

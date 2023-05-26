@@ -1,21 +1,21 @@
-using VimBindings.Motion
-import VimBindings.Motion: word, WORD
+using VimBindings.Motions
+import VimBindings.Motions: word, WORD
 using VimBindings.TextUtils
-@testset "a word textobject" begin
-    @test word(testbuf("|word")) == (0, 4)
-    @test word(testbuf("|word word")) == (0, 4)
-    @test word(testbuf("|word#@!")) == (0, 4)
-    @test word(testbuf("|word !##@")) == (0, 4)
-    @test word(testbuf("|!##@ word")) == (0, 4)
-    @test word(testbuf("|!##@word")) == (0, 4)
 
-    @test word(testbuf("word|!##@")) == (5, 8)
+@testset "a word textobject" begin
+    @test word(testbuf("|word")) == Motion(0, 4)
+    @test word(testbuf("|word word")) == Motion(0, 4)
+    @test word(testbuf("|word#@!")) == Motion(0, 4)
+    @test word(testbuf("|word !##@")) == Motion(0, 4)
+    @test word(testbuf("|!##@ word")) == Motion(0, 4)
+    @test word(testbuf("|!##@word")) == Motion(0, 4)
+    @test word(testbuf("word|!##@")) == Motion(4, 8)
 end
 
 @testset "a WORD textobject" begin
-    @test WORD(testbuf("|word !##@")) == (0, 4)
-    @test WORD(testbuf("|word!##@ ")) == (0, 8)
-    @test WORD(testbuf("|word#@!")) == (0, 7)
+    @test WORD(testbuf("|word !##@")) == Motion(0, 4)
+    @test WORD(testbuf("|word!##@ ")) == Motion(0, 8)
+    @test WORD(testbuf("|word#@!")) == Motion(0, 7)
 end
 
 @testset "space textobject" begin

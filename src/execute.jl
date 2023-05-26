@@ -44,8 +44,7 @@ function execute(buf, command::LineOperatorCommand)::Union{VimMode,Nothing}
     local op_fn = nothing
     for r in 1:command.r1
         # buf = buffer(s)
-        line_textobject = line(buf)
-        line_motion = Motion(line_textobject...)
+        line_motion = line(buf)
         op_fn = operator_fn(command.operator)
         op_fn(buf, line_motion)
     end
