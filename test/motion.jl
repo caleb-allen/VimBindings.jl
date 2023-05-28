@@ -59,6 +59,11 @@ end
 
     buf = IOBuffer("using VimBindings")
     @test find_c(buf, 'g') == Motion(0, 4)
+
+    buf = IOBuffer("println(12345)")
+    for i = 1:5
+        @test find_c(buf, i) == Motion(0, 7 + i)
+    end
 end
 
 @testset "line begin" begin
@@ -84,11 +89,11 @@ end
     m = Motion(1, 2, exclusive)
     @test min(m) == 1
     @test max(m) == 2
-    
+
     m = Motion(1, 2, inclusive)
     @test min(m) == 1
     @test max(m) == 3
-    
+
     m = Motion(2, 1, exclusive)
     @test min(m) == 1
     @test max(m) == 2
