@@ -457,6 +457,15 @@ function find_c_back(buf::IO, query_c::Char)::Motion
     return Motion(start, endd)
 end
 
+function find_c(buf::IO, query_c::Int)
+    @assert 0 <= query_c <= 9
+    return find_c(buf, '0' + query_c)
+end
+function find_c_back(buf::IO, query_c::Int)
+    @assert 0 <= query_c <= 9
+    return find_c_back(buf, '0' + query_c)
+end
+
 const insert_motions = Dict{Char,Any}(
     'i' => (buf) -> Motion(buf),
     'I' => (buf) -> line_begin(buf),
