@@ -74,7 +74,7 @@ function strike_key(c, s::LE.MIState)::StrikeKeyResult
 
     s_cmd = String(KEY_STACK)
     # keys to copy from `mode`
-    fallback_keys = [
+    fallback_keys = (
         # enter
         "\r",
         # tab
@@ -103,7 +103,7 @@ function strike_key(c, s::LE.MIState)::StrikeKeyResult
         "\x04",
         # C-l
         "\f"
-    ]
+    )
 
     s_cmd in fallback_keys && begin
         @debug "falling back for command" command=escape_string(s_cmd)
