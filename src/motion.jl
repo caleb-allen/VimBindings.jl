@@ -8,8 +8,8 @@ using ..Util
 using ..Commands
 using Match
 
-export Motion, MotionType, simple_motions, complex_motions, insert_motions, gen_motion, is_stationary,
-    down, up, word_next, word_big_next, word_end, word_back,
+export Motion, MotionType, simple_motions, complex_motions, partial_complex_motions, insert_motions, gen_motion,
+    is_stationary, down, up, word_next, word_big_next, word_end, word_back,
     word_big_back, word_big_end, line_end, line_begin, line_zero,
     find_c, find_c_back, get_safe_name, all_keys, special_keys, exclusive, inclusive, endd,
     left, right
@@ -522,6 +522,13 @@ const complex_motions = Dict{Regex,Any}(
     #     Motion(m, inclusive)
     # end,
 )
+const partial_complex_motions = (
+    r"f",
+    r"F",
+    r"t",
+    r"T"
+)
+
 """
     Generate a Motion object for the given `name`
 """

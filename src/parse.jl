@@ -43,21 +43,19 @@ const MOTION = begin
     "[$implemented_keys]"
 end
 # motions with multiple keystrokes e.g. 'fx'
-function complex_motion()::String
-    local motion_regexes = keys(complex_motions) |> collect
+function complex_motion(partial::Bool=false)::String
+    motion_regexes = partial ? partial_complex_motions : collect(keys(complex_motions))
     patterns = map(motion_regexes) do regex
         regex.pattern
     end
     join(patterns, "|")
 end
 const TEXTOBJECT = "$REPEAT[ai][wWsp]"
+const PARTIALTEXTOBJECT = "$REPEAT[ai]([wWsp])?"
 const OPERATOR = "[ydc]"
 const RULES = TupleDict(
-    # insert commands
-    r"^(?<c>[aAiIoO])$" => InsertCommand,
-    # Special case: `0` is a motion command:
-    "^0\$" |> Regex => ZeroCommand,
-    # synonym commands
+    r"^(?<c>[aAiIoO])$" => InsertCommand, # insert commands
+    "^0\$" |> Regex => ZeroCommand, # Special case: `0` is a motion command
     "^(?<n1>$REPEAT)(?<c>[xXDCS])\$" |> Regex => SynonymCommand,
     "^(?<n1>$REPEAT)($MOTION)\$" |> Regex => SimpleMotionCommand,
     "^(?<n1>$REPEAT)((?|$(complex_motion())))\$" |> Regex => CompositeMotionCommand,
@@ -68,20 +66,18 @@ const RULES = TupleDict(
 )
 
 # same as above, but valid for partially completed string commands. This is to determine when the key stack should be cleared.
-const PARTIAL_RULES = TupleDict(
-    # insert commands
-    r"^(?<c>[aAiIoO])" => InsertCommand,
-    # Special case: `0` is a motion command:
-    "^0\$" |> Regex => ZeroCommand,
-    # synonym commands
-    "^(?<n1>$REPEAT)(?<c>[xXCS])" |> Regex => SynonymCommand,
-    "^(?<n1>$REPEAT)($MOTION)" |> Regex => SimpleMotionCommand,
-    "^(?<n1>$REPEAT)((?|$(complex_motion())))" |> Regex => CompositeMotionCommand,
-    "^(?<n1>$REPEAT)(?<op>$OPERATOR)(?<n2>$REPEAT)(?|($TEXTOBJECT)|($MOTION))" |> Regex => OperatorCommand,
-    "^(?<n1>$REPEAT)(?<op>$OPERATOR)(?<n2>$REPEAT)((?|$(complex_motion())))" |> Regex => OperatorCommand,
-    "^(?<n1>$REPEAT)(?<op>$OPERATOR)(\\k<op>)" |> Regex => LineOperatorCommand,
-    "^(?<n1>$REPEAT)r(.)" |> Regex => ReplaceCommand,
+const PARTIAL_RULES = (
+    r"^[aAiIoO]?$",  # InsertCommand
+    "^0?\$" |> Regex,  # ZeroCommand
+    "^$(REPEAT)([xXCS])?\$" |> Regex,  # SynonymCommand
+    "^$(REPEAT)($MOTION)?\$" |> Regex,  # SimpleMotionCommand
+    "^$(REPEAT)($(complex_motion(true)))?\$" |> Regex,  # CompositeMotionCommand
+    "^$(REPEAT)($(OPERATOR)($(REPEAT)(($(PARTIALTEXTOBJECT))|($(MOTION)))?)?)?\$" |> Regex,  # OperatorCommand
+    "^$(REPEAT)($(OPERATOR)($(REPEAT)($(complex_motion(true)))?)?)?\$" |> Regex,  # OperatorCommand (2)
+    "^$(REPEAT)((?<op>$(OPERATOR))(\\k<op>)?)?\$" |> Regex,  # LineOperatorCommand
+    "^$(REPEAT)(r(.)?)?\$" |> Regex  # ReplaceCommand
 )
+# Note that many of these are redundant. This is written for consistency.
 
 """
 Determines whether the given string is accepted as a vim command.
@@ -95,9 +91,11 @@ function well_formed(cmd::String)::Bool
     return false
 end
 
+"""
+Determines whether the given string could be accepted, if more keys were pressed.
+"""
 function partial_well_formed(cmd::String)::Bool
-    for rule in keys(PARTIAL_RULES)
-        @show match(rule, cmd)
+    for rule in PARTIAL_RULES
         if occursin(rule, cmd)
             return true
         end

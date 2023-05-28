@@ -135,13 +135,15 @@ function strike_key(c, s::LE.MIState)::StrikeKeyResult
             end
         end
         return VimAction()
-    else
+    end
+    if !partial_well_formed(s_cmd)
         @debug("WARN: command not well formed!")
         @debug KEY_STACK
-        # TODO if command is still a possible match, don't clear the stack.
-        #  In other words, only clear the stack if the stack is definitely invalid.
-        return NoAction()
+        empty!(KEY_STACK)
     end
+    # If command is still a possible match, don't clear the stack.
+    # In other words, only clear the stack if the stack is definitely invalid.
+    return NoAction()
 end
 
 function init()
