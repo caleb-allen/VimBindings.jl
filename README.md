@@ -26,8 +26,8 @@ if isinteractive()
     @eval using VimBindings
 end
 ```
-**Warning**
-VimBindings.jl must be loaded **before** the REPL is initialized. This means that the call `@eval using VimBindings` must be called outside of `atreplinit` so that it can modify the behavior of REPL code before it is loaded.
+> **Warning**
+> VimBindings.jl must be loaded **before** the REPL is initialized. This means that the call `@eval using VimBindings` must be called outside of `atreplinit` so that it can modify the behavior of REPL code before it is loaded.
 
 ## Usage
 ### Insert mode
