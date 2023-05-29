@@ -59,7 +59,9 @@ end
 end
 @testset "validating commands" begin
     well_formed_cmds = (
-        "daw", "dd", "yy", "5dd", "yy", "h", "l", "5l", "4h", "10dd"
+        "daw", "dd", "yy", "5dd", "yy", "h", "l", "5l", "4h", "10dd", "x",
+        "ri", "ra", "r0", "r7", "5fd", "5Fd", "ciw", "dw", "2dw", "j", "k",
+        "I", "O", "o", "10D", "20x", "2dfe", "2cFk", "2dF0"
     )
     poorly_formed_cmds = (
         "aw", "5d5w5", "yd", "cd"
@@ -80,6 +82,9 @@ end
                 cmd_stub = cmd[1:cmd_end]
                 @test partial_well_formed(cmd_stub) || @show cmd_stub
             end
+        end
+        for cmd in poorly_formed_cmds
+            @test !partial_well_formed(cmd) || @show cmd
         end
         # TODO: Remove these when the commands are implemented:
         @test !partial_well_formed("u")
@@ -110,18 +115,18 @@ end
     @test well_formed(cmd) == true
     r = matched_rule(cmd)
     @test parse_command(cmd) == OperatorCommand(1,
-                                                    'd',
-                                                    10,
-                                                    'w')
+        'd',
+        10,
+        'w')
 
 
 end
 
 @testset "parse line operator commands" begin
     @test parse_command("5dd") == LineOperatorCommand(5,
-                                                      'd')
+        'd')
     @test parse_command("100yy") == LineOperatorCommand(100,
-                                                        'y')
+        'y')
 
     @test parse_command("100yd") === nothing
     @test parse_command("yy") === LineOperatorCommand(1, 'y')
