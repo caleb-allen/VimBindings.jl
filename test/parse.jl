@@ -73,9 +73,10 @@ end
         end
     end
     @testset "Partially well formed commands" begin
+        # Well formed commands should be partially well formed
+        #  when sliced from their start to any point in the middle.
         for cmd in well_formed_cmds
-            length(cmd) <= 1 && continue
-            for cmd_end in 2:length(cmd)
+            for cmd_end in 1:length(cmd)
                 cmd_stub = cmd[1:cmd_end]
                 @test partial_well_formed(cmd_stub) || @show cmd_stub
             end
