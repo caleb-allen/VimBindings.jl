@@ -69,15 +69,15 @@ const RULES = TupleDict(
 
 # same as above, but valid for partially completed string commands. This is to determine when the key stack should be cleared.
 const PARTIAL_RULES = (
-    "^$INSERTCHARS?\$" |> Regex,  # InsertCommand
+    "^(?<c>$INSERTCHARS)?\$" |> Regex,  # InsertCommand
     "^0?\$" |> Regex,  # ZeroCommand
-    "^$REPEAT($DELETECHARS)?\$" |> Regex,  # SynonymCommand
-    "^$REPEAT($MOTION)?\$" |> Regex,  # SimpleMotionCommand
-    "^$REPEAT($(complex_motion(true)))?\$" |> Regex,  # CompositeMotionCommand
-    "^$REPEAT($OPERATOR($REPEAT(($PARTIALTEXTOBJECT)|($MOTION))?)?)?\$" |> Regex,  # OperatorCommand
-    "^$REPEAT($OPERATOR($REPEAT($(complex_motion(true)))?)?)?\$" |> Regex,  # OperatorCommand (2)
-    "^$REPEAT((?<op>$OPERATOR)(\\k<op>)?)?\$" |> Regex,  # LineOperatorCommand
-    "^$REPEAT(r(.)?)?\$" |> Regex  # ReplaceCommand
+    "^(?<n1>$REPEAT)(?<c>$DELETECHARS)?\$" |> Regex,  # SynonymCommand
+    "^(?<n1>$REPEAT)($MOTION)?\$" |> Regex,  # SimpleMotionCommand
+    "^(?<n1>$REPEAT)((?|$(complex_motion(true))))?\$" |> Regex,  # CompositeMotionCommand
+    "^(?<n1>$REPEAT)((?<op>$OPERATOR)((?<n2>$REPEAT)((?|($PARTIALTEXTOBJECT)|($MOTION)))?)?)?\$" |> Regex,  # OperatorCommand
+    "^(?<n1>$REPEAT)((?<op>$OPERATOR)((?<n2>$REPEAT)((?|$(complex_motion(true))))?)?)?\$" |> Regex,  # OperatorCommand (2)
+    "^(?<n1>$REPEAT)((?<op>$OPERATOR)(\\k<op>)?)?\$" |> Regex,  # LineOperatorCommand
+    "^(?<n1>$REPEAT)(r(.)?)?\$" |> Regex  # ReplaceCommand
 )
 # Note that many of these are redundant. This is written for consistency.
 
