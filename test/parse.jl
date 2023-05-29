@@ -1,6 +1,6 @@
 # include("../src/parse.jl")
 # import VimBindings: verb_part, text_object_part, well_formed, parse_value
-import VimBindings.Parse: verb_part, text_object_part, well_formed, parse_value
+import VimBindings.Parse: verb_part, text_object_part, well_formed, partial_well_formed, parse_value
 using VimBindings.Commands
 import VimBindings.Commands: ParseValue
 using VimBindings.Parse
@@ -58,23 +58,43 @@ end
 
 end
 @testset "validating commands" begin
-    @test well_formed("daw") == true
-    @test well_formed("aw") == false
-    @test well_formed("5d5w5") == false
-    @test well_formed("dd") == true
-    @test well_formed("yy") == true
-    @test well_formed("5dd") == true
-    @test well_formed("yy") == true
-    @test well_formed("yd") == false
-    @test well_formed("cd") == false
-
-    @test well_formed("h") == true
-    @test well_formed("l") == true
-    @test well_formed("5l") == true
-    @test well_formed("4h") == true
-
-    @test well_formed("10dd") == true
+    well_formed_cmds = (
+        "daw", "dd", "yy", "5dd", "yy", "h", "l", "5l", "4h", "10dd"
+    )
+    poorly_formed_cmds = (
+        "aw", "5d5w5", "yd", "cd"
+    )
+    @testset "Well formed commands" begin
+        for cmd in well_formed_cmds
+            @test well_formed(cmd) || @show cmd
+        end
+        for cmd in poorly_formed_cmds
+            @test !well_formed(cmd) || @show cmd
+        end
+    end
+    @testset "Partially well formed commands" begin
+        for cmd in well_formed_cmds
+            length(cmd) <= 1 && continue
+            for cmd_end in 2:length(cmd)
+                cmd_stub = cmd[1:cmd_end]
+                @test partial_well_formed(cmd_stub) || @show cmd_stub
+            end
+        end
+        # TODO: Remove these when the commands are implemented:
+        @test !partial_well_formed("u")
+        @test !partial_well_formed("m")
+        @test !partial_well_formed("M")
+        @test !partial_well_formed("*")
+        @test !partial_well_formed("V")
+        @test !partial_well_formed("daa")
+        @test partial_well_formed("y")
+        @test !partial_well_formed("yp")
+        @test partial_well_formed("500dd")
+        @test partial_well_formed("500d")
+        @test partial_well_formed("500")
+    end
 end
+
 
 @testset "parse specific values" begin
     @test parse_value("10") == ParseValue(10)
