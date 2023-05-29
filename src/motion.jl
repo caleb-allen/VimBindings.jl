@@ -523,10 +523,10 @@ const complex_motions = Dict{Regex,Any}(
     # end,
 )
 const partial_complex_motions = (
-    r"f",
-    r"F",
-    r"t",
-    r"T"
+    r"f(.)?",
+    r"F(.)?",
+    r"t(.)?",
+    r"T(.)?"
 )
 
 """
