@@ -11,38 +11,25 @@ The package is early in development and is not yet recommended for daily use. Fo
 julia> import Pkg
 
 julia> Pkg.add("VimBindings")
-
 ```
 
 ## Running
 
-VimBindings must be initialized when Julia is started, and **before** `startup.jl`, like so:
 
-```bash
-$ julia -i -e "using VimBindings"
-julia> # You now have vim bindings!
+VimBindings.jl can be loaded from `startup.jl` like so:
+
+```julia
+# DO NOT place this code inside atreplinit!
+# It is recommended to use this snippet at
+# the top level of your `startup.jl`.
+if isinteractive()
+    @eval using VimBindings
+end
 ```
-
-> **Warning**
-> `VimBindings.jl` **MUST** be loaded in this way in order to function correctly.
->
-> Unfortunately, the package cannot be instantiated from `~/.julia/config/startup.jl`. Doing so will result in buggy/unpredictable behavior.
-
-You can define `juliavim` as an alias with:
-
-```bash
-alias juliavim='julia -i -e "using VimBindings"'
-```
-
-in your `.{ba,z}shrc` file.
-
+**Warning**
+VimBindings.jl must be loaded **before** the REPL is initialized. This means that the call `@eval using VimBindings` must be called outside of `atreplinit` so that it can modify the behavior of REPL code before it is loaded.
 
 ## Usage
-The REPL begins in Insert mode, which can be used in its familiar fashion.
-
-VimBindings.jl emulates Normal mode, which is accessed by striking the `Escape` key.
-
-
 ### Insert mode
 Insert mode is similar to the standard REPL experience. Insert mode is indicated with a pipe | cursor.
 
