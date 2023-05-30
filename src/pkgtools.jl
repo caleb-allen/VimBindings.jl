@@ -6,7 +6,7 @@ Tools for running or testing the package. This module is meant for code that is
 The end of this file contains precompilation code
 """
 module PkgTools
-import ..VimBuffer, ..parse_command, ..testbuf, ..execute
+import ..VimBuffer, ..parse_command, ..testbuf, ..execute, ..well_formed, ..partial_well_formed
 import ..TextUtils: junction_type, TextChar, is_object_start, is_whitespace_start,
     is_non_whitespace_start, is_object_end, is_non_whitespace_end, is_whitespace_end
 using Combinatorics
@@ -14,7 +14,7 @@ using Combinatorics
 const TEST_STRING = """abcdefghijklmnopqrstuvwxyz "' 0987654321 A B C D E F G H| I J K L M N O P Q R S T U V W X Y Z 98 76 54 32 21 !@#%^9^&*() abcdefghijklmnopqrstuvwxyz '" 0987654321"""
 
 
-function partial_vim_commands_list()::Vector{String}
+function some_vim_commands()::Vector{String}
     s = """
         h j k l
         3h 3j 3k 3l
@@ -29,7 +29,7 @@ Convenience function to return each vim command alongside a pre-constructed
     vim buffer
 """
 commands_and_buffers()::Vector{Tuple{String,VimBuffer}} =
-    map(partial_vim_commands_list()) do cmd
+    map(some_vim_commands()) do cmd
         (cmd, testbuf(TEST_STRING))
     end
 
@@ -66,14 +66,14 @@ end
 end
 
 using PrecompileTools
-
-# PrecompileTools.verbose[] = true
 # precompilation
 @setup_workload begin
     commands = PkgTools.commands_and_buffers()
-
     @compile_workload begin
         for (cmd, buf) in commands
+            well_formed(cmd)
+            partial_well_formed(cmd)
+            
             PkgTools.run(cmd, buf)
         end
 
