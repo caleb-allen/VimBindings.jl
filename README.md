@@ -56,6 +56,10 @@ Here are a few of the features of the package, as well as goal features of the p
 - [ ] System clipboard integration
 - [ ] Registers
 - [ ] Undo/Redo
+
+### Requesting unimplemented commands
+
+Is there a vim command you long for that isn't implemented? Please share by using the [Key bind request thread](https://github.com/caleb-allen/VimBindings.jl/issues/15)
 <!-- - [ ] Visual mode -->
 <!-- - [ ] Macros -->
 ## Issues
