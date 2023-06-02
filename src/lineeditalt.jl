@@ -116,18 +116,15 @@ function LE.match_input(k::Dict{Char}, s::Union{Nothing,LE.MIState}, term::Union
     @debug(escape_string("Reading byte $c"))
     @debug("cs: " * escape_string(string(cs)))
     if isempty(cs) && c == '\e'
-        is_escape_task = @async begin
-            sleep(0.03)
-            avail = bytesavailable(term)
-            if avail > 0
-                @debug("bytes available to read: suspected encoded sequence")
-                return false
-            else
-                @debug("no bytes available to read: suspected Escape key")
-                return true
-            end
+        sleep(0.03)
+        avail = bytesavailable(term)
+        is_escape = if avail > 0
+            @debug("bytes available to read: suspected encoded sequence")
+            false
+        else
+            @debug("no bytes available to read: suspected Escape key")
+            true
         end
-        is_escape = fetch(is_escape_task)
         @debug("is escape_key?")
 
         if is_escape
