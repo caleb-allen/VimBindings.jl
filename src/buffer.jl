@@ -1,7 +1,7 @@
 module Buffer
 using Match
 import REPL.LineEdit as LE
-export VimBuffer, mode, VimMode, normal_mode, insert_mode, testbuf, readall
+export VimBuffer, mode, VimMode, normal_mode, insert_mode, testbuf, readall, freeze, BufferRecord
 
 @enum VimMode begin
     normal_mode
@@ -9,7 +9,7 @@ export VimBuffer, mode, VimMode, normal_mode, insert_mode, testbuf, readall
     # visual
 end
 
-function VimMode(s :: AbstractString)
+function VimMode(s::AbstractString)
     return @match s begin
         "i" => insert_mode
         "n" => normal_mode
@@ -26,13 +26,13 @@ VimMode(vm::VimMode) = vm
     and match |i| as "insert mode", |n| as "normal mode".
     Defaults to normal mode.
 """
-function testbuf(s :: AbstractString) :: VimBuffer
+function testbuf(s::AbstractString)::VimBuffer
     m = match(r"(.*?)\|(?:([ni])\|)?(.*)", s)
     if m === nothing
-        throw(ArgumentError("could not construct VimBuffer with string \"$s\"\n   Expecting a string with a pipe (|) indicating cursor position"))
+        throw(ArgumentError("could not construct VimBuffer with string \"$s\"\n   Expecting a string with a pipe `|` indicating cursor position"))
     end
     (a, mode, b) = (m[1], m[2], m[3])
-    buf = IOBuffer(;read=true, write=true, append=true)
+    buf = IOBuffer(; read=true, write=true, append=true)
     write(buf, a * b)
     seek(buf, length(a))
     vim_mode = VimMode(mode)
@@ -40,31 +40,51 @@ function testbuf(s :: AbstractString) :: VimBuffer
 end
 
 struct VimBuffer <: IO
-    buf :: IOBuffer
-    mode :: VimMode
+    buf::IOBuffer
+    mode::VimMode
 end
 
-VimBuffer(str :: String) :: VimBuffer = testbuf(str)
+VimBuffer(str::String)::VimBuffer = testbuf(str)
 
-mode(vb :: VimBuffer) = vb.mode
-Base.position(vb :: VimBuffer) = position(vb.buf)
-Base.seek(vb :: VimBuffer, n) = seek(vb.buf, n)
-Base.mark(vb :: VimBuffer) = mark(vb.buf)
-Base.peek(vb :: VimBuffer, ::Type{T}) where T = peek(vb.buf, T)
-Base.peek(vb :: VimBuffer) = peek(vb.buf)
-Base.reset(vb :: VimBuffer) = reset(vb.buf)
-Base.read(vb :: VimBuffer, ::Type{Char}) = read(vb.buf, Char)
-Base.read(vb :: VimBuffer, ::Type{String}) = read(vb.buf, String)
-Base.eof(vb :: VimBuffer) = eof(vb.buf)
-Base.skip(vb :: VimBuffer, o) = skip(vb.buf, o)
+mode(vb::VimBuffer) = vb.mode
+Base.position(vb::VimBuffer) = position(vb.buf)
+Base.seek(vb::VimBuffer, n) = seek(vb.buf, n)
+Base.mark(vb::VimBuffer) = mark(vb.buf)
+Base.peek(vb::VimBuffer, ::Type{T}) where {T} = peek(vb.buf, T)
+Base.peek(vb::VimBuffer) = peek(vb.buf)
+Base.reset(vb::VimBuffer) = reset(vb.buf)
+Base.read(vb::VimBuffer, ::Type{Char}) = read(vb.buf, Char)
+Base.read(vb::VimBuffer, ::Type{String}) = read(vb.buf, String)
+Base.eof(vb::VimBuffer) = eof(vb.buf)
+Base.skip(vb::VimBuffer, o) = skip(vb.buf, o)
 
 
 function Base.getproperty(vb::VimBuffer, sym::Symbol)
-   if sym === :size
-       return vb.buf.size
-   else # fallback to getfield
-       return getfield(vb, sym)
-   end
+    if sym === :size
+        return vb.buf.size
+    else # fallback to getfield
+        return getfield(vb, sym)
+    end
+end
+
+struct BufferRecord
+    text::String
+    cursor_index::Int
+    mode::VimMode
+end
+
+Base.:(==)(x::BufferRecord, y::BufferRecord) =
+    x.text == y.text &&
+    x.cursor_index == y.cursor_index &&
+    x.mode == y.mode
+
+
+function freeze(buf::VimBuffer)::BufferRecord
+    pos = position(buf)
+    seek(buf, 0)
+    s = read(buf, String)
+    seek(buf, pos)
+    return BufferRecord(s, pos, buf.mode)
 end
 
 function Base.show(io::IO, buf::VimBuffer)
@@ -75,17 +95,16 @@ function Base.show(io::IO, buf::VimBuffer)
     seek(buf, 0)
     s = read(buf, String)
     reset(buf)
-    
+
     a = s[begin:pos]
-    b = s[pos + 1:end]
+    b = s[pos+1:end]
     mode = if buf.mode == insert_mode
         "i"
     elseif buf.mode == normal_mode
         "n"
     end
-    
-    out = a * "|$mode|" * b
 
+    out = a * "|$mode|" * b
     print(io, " VimBuffer(\"$out\")")
 end
 function Base.show(io::IO, ::MIME"text/plain", vb::VimBuffer)
@@ -96,13 +115,13 @@ end
 """
 Two VimBuffers are equal if their contents and position are equal
 """
-function Base.:(==)(buf1 :: VimBuffer, buf2 :: VimBuffer)
+function Base.:(==)(buf1::VimBuffer, buf2::VimBuffer)
     a = IOBuffer()
     b = IOBuffer()
 
     show(a, buf1)
     show(b, buf2)
-    
+
     seekstart(a)
     seekstart(b)
 

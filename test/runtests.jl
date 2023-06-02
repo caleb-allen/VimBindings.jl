@@ -5,6 +5,7 @@ using Test
 # const VB = VimBindings
 
 # include("action.jl")
+include("changes.jl")
 include("parse.jl")
 include("textutils.jl")
 include("motion.jl")

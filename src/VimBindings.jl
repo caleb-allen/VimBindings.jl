@@ -30,6 +30,7 @@ include("operator.jl")
 include("parse.jl")
 include("execute.jl")
 include("lineeditalt.jl")
+include("changes.jl")
 
 using .Parse
 using .Commands
@@ -38,6 +39,7 @@ using .Motions
 using .TextUtils
 using .Operators
 using .Registers
+using .Changes
 
 mutable struct VimState
     registers::Dict{Char,String}

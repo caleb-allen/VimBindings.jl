@@ -3,7 +3,7 @@ import Base: *
 using REPL
 include("buffer.jl")
 using .Buffer
-export VimBuffer, mode, VimMode, normal_mode, insert_mode, testbuf, readall
+export VimBuffer, mode, VimMode, normal_mode, insert_mode, testbuf, readall, freeze, BufferRecord
 const LE = REPL.LineEdit
 export is_linebreak, is_whitespace, is_word_char, TextChar, WordChar, WhitespaceChar, PunctuationChar, ObjectChar,
     chars_by_cursor, junction_type, at_junction_type, Text, NonWhitespace, Word, Whitespace, Junction, Start, End, In,
