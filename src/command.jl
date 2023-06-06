@@ -1,7 +1,7 @@
 module Commands
 export Command, MotionCommand, OperatorCommand, LineOperatorCommand, InsertCommand,
-        SynonymCommand, SimpleMotionCommand, CompositeMotionCommand, TextObjectCommand, ReplaceCommand,
-        ZeroCommand, ParseValue, command_constructor
+    SynonymCommand, SimpleMotionCommand, CompositeMotionCommand, TextObjectCommand, ReplaceCommand,
+    ZeroCommand, HistoryCommand, ParseValue, command_constructor
 export key
 
 abstract type Command end
@@ -74,10 +74,10 @@ function OperatorCommand(n1 :: Union{Integer, Nothing},
                  action :: Char) :: OperatorCommand
     r1 = if n1 === nothing 1 else n1 end
     r2 = if n2 === nothing 1 else n2 end
-    motion_command = MotionCommand(r2, action) 
+    motion_command = MotionCommand(r2, action)
     return OperatorCommand(r1,
-                           operator,
-                           motion_command)
+        operator,
+        motion_command)
 end
 # string action + captures = complex motion
 function OperatorCommand(n1 :: Union{Integer, Nothing},
@@ -89,8 +89,8 @@ function OperatorCommand(n1 :: Union{Integer, Nothing},
     r2 = if n2 === nothing 1 else n2 end
     motion_command = MotionCommand(r2, action, captures)
     return OperatorCommand(r1,
-                           operator,
-                           motion_command)
+        operator,
+        motion_command)
 end
 
 # string action + no captures = text object
@@ -102,8 +102,8 @@ function OperatorCommand(n1 :: Union{Integer, Nothing},
     r2 = if n2 === nothing 1 else n2 end
     text_object_command = TextObjectCommand(r2, action)
     return OperatorCommand(r1,
-                           operator,
-                           text_object_command)
+        operator,
+        text_object_command)
 end
 
 """
@@ -160,14 +160,37 @@ end
 struct ZeroCommand <: Command end
 ZeroCommand(args...) = ZeroCommand()
 
-function key(cmd :: Command) :: Char
+struct HistoryCommand <: Command
+    r1::Int
+    c::Char
+end
+function HistoryCommand(n1::Union{Int, Nothing}, c::Char)
+    r1 = isnothing(n1) ? 1 : n1
+    HistoryCommand(r1, c)
+end
+function HistoryCommand(n1::Union{Int,Nothing}, c1::Char, c2::Char)
+    @debug "Parsed HistoryCommand" n1 c1 c2
+    # `^R` is parsed as two characters instead of 1
+    r1 = isnothing(n1) ? 1 : n1
+    
+    c = if c1 * c2 == "^R"
+        '\x12'
+    else
+        error("Invalid characters for HistoryCommand: `" * c1 * c2 *
+            "`. Expecting `^R`.")
+    end
+    HistoryCommand(r1, c)
+end
+
+function key(cmd::Command)::Char
     error("method `key` not implemented for type $(typeof(cmd))")
 end
 
-key(cmd :: MotionCommand) = cmd.name
-key(cmd :: OperatorCommand) = cmd.operator
-key(cmd :: LineOperatorCommand) = cmd.operator
-key(cmd :: InsertCommand) = cmd.c
+key(cmd::MotionCommand) = cmd.name
+key(cmd::OperatorCommand) = cmd.operator
+key(cmd::LineOperatorCommand) = cmd.operator
+key(cmd::InsertCommand) = cmd.c
+key(cmd::HistoryCommand) = cmd.c
 
 Base.@kwdef struct ParseValue
     type::Symbol
@@ -198,6 +221,7 @@ function command_constructor(::Type{C}, parse_values::ParseValue...) where {C<:C
     return command_constructor((x...) -> C(x...), parse_values...)::C
 end
 function command_constructor(f::F, parse_values::ParseValue...) where {F<:Function}
+    @debug "command_constructor" f parse_values
     if parse_values[1].type == :nothing
         return command_constructor((x...) -> f(nothing, x...), parse_values[2:end]...)
     elseif parse_values[1].type == :int

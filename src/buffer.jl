@@ -57,6 +57,9 @@ Base.read(vb::VimBuffer, ::Type{Char}) = read(vb.buf, Char)
 Base.read(vb::VimBuffer, ::Type{String}) = read(vb.buf, String)
 Base.eof(vb::VimBuffer) = eof(vb.buf)
 Base.skip(vb::VimBuffer, o) = skip(vb.buf, o)
+Base.truncate(vb::VimBuffer, n::Integer) = truncate(vb.buf, n)
+Base.write(vb::VimBuffer, x::AbstractString) = write(vb.buf, x)
+Base.write(vb::VimBuffer, x::Union{SubString{String}, String}) = write(vb.buf, x)
 
 
 function Base.getproperty(vb::VimBuffer, sym::Symbol)
@@ -65,26 +68,6 @@ function Base.getproperty(vb::VimBuffer, sym::Symbol)
     else # fallback to getfield
         return getfield(vb, sym)
     end
-end
-
-struct BufferRecord
-    text::String
-    cursor_index::Int
-    mode::VimMode
-end
-
-Base.:(==)(x::BufferRecord, y::BufferRecord) =
-    x.text == y.text &&
-    x.cursor_index == y.cursor_index &&
-    x.mode == y.mode
-
-
-function freeze(buf::VimBuffer)::BufferRecord
-    pos = position(buf)
-    seek(buf, 0)
-    s = read(buf, String)
-    seek(buf, pos)
-    return BufferRecord(s, pos, buf.mode)
 end
 
 function Base.show(io::IO, buf::VimBuffer)

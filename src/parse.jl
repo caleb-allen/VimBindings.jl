@@ -50,6 +50,7 @@ function complex_motion(partial::Bool=false)::String
     end
     join(patterns, "|")
 end
+const UNDO_REDO = "(?|(u)|(\x12))"
 const TEXTOBJECT = "$REPEAT[ai][wWsp]"
 const PARTIALTEXTOBJECT = "$REPEAT[ai]([wWsp])?"
 const DELETECHARS = "[xXDCS]"
@@ -59,6 +60,7 @@ const RULES = TupleDict(
     "^(?<c>$INSERTCHARS)\$" |> Regex => InsertCommand, # insert commands
     "^0\$" |> Regex => ZeroCommand, # Special case: `0` is a motion command
     "^(?<n1>$REPEAT)(?<c>$DELETECHARS)\$" |> Regex => SynonymCommand,
+    "^(?<n1>$REPEAT)$UNDO_REDO\$" |> Regex => HistoryCommand,
     "^(?<n1>$REPEAT)($MOTION)\$" |> Regex => SimpleMotionCommand,
     "^(?<n1>$REPEAT)((?|$(complex_motion())))\$" |> Regex => CompositeMotionCommand,
     "^(?<n1>$REPEAT)(?<op>$OPERATOR)(?<n2>$REPEAT)(?|($TEXTOBJECT)|($MOTION))\$" |> Regex => OperatorCommand,
@@ -72,6 +74,7 @@ const PARTIAL_RULES = (
     "^(?<c>$INSERTCHARS)?\$" |> Regex,  # InsertCommand
     "^0?\$" |> Regex,  # ZeroCommand
     "^(?<n1>$REPEAT)(?<c>$DELETECHARS)?\$" |> Regex,  # SynonymCommand
+    "^(?<n1>$REPEAT)($UNDO_REDO)?\$" |> Regex => HistoryCommand,
     "^(?<n1>$REPEAT)($MOTION)?\$" |> Regex,  # SimpleMotionCommand
     "^(?<n1>$REPEAT)((?|$(complex_motion(true))))?\$" |> Regex,  # CompositeMotionCommand
     "^(?<n1>$REPEAT)((?<op>$OPERATOR)((?<n2>$REPEAT)((?|($PARTIALTEXTOBJECT)|($MOTION)))?)?)?\$" |> Regex,  # OperatorCommand
@@ -136,7 +139,7 @@ end
 function parse_command(s::AbstractString)::Union{Command,Nothing}
     r = matched_rule(s)
     if r === nothing
-        @debug("command not well formed", s)
+        @warn "command not well formed", s
         return nothing
     end
     r::Regex

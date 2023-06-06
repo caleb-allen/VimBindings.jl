@@ -28,9 +28,9 @@ include("motion.jl")
 include("registers.jl")
 include("operator.jl")
 include("parse.jl")
+include("changes.jl")
 include("execute.jl")
 include("lineeditalt.jl")
-include("changes.jl")
 
 using .Parse
 using .Commands
@@ -153,13 +153,20 @@ function init()
         return
     end
     # enable_logging()
-    @debug("initializing...")
     @debug current_task()
     repl = Base.active_repl
     trigger_insert_mode(repl.mistate)
     INITIALIZED.x = true
     @debug("initialized")
     return
+end
+
+"""
+Make necessary modifications to vim state for a new prompt
+"""
+function new_prompt_line(s::LE.MIState)
+    Changes.reset!()
+    trigger_insert_mode(s) 
 end
 
 function edit_move_end(s::LE.MIState)
