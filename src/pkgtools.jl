@@ -7,6 +7,7 @@ The end of this file contains precompilation code
 """
 module PkgTools
 import ..VimBuffer, ..parse_command, ..testbuf, ..execute, ..well_formed, ..partial_well_formed
+import ..Changes: record, undo!, redo!, freeze, thaw!, reset!
 import ..TextUtils: junction_type, TextChar, is_object_start, is_whitespace_start,
     is_non_whitespace_start, is_object_end, is_non_whitespace_end, is_whitespace_end
 using Combinatorics
@@ -44,6 +45,21 @@ function time_commands()
     end
 end
 
+# call methods for undo/redo
+function changes()
+    buf1::IOBuffer = IOBuffer(; read=true, write=true, append=true)
+    buf2::VimBuffer = testbuf(TEST_STRING)
+    for buf in (buf1, buf2)
+        write(buf, TEST_STRING)
+        record(buf)
+        truncate(buf, 5)
+        record(buf)
+        undo!(buf)
+        redo!(buf)
+        reset!()
+    end
+end
+
 """
 Run through the possible method calls to `junction_type` and `at_junction_type`
 """
@@ -78,6 +94,7 @@ using PrecompileTools
         end
 
         PkgTools.run_junctions()
+        PkgTools.changes()
     end
 end
 

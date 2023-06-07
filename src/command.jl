@@ -221,7 +221,6 @@ function command_constructor(::Type{C}, parse_values::ParseValue...) where {C<:C
     return command_constructor((x...) -> C(x...), parse_values...)::C
 end
 function command_constructor(f::F, parse_values::ParseValue...) where {F<:Function}
-    @debug "command_constructor" f parse_values
     if parse_values[1].type == :nothing
         return command_constructor((x...) -> f(nothing, x...), parse_values[2:end]...)
     elseif parse_values[1].type == :int

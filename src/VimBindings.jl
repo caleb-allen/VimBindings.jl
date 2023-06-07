@@ -119,6 +119,7 @@ function strike_key(c, s::LE.MIState)::StrikeKeyResult
         @debug "Well formed command" string=escape_string(s_cmd) command=cmd
         if cmd !== nothing
             buf = buffer(s)
+            record(buf)
             repl_action::Union{VimMode,ReplAction,Nothing} = execute(buf, cmd)
             if repl_action isa VimMode
                 @debug("trigger mode...")
@@ -165,7 +166,8 @@ end
 Make necessary modifications to vim state for a new prompt
 """
 function new_prompt_line(s::LE.MIState)
-    Changes.reset!()
+    # Changes.reset!()
+    # Changes.record(LE.buffer(s))
     trigger_insert_mode(s) 
 end
 
@@ -235,6 +237,7 @@ function trigger_insert_mode(s::LE.MIState)
 end
 
 function trigger_normal_mode(s::LE.MIState)
+    record(LE.buffer(s))
     iobuffer = LineEdit.buffer(s)
     if STATE.mode !== normal_mode
         STATE.mode = normal_mode

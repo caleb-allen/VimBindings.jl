@@ -27,13 +27,11 @@ function execute(buf, command::MotionCommand)::Union{VimMode,ReplAction,Nothing}
     for iteration in 1:command.r1
         # call the command's function to generate the motion object
         motion = gen_motion(buf, command)
-        @debug motion
         if is_stationary(motion)
             repl_action = @match key(command) begin
                 'j' => history_down
                 'k' => history_up
             end
-            @debug repl_action
         else
             # execute the motion object
             motion(buf)

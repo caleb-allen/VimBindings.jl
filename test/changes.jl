@@ -6,12 +6,14 @@ import VimBindings.Changes: freeze, BufferRecord, record, reset!
     reset!()
     a = freeze(VimBuffer("Hello world|!"))
     b = freeze(VimBuffer("Hello worl|d"))
-    c = freeze(VimBuffer("Hello world|!"))
     
     @test a != b
-    @test freeze(VimBuffer("Hello world|!")) != BufferRecord("Hello |!", 1, insert_mode)
-    @test freeze(VimBuffer("Hello world|!")) == BufferRecord("Hello world!", 11, normal_mode)
-    @test freeze(VimBuffer("Hello|i| world!")) == BufferRecord("Hello world!", 5, insert_mode)
+    @test freeze(VimBuffer("Hello world|!")) != BufferRecord("Hello |!", 1)
+    @test freeze(VimBuffer("Hello world|!")) == BufferRecord("Hello world!", 11)
+    @test freeze(VimBuffer("Hello|i| world!")) == BufferRecord("Hello world!", 5)
+    
+    # The record includes the cursor location but does not include it in equality
+    @test BufferRecord("Hello world!", 7) == BufferRecord("Hello world!", 5)
 end
 
 @testset "record" begin

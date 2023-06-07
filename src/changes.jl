@@ -11,13 +11,10 @@ end
 struct BufferRecord
     text::String
     cursor_index::Int
-    mode::VimMode
 end
 
 Base.:(==)(x::BufferRecord, y::BufferRecord) =
-    x.text == y.text &&
-    x.cursor_index == y.cursor_index &&
-    x.mode == y.mode
+    x.text == y.text
 
 
 function freeze(buf::IO)::BufferRecord
@@ -25,7 +22,7 @@ function freeze(buf::IO)::BufferRecord
     seek(buf, 0)
     s = read(buf, String)
     seek(buf, pos)
-    return BufferRecord(s, pos, buf.mode)
+    return BufferRecord(s, pos)
 end
 
 """
@@ -72,6 +69,9 @@ end
 const global root = Entry()
 const latest = Ref{Entry}(root)
 
+"""
+Record the state of `buf` and save it to history.
+"""
 function record(buf::IO)
     record = freeze(buf)
     if record != latest[].record
@@ -79,7 +79,7 @@ function record(buf::IO)
         current.prev[] = latest[]
         latest[].next[] = current
         latest[] = current
-        @debug "Recorded latest entry" record entry
+        @debug "Recorded latest entry" record
     else
         @debug "Did not record new entry; record is equal to previous entry" record
     end
@@ -94,6 +94,7 @@ function undo!(buf::IO)
 
     staged.prev[].next[] = staged
     latest[] = staged
+    @debug "undo! to previous entry"
 end
 
 function redo!(buf::IO)
@@ -102,10 +103,11 @@ function redo!(buf::IO)
     
     staged.next[].prev[] = staged
     latest[] = staged
+    @debug "redo! to next entry"
 end
 
 """
-reset the `root` and `latest` entries
+reset the `root` and `latest` entries to initial conditions
 """
 function reset!()
     root.next[] = root
