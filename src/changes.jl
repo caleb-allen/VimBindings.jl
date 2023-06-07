@@ -69,8 +69,8 @@ function Entry()
     return Entry(record)
 end
 
-const global root::Entry = Entry()
-const latest::Ref{Entry} = Ref{Entry}(root)
+const global root = Entry()
+const latest = Ref{Entry}(root)
 
 function record(buf::IO)
     record = freeze(buf)
