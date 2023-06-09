@@ -18,7 +18,12 @@ function LE.prompt!(term::TextTerminal, prompt::ModalInterface, s::MIState=init_
         new_prompt_line(s)
         while true
             kmap = keymap(s, prompt)
-            fcn = match_input(kmap, s)
+            local fcn
+            try
+                fcn = match_input(kmap, s)
+            catch e
+                @error "Error processing input" exception=(e, catch_backtrace())
+            end
             kdata = keymap_data(s, prompt)
             s.current_action = :unknown # if the to-be-run action doesn't update this field,
             # :unknown will be recorded in the last_action field

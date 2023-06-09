@@ -3,11 +3,6 @@ using ..TextUtils
 
 export record, undo!, redo!
 
-struct VimString <: AbstractString
-    text::String
-    start_column::Int
-end
-
 struct BufferRecord
     text::String
     cursor_index::Int
@@ -16,30 +11,36 @@ end
 Base.:(==)(x::BufferRecord, y::BufferRecord) =
     x.text == y.text
 
+function Base.show(io::IO, rec::BufferRecord)
+    i = min(length(rec.text), rec.cursor_index)
+    a = rec.text[begin:i]
+    b = rec.text[i+1:end]
+    print(io, "BufferRecord(\"" * a * "|" * b * "\"), $(rec.cursor_index))")
+end
 
-function freeze(buf::IO)::BufferRecord
-    pos = position(buf)
+
+function freeze(buf::IO, pos = position(buf))::BufferRecord
+    origin = position(buf)
     seek(buf, 0)
     s = read(buf, String)
-    seek(buf, pos)
+    seek(buf, origin)
     return BufferRecord(s, pos)
 end
 
 """
 Restore `buf` to the state recorded by `BufferRecord`
 """
-function thaw!(buf::IO, rec::BufferRecord)
+function thaw!(buf::IO, rec::BufferRecord; cursor_index=rec.cursor_index)
     truncate(buf, 0)
     write(buf, rec.text)
+    seek(buf, cursor_index)
+    # seek(buf, rec.cursor_index)
     # buf.mode = normal_mode
-    @debug "thaw" rec
-    seek(buf, rec.cursor_index)
+    @debug "thaw" rec cursor_index
 end
 
 struct Entry
-    # line_above::Int # number of line above undo block
-    # line_below::Int # number of line below undo block
-    id::Int # TODO add an ID so that entries with the same content are not equivalent
+    id::Int
     prev::Ref{Entry} # previous entry in list
     next::Ref{Entry} # next entry in list
     record::BufferRecord
@@ -76,8 +77,8 @@ const latest = Ref{Entry}(root)
 """
 Record the state of `buf` and save it to history.
 """
-function record(buf::IO)
-    record = freeze(buf)
+function record(buf::IO; cursor_index=position(buf))
+    record = freeze(buf, cursor_index)
     @debug "Recording latest entry..." record
     if record != latest[].record
         current = Entry(record, latest[])
@@ -96,8 +97,11 @@ Move from the current buffer record to the previous buffer record.
 """
 function undo!(buf::IO)
     staged = latest[].prev[]
-    show_full_history(staged)
-    thaw!(buf, staged.record)
+    thaw!(buf, staged.record, cursor_index=latest[].record.cursor_index)
+    # thaw!(buf, staged.record)
+    # using cursor_index from the *current* record, because the index at the previous
+    # record indicates where the cursor was at then *end* of the previous edit, not the *beginning*
+    # of the current one.
 
     latest[] = staged
 
@@ -106,8 +110,8 @@ function undo!(buf::IO)
 end
 
 function redo!(buf::IO)
+    @debug "redo! to next entry"
     staged = latest[].next[]
-    show_full_history(staged)
     if staged === latest[]
         @debug "no newer entries. No redo."
         return
@@ -116,7 +120,6 @@ function redo!(buf::IO)
 
     latest[] = staged
     show_full_history()
-    @debug "redo! to next entry"
 end
 
 """
@@ -138,6 +141,7 @@ function show_full_history(selected::Entry=latest[])
     for entry in r
         # show(buf, entry)
         # @debug "history" entry r
+        write(buf, '\n')
         write(buf, show(buf, entry))
     end
     seek(buf, 0)
@@ -194,7 +198,9 @@ function Base.show(io::IO, entry::Entry)
     else
         write(io, "\t")
     end
-    write(io, "Entry($(entry.id), \"" * entry.record.text * "\")\n")
+    write(io, "Entry($(entry.id), \"")
+    show(io, entry.record)
+    write(io, "\")")
 end
 
 

@@ -1,6 +1,7 @@
 using VimBindings.TextUtils
 using VimBindings.Changes
 import VimBindings.Changes: freeze, BufferRecord, record, reset!, Entry
+import VimBindings.PkgTools: run as run_command
 
 @testset "BufferRecord and freeze" begin
     reset!()
@@ -98,8 +99,6 @@ end
 
 end
 
-
-
 @testset "undo" begin
     reset!()
     buf = testbuf("Hello |world!")
@@ -136,4 +135,43 @@ end
 
     undo!(buf)
     # @test buf == testbuf("Hello |n|")
+end
+
+@testset "undo/redo cursor" begin
+    reset!()
+    buf = testbuf("Hello |world")
+    run_command("d\$", buf)
+    # test that `dw` records an entry
+    @test buf == testbuf("Hello |")
+    @test Changes.latest[].record == BufferRecord("Hello world", 6)
+    
+    run_command("u", buf)
+    @test Changes.latest[].record == BufferRecord("Hello world", 6)
+    # running undo records the record as `next`
+    @test Changes.latest[].next[].record == BufferRecord("Hello ", 6)
+
+    # \x12 == C-r for redo
+    run_command("\x12", buf)
+    @test buf == testbuf("Hello |world")
+    @test Changes.latest[].record == BufferRecord("Hello world", 6)
+    @test Changes.latest[].next[].record == BufferRecord("Hello world", 6)
+end
+
+@testset "undo/redo cursor" begin
+    buf = testbuf("Hello worl|d")
+    run_command("daw", buf)
+    # test that `dw` records an entry
+    @test buf == testbuf("Hello |")
+    @test Changes.latest[].record == BufferRecord("Hello world", 6)
+
+    run_command("u", buf)
+    @test Changes.latest[].record == BufferRecord("Hello world", 6)
+    # running undo records the record as `next`
+    @test Changes.latest[].next[].record == BufferRecord("Hello ", 6)
+
+    # \x12 == C-r for redo
+    run_command("\x12", buf)
+    @test buf == testbuf("Hello |world")
+    @test Changes.latest[].record == BufferRecord("Hello world", 6)
+    @test Changes.latest[].next[].record == BufferRecord("Hello world", 6)
 end
