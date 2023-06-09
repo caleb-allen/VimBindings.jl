@@ -119,8 +119,8 @@ function strike_key(c, s::LE.MIState)::StrikeKeyResult
         @debug "Well formed command" string=escape_string(s_cmd) command=cmd
         if cmd !== nothing
             buf = buffer(s)
-            record(buf)
             repl_action::Union{VimMode,ReplAction,Nothing} = execute(buf, cmd)
+            record(buf)
             if repl_action isa VimMode
                 @debug("trigger mode...")
                 trigger_mode(s, repl_action)
