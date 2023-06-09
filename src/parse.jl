@@ -74,7 +74,7 @@ const PARTIAL_RULES = (
     "^(?<c>$INSERTCHARS)?\$" |> Regex,  # InsertCommand
     "^0?\$" |> Regex,  # ZeroCommand
     "^(?<n1>$REPEAT)(?<c>$DELETECHARS)?\$" |> Regex,  # SynonymCommand
-    "^(?<n1>$REPEAT)($UNDO_REDO)?\$" |> Regex => HistoryCommand,
+    "^(?<n1>$REPEAT)($UNDO_REDO)?\$" |> Regex, # HistoryCommand,
     "^(?<n1>$REPEAT)($MOTION)?\$" |> Regex,  # SimpleMotionCommand
     "^(?<n1>$REPEAT)((?|$(complex_motion(true))))?\$" |> Regex,  # CompositeMotionCommand
     "^(?<n1>$REPEAT)((?<op>$OPERATOR)((?<n2>$REPEAT)((?|($PARTIALTEXTOBJECT)|($MOTION)))?)?)?\$" |> Regex,  # OperatorCommand
