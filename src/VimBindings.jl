@@ -173,7 +173,7 @@ Make necessary modifications to vim state for a new prompt
 """
 function new_prompt_line(s::LE.MIState)
     # Changes.reset!()
-    # Changes.record(LE.buffer(s))
+    Changes.record(LE.buffer(s))
     trigger_insert_mode(s)
 end
 
