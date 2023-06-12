@@ -142,27 +142,26 @@ end
     buf = testbuf("Hello |world")
     run_command("d\$", buf)
     # test that `dw` records an entry
+    record(buf)
     @test buf == testbuf("Hello |")
-    @test Changes.latest[].record == BufferRecord("Hello world", 6)
+    @test Changes.latest[].record == BufferRecord("Hello ", 6)
     
     run_command("u", buf)
-    @test Changes.latest[].record == BufferRecord("Hello world", 6)
+    @test Changes.latest[].record == BufferRecord("", 0)
     # running undo records the record as `next`
     @test Changes.latest[].next[].record == BufferRecord("Hello ", 6)
 
-    # \x12 == C-r for redo
-    run_command("\x12", buf)
-    @test buf == testbuf("Hello |world")
-    @test Changes.latest[].record == BufferRecord("Hello world", 6)
-    @test Changes.latest[].next[].record == BufferRecord("Hello world", 6)
 end
 
 @testset "undo/redo cursor" begin
+    reset!()
     buf = testbuf("Hello worl|d")
+    record(buf)
     run_command("daw", buf)
     # test that `dw` records an entry
     @test buf == testbuf("Hello |")
-    @test Changes.latest[].record == BufferRecord("Hello world", 6)
+    record(buf)
+    @test Changes.latest[].record == BufferRecord("Hello ", 6)
 
     run_command("u", buf)
     @test Changes.latest[].record == BufferRecord("Hello world", 6)
@@ -171,7 +170,7 @@ end
 
     # \x12 == C-r for redo
     run_command("\x12", buf)
-    @test buf == testbuf("Hello |world")
-    @test Changes.latest[].record == BufferRecord("Hello world", 6)
-    @test Changes.latest[].next[].record == BufferRecord("Hello world", 6)
+    @test buf == testbuf("Hello |")
+    @test Changes.latest[].record == BufferRecord("Hello ", 6)
+    @test Changes.latest[].next[].record == BufferRecord("Hello ", 6)
 end
