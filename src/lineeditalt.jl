@@ -45,6 +45,7 @@ function LE.prompt!(term::TextTerminal, prompt::ModalInterface, s::MIState=init_
                 s.aborted = true
                 return buffer(s), false, false
             elseif status === :done
+                Changes.record(buffer(s))
                 return buffer(s), true, false
             elseif status === :suspend
                 if Sys.isunix()
@@ -63,7 +64,7 @@ end
 function LE.match_input(f::Function, s::Union{Nothing,LE.MIState}, term, cs::Vector{Char}, keymap)
     LE.update_key_repeats(s, cs)
     c = String(cs)
-    @debug "match function" cs c
+    # @debug "match function" cs c
     fallback_fn = function (s, p)  # s::Union{Nothing,MIState}; p can be (at least) a LineEditREPL, PrefixSearchState, Nothing
         r = Base.invokelatest(f, s, p, c)
         if isa(r, Symbol)
@@ -119,7 +120,7 @@ function LE.match_input(k::Dict{Char}, s::Union{Nothing,LE.MIState}, term::Union
         :abort
     end
     c = read(term, Char)
-    @debug "Read byte" byte = escape_string(string(c)) cs = escape_string(string(cs))
+    # @debug "Read byte" byte = escape_string(string(c)) cs = escape_string(string(cs))
     if isempty(cs) && c == '\e'
         sleep(0.03)
         avail = bytesavailable(term)
