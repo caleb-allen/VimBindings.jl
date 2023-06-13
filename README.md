@@ -52,10 +52,10 @@ Here are a few of the features of the package, as well as goal features of the p
 - [x] Binding the escape key from the REPL
 - [x] More advanced editing with text objects (e.g. `diw`)
 - [x] History integration
+- [x] Undo/Redo with `u` and `C-r`
 - [ ] Full support for Unicode characters
 - [ ] System clipboard integration
 - [ ] Registers
-- [ ] Undo/Redo
 
 ### Requesting unimplemented commands
 
