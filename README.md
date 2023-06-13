@@ -1,6 +1,6 @@
 VimBindings.jl is an experimental Julia package which brings vim emulation directly to the Julia REPL.
 
-The package is early in development and is not yet recommended for daily use. For the brave, feel free to give it a try!
+The package is early in development and may have unknown issues. For the brave, feel free to give it a try! Feedback is welcome.
 
 ![latest ci](https://github.com/caleb-allen/VimBindings.jl/actions/workflows/test.yaml/badge.svg)
 
