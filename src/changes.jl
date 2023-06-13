@@ -34,8 +34,6 @@ function thaw!(buf::IO, rec::BufferRecord; cursor_index=rec.cursor_index)
     truncate(buf, 0)
     write(buf, rec.text)
     seek(buf, cursor_index)
-    # seek(buf, rec.cursor_index)
-    # buf.mode = normal_mode
     @debug "thaw" rec cursor_index
 end
 
@@ -98,7 +96,6 @@ Move from the current buffer record to the previous buffer record.
 function undo!(buf::IO)
     staged = latest[].prev[]
     thaw!(buf, staged.record, cursor_index=latest[].record.cursor_index)
-    # thaw!(buf, staged.record)
     # using cursor_index from the *current* record, because the index at the previous
     # record indicates where the cursor was at then *end* of the previous edit, not the *beginning*
     # of the current one.
@@ -136,11 +133,8 @@ Base.:(==)(x::Entry, y::Entry) = x.record == y.record && x.id == y.id
 
 function show_full_history(selected::Entry=latest[])
     r = root_of(selected)
-    # @debug "got root of entry" root=r entry=selected
     buf = IOBuffer()
     for entry in r
-        # show(buf, entry)
-        # @debug "history" entry r
         write(buf, '\n')
         write(buf, show(buf, entry))
     end
@@ -174,8 +168,6 @@ Whether the entry is the first in the linked list
 is_first(x::Entry) = x.prev[] === x
 
 function Base.iterate(entry::Entry, state=nothing)
-    # @show entry
-    # @show state
     if state === nothing
         return (entry, entry)
     end

@@ -172,7 +172,6 @@ end
 Make necessary modifications to vim state for a new prompt
 """
 function new_prompt_line(s::LE.MIState)
-    # Changes.reset!()
     Changes.record(LE.buffer(s))
     trigger_insert_mode(s)
 end
@@ -236,7 +235,6 @@ function trigger_mode(state::LE.MIState, mode::VimMode)
     end
 end
 function trigger_insert_mode(s::LE.MIState)
-    # record(LE.buffer(s))
     STATE.mode = insert_mode
     print(stdout, VTE_CURSOR_STYLE_STEADY_IBEAM)
     @debug("trigger insert mode")
@@ -244,7 +242,6 @@ function trigger_insert_mode(s::LE.MIState)
 end
 
 function trigger_normal_mode(s::LE.MIState)
-    # record(LE.buffer(s))
     iobuffer = LineEdit.buffer(s)
     record(iobuffer, cursor_index=STATE.last_edit_index)
     if STATE.mode !== normal_mode
