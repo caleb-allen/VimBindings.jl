@@ -5,6 +5,7 @@ using ..TextUtils
 using ..Motions
 using ..Parse
 using ..Operators
+using ..Changes
 
 using Match
 import REPL: LineEdit as LE
@@ -26,13 +27,11 @@ function execute(buf, command::MotionCommand)::Union{VimMode,ReplAction,Nothing}
     for iteration in 1:command.r1
         # call the command's function to generate the motion object
         motion = gen_motion(buf, command)
-        @debug motion
         if is_stationary(motion)
             repl_action = @match key(command) begin
                 'j' => history_down
                 'k' => history_up
             end
-            @debug repl_action
         else
             # execute the motion object
             motion(buf)
@@ -124,7 +123,7 @@ function execute(buf, command::OperatorCommand)::Union{VimMode,Nothing}
         # TODO the iteration on `action.r1` should probably happen in `gen_motion`
         for r2 in 1:command.action.r1
             motion = gen_motion(buf, command.action)
-            @debug "executing motion" command_iteration=r1 action_iteration=r2 motion
+            @debug "executing motion" command_iteration = r1 action_iteration = r2 motion
             # @debug result = eval(Expr(:call, op_fn, buf, motion))
             result = op_fn(buf, motion)
             @debug result
@@ -162,5 +161,17 @@ function execute(buf, command::ReplaceCommand)::Union{VimMode,Nothing}
 end
 
 execute(buf, ::ZeroCommand) = execute(buf, MotionCommand(nothing, '0'))
+
+function execute(buf, command::HistoryCommand)
+    for r1 in 1:command.r1
+        if key(command) == 'u'
+            undo!(buf)
+        elseif key(command) == '\x12'
+            redo!(buf)
+        else
+            error("invalid history command: $command")
+        end
+    end
+end
 
 end

@@ -28,6 +28,7 @@ include("motion.jl")
 include("registers.jl")
 include("operator.jl")
 include("parse.jl")
+include("changes.jl")
 include("execute.jl")
 include("lineeditalt.jl")
 
@@ -38,16 +39,18 @@ using .Motions
 using .TextUtils
 using .Operators
 using .Registers
+using .Changes
 
 mutable struct VimState
     registers::Dict{Char,String}
     register::Char
     mode::VimMode
+    last_edit_index::Int # where the most recent edit started
 end
 
 
 
-const global STATE = VimState(Dict{Char,String}(), '"', insert_mode)
+const global STATE = VimState(Dict{Char,String}(), '"', insert_mode, 0)
 const global KEY_STACK = Char[]
 const global INITIALIZED = Ref(false)
 
@@ -65,7 +68,7 @@ const VTE_CURSOR_STYLE_STEADY_IBEAM = "\033[6 q"
 
 
 function strike_key(c, s::LE.MIState)::StrikeKeyResult
-    @debug "strike key" key=escape_string(c)
+    @debug "strike key" key = escape_string(c)
     if c == "\e\e"
         empty!(KEY_STACK)
         return VimAction()
@@ -106,7 +109,7 @@ function strike_key(c, s::LE.MIState)::StrikeKeyResult
     )
 
     s_cmd in fallback_keys && begin
-        @debug "falling back for command" command=escape_string(s_cmd)
+        @debug "falling back for command" command = escape_string(s_cmd)
         cs = copy(KEY_STACK)
         empty!(KEY_STACK)
         return Fallback(cs)
@@ -114,10 +117,16 @@ function strike_key(c, s::LE.MIState)::StrikeKeyResult
     if well_formed(s_cmd)
         empty!(KEY_STACK)
         cmd = parse_command(s_cmd)
-        @debug "Well formed command" string=escape_string(s_cmd) command=cmd
+        @debug "Well formed command" string = escape_string(s_cmd) command = cmd
         if cmd !== nothing
             buf = buffer(s)
+            STATE.last_edit_index = position(buf)
+            @debug "Last edit index" index = STATE.last_edit_index
+            # record(buf)
             repl_action::Union{VimMode,ReplAction,Nothing} = execute(buf, cmd)
+            if repl_action != insert_mode
+                record(buf, cursor_index=STATE.last_edit_index)
+            end
             if repl_action isa VimMode
                 @debug("trigger mode...")
                 trigger_mode(s, repl_action)
@@ -151,13 +160,20 @@ function init()
         return
     end
     # enable_logging()
-    @debug("initializing...")
     @debug current_task()
     repl = Base.active_repl
     trigger_insert_mode(repl.mistate)
     INITIALIZED.x = true
     @debug("initialized")
     return
+end
+
+"""
+Make necessary modifications to vim state for a new prompt
+"""
+function new_prompt_line(s::LE.MIState)
+    Changes.record(LE.buffer(s))
+    trigger_insert_mode(s)
 end
 
 function edit_move_end(s::LE.MIState)
@@ -227,6 +243,7 @@ end
 
 function trigger_normal_mode(s::LE.MIState)
     iobuffer = LineEdit.buffer(s)
+    record(iobuffer, cursor_index=STATE.last_edit_index)
     if STATE.mode !== normal_mode
         STATE.mode = normal_mode
         left(iobuffer)(iobuffer)

@@ -4,6 +4,7 @@ import .Threads.@spawn
 import REPL.LineEdit: TextTerminal, ModalInterface, MIState, activate, keymap, match_input, keymap_data, transition, mode, terminal, refresh_line
 import REPL.Terminals: raw!, enable_bracketed_paste, disable_bracketed_paste
 function LE.prompt!(term::TextTerminal, prompt::ModalInterface, s::MIState=init_state(term, prompt))
+    @debug "new prompt call"
     Base.reseteof(term)
     raw!(term, true)
     enable_bracketed_paste(term)
@@ -14,9 +15,15 @@ function LE.prompt!(term::TextTerminal, prompt::ModalInterface, s::MIState=init_
             refresh_line(s)
         end
         old_state = mode(s)
+        new_prompt_line(s)
         while true
             kmap = keymap(s, prompt)
-            fcn = match_input(kmap, s)
+            local fcn
+            try
+                fcn = match_input(kmap, s)
+            catch e
+                @error "Error processing input" exception=(e, catch_backtrace())
+            end
             kdata = keymap_data(s, prompt)
             s.current_action = :unknown # if the to-be-run action doesn't update this field,
             # :unknown will be recorded in the last_action field
@@ -32,12 +39,13 @@ function LE.prompt!(term::TextTerminal, prompt::ModalInterface, s::MIState=init_
                 transition(s, old_state)
                 status = :done
             end
-            @debug status
+            @debug "Prompt status" status
             status !== :ignore && (s.last_action = s.current_action)
             if status === :abort
                 s.aborted = true
                 return buffer(s), false, false
             elseif status === :done
+                Changes.record(buffer(s))
                 return buffer(s), true, false
             elseif status === :suspend
                 if Sys.isunix()
@@ -54,10 +62,9 @@ function LE.prompt!(term::TextTerminal, prompt::ModalInterface, s::MIState=init_
 end
 
 function LE.match_input(f::Function, s::Union{Nothing,LE.MIState}, term, cs::Vector{Char}, keymap)
-    @debug("match function")
-    @debug cs
     LE.update_key_repeats(s, cs)
     c = String(cs)
+    @debug "match function" cs c
     fallback_fn = function (s, p)  # s::Union{Nothing,MIState}; p can be (at least) a LineEditREPL, PrefixSearchState, Nothing
         r = Base.invokelatest(f, s, p, c)
         if isa(r, Symbol)
@@ -113,8 +120,7 @@ function LE.match_input(k::Dict{Char}, s::Union{Nothing,LE.MIState}, term::Union
         :abort
     end
     c = read(term, Char)
-    @debug(escape_string("Reading byte $c"))
-    @debug("cs: " * escape_string(string(cs)))
+    @debug "Read byte" byte = escape_string(string(c)) cs = escape_string(string(cs))
     if isempty(cs) && c == '\e'
         sleep(0.03)
         avail = bytesavailable(term)
@@ -140,7 +146,6 @@ function LE.match_input(k::Dict{Char}, s::Union{Nothing,LE.MIState}, term::Union
             @debug("not escape key.")
         end
     end
-    @debug(escape_string("matching input for `$c`"))
     # Ignore any `wildcard` as this is used as a
     # placeholder for the wildcard (see normalize_key("*"))
     c == LE.wildcard && return (s, p) -> begin
@@ -148,8 +153,7 @@ function LE.match_input(k::Dict{Char}, s::Union{Nothing,LE.MIState}, term::Union
         :ok
     end
     push!(cs, c)
-    @debug escape_string(LE.input_string(s))
-    @debug haskey(k, c)
+    @debug escape_string("matching input for `$c`") input_string = escape_string(LE.input_string(s)) haskey = haskey(k, c)
     key = haskey(k, c) ? c : LE.wildcard
     # if we don't match on the key, look for a default action then fallback on 'nothing' to ignore
     # if we don't match on the key, look for a default action then fallback on 'nothing' to ignore

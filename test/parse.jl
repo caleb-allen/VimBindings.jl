@@ -87,7 +87,7 @@ end
             @test !partial_well_formed(cmd) || @show cmd
         end
         # TODO: Remove these when the commands are implemented:
-        @test !partial_well_formed("u")
+        @test partial_well_formed("u")
         @test !partial_well_formed("m")
         @test !partial_well_formed("M")
         @test !partial_well_formed("*")
