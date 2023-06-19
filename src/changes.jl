@@ -13,8 +13,12 @@ Base.:(==)(x::BufferRecord, y::BufferRecord) =
 
 function Base.show(io::IO, rec::BufferRecord)
     i = min(length(rec.text), rec.cursor_index)
-    a = rec.text[begin:i]
-    b = rec.text[i+1:end]
+    a = ""
+    b = ""
+    if i > 0
+        a = rec.text[begin:nextind(rec.text, i-1)]
+        b = rec.text[nextind(rec.text, i):end]
+    end
     print(io, "BufferRecord(\"" * a * "|" * b * "\"), $(rec.cursor_index))")
 end
 
