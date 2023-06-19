@@ -30,6 +30,17 @@ end
     
     # https://github.com/caleb-allen/VimBindings.jl/issues/61
     @test run("Hello world|", "A") == testbuf("Hello world|i|")
+    
+    
+    # @testset "o and O" begin
+       run("""run("function \\|hello()" """, "e" == testbuf("""run("function \\hell|o())"""))
+    # end
+    # very odd behavior - paste this exactly into the repl and run `e` when the cursor is on the 
+    #=
+        julia> @testset "o and O" begin
+           @test run("function \|hello()", )
+       end
+       =#
 end
 
 
