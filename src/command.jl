@@ -52,6 +52,7 @@ end
 
 struct TextObjectCommand <: Command
     r1 :: Int
+    # TODO separate name into two char parts
     name :: String
 end
 
