@@ -4,7 +4,6 @@ import DataStructures: OrderedDict
 using ..Commands
 using ..Motions
 using ..Util
-import ..Util.@debug
 
 export well_formed, matched_rule, parse_command, synonym, partial_well_formed
 

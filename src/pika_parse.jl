@@ -1,65 +1,89 @@
-module PikaParse
+module Parse
+using ..Commands, ..Motions, ..Util
+
 import PikaParser as P
+import PikaParser: satisfy, seq, first, token, some, epsilon, flatten,
+    make_grammar, find_match_at!, traverse_match, ParserState
 using Match
 export well_formed, parse_command, synonym, partial_well_formed, eval_parse
+include("parse_clauses.jl")
 
-const simple_motions = (
-    'h',
-    'l',
-    'j',
-    'k',
-    'w',
-    'W',
-    'e',
-    'E',
-    'b',
-    'B',
-    '^',
-    '$',
-    '0',
-    '{',
-    '}',
-    '(',
-    ')',
-    'G',
-    'H',
-    'L',
-)
+const ϵ = epsilon
 
+function ismotion(x)
+    x in keys(simple_motions)
+end
 
+"""
+    Parse `input` as a vim command.
+"""
 function parse_command(input::AbstractString)
-    function ismotion(x)
-        x in simple_motions
-    end
     rules = Dict(
-        :motion => P.satisfy(ismotion),
-        :digits => P.some(P.satisfy(isdigit)),
-        :register => P.seq(P.token('"'), P.satisfy(isletter)),
-        :motions => P.seq(
-            P.first(:register, P.epsilon),
-            P.first(:digits, P.epsilon),
-            :motion
-        )
+        :motions => seq(
+            # :repeat,
+            :count,
+            :motion => satisfy(ismotion)
+        ),
+        #=
+        :textobject => seq(
+            P.first(:repeat, ϵ),
+            P.first(token.(['a', 'i'])...),
+            P.first(token.(['w', 'W', 's', 'p'])...)
+        ),
+        :findmotion => seq(
+            :count,
+            P.first(token.(['f', 'F', 't', 'T'])...),
+            ϵ
+        ), =#
+        :repeat => some(satisfy(isdigit)),
+        :count => P.first(:repeat, ϵ),
+        #= :register => seq(token('"'), satisfy(isletter)),
+        :command => seq(
+            # P.first(:register, ϵ),
+            # P.first(:repeat, ϵ),
+            P.first(:textobject, :motions, :findmotion)
+        )=#
     )
-    g = P.make_grammar(
+    g = make_grammar(
         [:motions], # the top-level rule
-        P.flatten(rules, Char), # process the rules into a single level and specialize them for crunching Chars
+        flatten(rules, Char), # process the rules into a single level and specialize them for crunching Chars
     )
     p = P.parse(g, input)
-    # P.find_match_at!(p, :motions, 1)
+    eval_parse(p)
+    # find_match_at!(p, :command, 1)
 
 end
 
-function eval_parse(p::P.ParserState)
+function eval_parse(p::ParserState)
     function fold(m, p, subvals)
-        # @info "Parsed values" m.rule m.view subvals
+        # @info string(m.rule) m.rule m.view subvals
+        # dump(subvals)
         # return nothing
-        return @match m.rule begin
+        @info string(m.rule) m.rule m.view subvals
+        dump(m)
+        a = clause(m, subvals)
+        @info "Result $(string(m.rule))" result = a
+        println("\n")
+        return a
+        a = @match m.rule begin
+            :motions => MotionCommand()
             :motion => m.view
-            :digits => parse(Int, m.view)
-            :register => m.view
+            :textobject => nothing
+            :findmotion => nothing
+            :repeat => parse(Int, m.view)
+            :count => nothing,
+            # :repeat => nothing
+            # :register => m.view
+            :register => nothing
+            :command => nothing
         end
-        # m.rule == :digits ? parse(Int, m.view) :
+        if a === nothing
+            a = m.view
+        end
+        @info "Result $(string(m.rule))" result = a
+        println("\n")
+        return a
+        # m.rule == :repeat ? parse(Int, m.view) :
         # m.rule == :expr ? subvals[1] :
         # m.rule == :parens ? subvals[2] :
         # m.rule == :plusexpr ? subvals[1] + subvals[3] :
@@ -73,7 +97,8 @@ function eval_parse(p::P.ParserState)
         (true for _ in match.submatches)
     end
 
-    P.traverse_match(p, P.find_match_at!(p, :motions, 1), open=open)
+    # traverse_match(p, find_match_at!(p, :command, 1), fold=fold)
+    traverse_match(p, find_match_at!(p, :motions, 1), fold=fold)
 end
 
 end
