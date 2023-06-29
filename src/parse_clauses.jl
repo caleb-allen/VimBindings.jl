@@ -70,12 +70,27 @@ operator_command(_, op::Tuple{Int, AbstractChar}, cmd::Union{MotionCommand, Text
 textobject(_, count::Int, a_or_i::AbstractString, object_type::AbstractString) =
     (count, a_or_i[1], object_type[1])
     
-textobject_command(_,
-                    op::Tuple{Int, Char},
-                    textobject::Tuple{Int, Char, Char}) =
+textobject_command(_, op::Tuple{Int, Char}, textobject::Tuple{Int, Char, Char}) =
     OperatorCommand(
         op[1], op[2],
         # TODO separate name into two char parts
         TextObjectCommand(textobject[1], textobject[2] * textobject[3])
     )
+
+insert_command(_, name::AbstractString) = InsertCommand(name[1])
+
+zero_command(_, zero::AbstractString) = ZeroCommand()
+
+synonym(_, name::AbstractString) = name[1]
+
+synonym_command(_, count::Int, name::Char) = SynonymCommand(count, name)
+
+history(_, name::AbstractString) = name[1]
+# history(_, name::AbstractString) = name == "^R" ? '\x12' : name[1]
+
+history_command(_, count::Int, name::Char) = HistoryCommand(count, name)
+
+# lineoperator_command(_, count::Int, op::Char, op::Char) = 
+
+
 end

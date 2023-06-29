@@ -3,7 +3,7 @@ using ..Commands, ..Motions, ..Util
 
 import PikaParser as P
 import PikaParser: satisfy, seq, first, token, some, epsilon, flatten,
-    make_grammar, find_match_at!, traverse_match, ParserState
+    make_grammar, find_match_at!, traverse_match, ParserState, scan
 using Match
 export well_formed, parse_command, synonym, partial_well_formed, eval_parse
 include("parse_clauses.jl")
@@ -40,10 +40,9 @@ function parse_command(input::AbstractString)
         ),
         :findmotions => seq(
             :count,
-            P.first(token.(['f', 'F', 't', 'T'])...)
-        ),
-
-        :repeat => some(satisfy(isdigit)),
+            # P.first(token.(['f', 'F', 't', 'T'])...)
+            P.first(token.(collect("fFtT"))...)
+        ), :repeat => some(satisfy(isdigit)),
         # like "repeat" but may be missing
         :count => P.first(:repeat, ϵ),
         # :register => seq(token('"'), satisfy(isletter)),
@@ -59,9 +58,33 @@ function parse_command(input::AbstractString)
             P.first(:motion_command, :textobject_command)
         ),
         :command => P.first(
-            :operator_command,
+            :insert_command => P.first(
+                token.(collect("aAiIoO"))...
+            ),
+            :zero_command => token('0'),
+            :synonym_command => seq(
+                :count,
+                :synonym => P.first(token.(collect("xXDCS"))...)
+            ),
+            :history_command => seq(
+                :count,
+                :history => P.first(token('u'), token('\x12')),
+            ),
+            :motion_command,
             :textobject_command,
-            :motion_command
+            :operator_command,
+            # :lineoperator_command => seq(
+            #     :count,
+            #     # :operator => scan(m -> m[1] == m[2] ? 2 : -1)
+            #     :operator,
+            #     :operator
+            # ),
+            # rule to match a pair of equal tokens
+            # :replace_command => seq(
+            #     :count,
+            #     token('r'),
+            #     ϵ
+            # )
         )
     )
     g = make_grammar(
@@ -118,7 +141,9 @@ function eval_parse(p::ParserState)
         return response
     end
 
-    traverse_match(p, find_match_at!(p, :command, 1), fold=fold)
+    result = traverse_match(p, find_match_at!(p, :command, 1), fold=fold)
+    result isa Command || @error("Got a $(typeof(result)) but expected <:Command. Folding may be incomplete.", result)
+    return result
     # traverse_match(p, find_match_at!(p, :motions, 1), fold=fold)
 end
 
