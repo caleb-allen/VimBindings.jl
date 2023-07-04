@@ -7,8 +7,9 @@ using ..Registers
 using REPL
 using REPL.LineEdit
 const LE = LineEdit
+import InteractiveUtils.clipboard
 
-export operator_fn, change, delete, move, yank, insert, cut, paste
+export operator_fn, change, delete, move, yank, insert, cut, put
 function operator_fn(c::Char)::Function
     operators = Dict(
         'c' => change,
@@ -44,8 +45,9 @@ end
 
 function yank(buf::IO, motion::Motion)::Union{String,Nothing}
     text = cut(buf, motion)
-
-    put!(nothing, text)
+    !isempty(text) && clipboard(text)
+    @debug "yanked text" yanked=text
+    # put!(nothing, text)
     return text
 end
 
@@ -62,13 +64,19 @@ function cut(buf::IO, motion::Motion)::String
     return String(chars)
 end
 
-function paste(buf::IO, reg::Char)
-    text = get(reg)
+function put(buf::IO, reg::Char='"') # default unnamed register
+    reg == '"' || @warn "Named registers are currently unsupported. Please see this issue to follow progress: https://github.com/caleb-allen/VimBindings.jl/issues/3"
+    text::String = try
+        clipboard() |> rstrip
+    catch ex
+        @error "Could not read clipboard" exception=(ex, catch_backtrace())
+        ""
+    end
     if text === nothing
         return
     end
     pos = position(buf)
-    edit_splice!(buf, pos => pos, text)
+    LE.edit_splice!(buf, pos => pos, text)
 end
 
 function LE.edit_splice!(buf::VimBuffer, range::Pair{Int,Int}, text::AbstractString)

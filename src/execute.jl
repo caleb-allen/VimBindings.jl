@@ -174,4 +174,9 @@ function execute(buf, command::HistoryCommand)
     end
 end
 
+function execute(buf, command::PasteCommand)
+    put(buf)
+    return nothing
+end
+
 end
