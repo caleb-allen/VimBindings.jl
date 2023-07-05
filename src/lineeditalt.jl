@@ -59,6 +59,7 @@ function LE.prompt!(term::TextTerminal, prompt::ModalInterface, s::MIState=init_
         end
     finally
         print(stdout, VTE_CURSOR_STYLE_TERMINAL_DEFAULT)
+        @debug "Reset cursor style" time=now()
         # this is called at every prompt line, if there are terminal cursor blinking issues this may be a cause since
         # it's resetting the style to default and then immediately setting it to IBEAM on the next prompt line
         raw!(term, false) && disable_bracketed_paste(term)

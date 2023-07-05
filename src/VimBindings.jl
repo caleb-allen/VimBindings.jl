@@ -14,6 +14,7 @@ using REPL
 using REPL.LineEdit
 using Match
 using Logging
+using Dates
 import REPL.LineEdit: KeyAlias, edit_splice!, buffer, refresh_line
 import Base: AnyDict, show_unquoted
 using Sockets
@@ -237,7 +238,7 @@ end
 function trigger_insert_mode(s::LE.MIState)
     STATE.mode = insert_mode
     print(stdout, VTE_CURSOR_STYLE_STEADY_IBEAM)
-    @debug "trigger insert mode"
+    @debug "trigger insert mode" time=now()
     LE.refresh_line(s)
 end
 
@@ -250,7 +251,7 @@ function trigger_normal_mode(s::LE.MIState)
         LE.refresh_line(s)
         print(stdout, VTE_CURSOR_STYLE_STEADY_BLOCK)
     end
-    @debug "trigger normal mode"
+    @debug "trigger normal mode" time=now()
 end
 
 function reset_term_cursor()
