@@ -157,8 +157,12 @@ function strike_key(c, s::LE.MIState)::StrikeKeyResult
 end
 
 function init()
-    if INITIALIZED.x
+    if INITIALIZED[]
         return
+    end
+    atexit() do
+        @debug "Reset cursor style"
+        print(stdout, VTE_CURSOR_STYLE_STEADY_BLOCK)
     end
     # enable_logging()
     @debug current_task()
