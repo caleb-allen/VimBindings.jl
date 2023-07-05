@@ -3,6 +3,8 @@
 import .Threads.@spawn
 import REPL.LineEdit: TextTerminal, ModalInterface, MIState, activate, keymap, match_input, keymap_data, transition, mode, terminal, refresh_line
 import REPL.Terminals: raw!, enable_bracketed_paste, disable_bracketed_paste
+
+
 function LE.prompt!(term::TextTerminal, prompt::ModalInterface, s::MIState=init_state(term, prompt))
     @debug "new prompt call"
     Base.reseteof(term)
@@ -56,6 +58,9 @@ function LE.prompt!(term::TextTerminal, prompt::ModalInterface, s::MIState=init_
             end
         end
     finally
+        print(stdout, VTE_CURSOR_STYLE_TERMINAL_DEFAULT)
+        # this is called at every prompt line, if there are terminal cursor blinking issues this may be a cause since
+        # it's resetting the style to default and then immediately setting it to IBEAM on the next prompt line
         raw!(term, false) && disable_bracketed_paste(term)
     end
     # unreachable
