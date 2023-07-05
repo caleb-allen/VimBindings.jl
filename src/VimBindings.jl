@@ -19,6 +19,16 @@ import Base: AnyDict, show_unquoted
 using Sockets
 
 const LE = LineEdit
+const VTE_CURSOR_STYLE_TERMINAL_DEFAULT = "\033[0 q"
+const VTE_CURSOR_STYLE_BLINK_BLOCK = "\033[1 q"
+const VTE_CURSOR_STYLE_STEADY_BLOCK = "\033[2 q"
+const VTE_CURSOR_STYLE_BLINK_UNDERLINE = "\033[3 q"
+# TODO use underline for interim cursor for something like `rX`
+const VTE_CURSOR_STYLE_STEADY_UNDERLINE = "\033[4 q"
+# xterm extensions
+const VTE_CURSOR_STYLE_BLINK_IBEAM = "\033[5 q"
+const VTE_CURSOR_STYLE_STEADY_IBEAM = "\033[6 q"
+
 include("util.jl")
 using .Util
 
@@ -53,16 +63,6 @@ end
 const global STATE = VimState(Dict{Char,String}(), '"', insert_mode, 0)
 const global KEY_STACK = Char[]
 const global INITIALIZED = Ref(false)
-
-const VTE_CURSOR_STYLE_TERMINAL_DEFAULT = "\033[0 q"
-const VTE_CURSOR_STYLE_BLINK_BLOCK = "\033[1 q"
-const VTE_CURSOR_STYLE_STEADY_BLOCK = "\033[2 q"
-const VTE_CURSOR_STYLE_BLINK_UNDERLINE = "\033[3 q"
-# TODO use underline for interim cursor for something like `rX`
-const VTE_CURSOR_STYLE_STEADY_UNDERLINE = "\033[4 q"
-# xterm extensions
-const VTE_CURSOR_STYLE_BLINK_IBEAM = "\033[5 q"
-const VTE_CURSOR_STYLE_STEADY_IBEAM = "\033[6 q"
 
 
 
@@ -156,8 +156,12 @@ function strike_key(c, s::LE.MIState)::StrikeKeyResult
 end
 
 function init()
-    if INITIALIZED.x
+    if INITIALIZED[]
         return
+    end
+    atexit() do
+        @debug "Reset cursor style"
+        print(stdout, VTE_CURSOR_STYLE_STEADY_BLOCK)
     end
     # enable_logging()
     @debug current_task()
@@ -239,7 +243,7 @@ end
 function trigger_insert_mode(s::LE.MIState)
     STATE.mode = insert_mode
     print(stdout, VTE_CURSOR_STYLE_STEADY_IBEAM)
-    @debug("trigger insert mode")
+    @debug "trigger insert mode"
     LE.refresh_line(s)
 end
 
@@ -252,7 +256,7 @@ function trigger_normal_mode(s::LE.MIState)
         LE.refresh_line(s)
         print(stdout, VTE_CURSOR_STYLE_STEADY_BLOCK)
     end
-    @debug("trigger normal mode")
+    @debug "trigger normal mode"
 end
 
 function reset_term_cursor()
