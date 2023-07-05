@@ -3,8 +3,6 @@
 import .Threads.@spawn
 import REPL.LineEdit: TextTerminal, ModalInterface, MIState, activate, keymap, match_input, keymap_data, transition, mode, terminal, refresh_line
 import REPL.Terminals: raw!, enable_bracketed_paste, disable_bracketed_paste
-
-
 function LE.prompt!(term::TextTerminal, prompt::ModalInterface, s::MIState=init_state(term, prompt))
     @debug "new prompt call"
     Base.reseteof(term)
