@@ -32,7 +32,7 @@ function clause(match, subvals)
     # e.g. motion-1 becomes motion_1
         # @debug "Executing clause $(string(sym))" match.view subvals
     if !(sym in clauses())
-        @warn "No function for clause: `$sym` does not exist" f_name=sym args=(match.view, subvals...) types=typeof.(subvals)
+        @warn "No function for clause: `$sym` exists" f_name=sym args=(match.view, subvals...) types=typeof.(subvals)
         if !isempty(subvals)
             if length(subvals) == 1
                 return subvals[1]
@@ -90,7 +90,7 @@ history(_, name::AbstractString) = name[1]
 
 history_command(_, count::Int, name::Char) = HistoryCommand(count, name)
 
-# lineoperator_command(_, count::Int, op::Char, op::Char) = 
+lineoperator_command(_, count::Int, op::AbstractString) = LineOperatorCommand(count, op[1])
 
 
 end
