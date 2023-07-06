@@ -56,6 +56,8 @@ count(_, repeat::Int) = repeat
 
 count(_) = 1
 
+char(s::AbstractString) = s[1]
+
 motion(m::AbstractString) = m[1]
 
 motions(_, count::Int, name::AbstractChar) = SimpleMotionCommand(count, name)
@@ -91,6 +93,8 @@ history(_, name::AbstractString) = name[1]
 history_command(_, count::Int, name::Char) = HistoryCommand(count, name)
 
 lineoperator_command(_, count::Int, op::AbstractString) = LineOperatorCommand(count, op[1])
+
+replace_command(_, count::Int, r, replacement::Char) = ReplaceCommand(count, replacement)
 
 
 end

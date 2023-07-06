@@ -82,12 +82,11 @@ function parse_command(input::AbstractString)
                 :count,
                 scan(islineoperator)
             ),
-            # rule to match a pair of equal tokens
-            # :replace_command => seq(
-            #     :count,
-            #     token('r'),
-            #     ϵ
-            # )
+            :replace_command => seq(
+                :count,
+                token('r'),
+                :char => satisfy(c->true)
+            )
         )
     )
     g = make_grammar(
