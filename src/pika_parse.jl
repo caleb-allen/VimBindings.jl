@@ -15,6 +15,11 @@ function ismotion(x)
     x in keys(simple_motions)
 end
 
+function islineoperator(m)
+    length(m) != 2 && return -1
+    m[1] == m[2] ? 2 : -1
+end
+
 """
     Parse `input` as a vim command.
 """
@@ -73,12 +78,10 @@ function parse_command(input::AbstractString)
             :motion_command,
             :textobject_command,
             :operator_command,
-            # :lineoperator_command => seq(
-            #     :count,
-            #     # :operator => scan(m -> m[1] == m[2] ? 2 : -1)
-            #     :operator,
-            #     :operator
-            # ),
+            :lineoperator_command => seq(
+                :count,
+                scan(islineoperator)
+            ),
             # rule to match a pair of equal tokens
             # :replace_command => seq(
             #     :count,
@@ -96,6 +99,7 @@ function parse_command(input::AbstractString)
     # find_match_at!(p, :command, 1)
 
 end
+
 
 function eval_parse(p::ParserState)
     function fold(m, p, subvals)
