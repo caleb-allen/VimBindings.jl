@@ -200,7 +200,7 @@ function partial_rule(rule::P.Seq)
             end
             # push!(sub_rules, r)
             # @info "increment" i j pc[1:j] r
-            @info "increment" i pc[1:i] r
+            # @info "increment" i pc[1:i] r
         # end
         push!(sub_rules, r)
         # @info "new subrule" i old=pc[i] new=sub_rule
@@ -208,8 +208,12 @@ function partial_rule(rule::P.Seq)
     end
     # push!(pc, first(sub_rules...))
     # end
+    # no_epsilon = filter(sub_rules) do r
+    #     !(r isa Epsilon)
+    # end
+    # @info "filter" sub_rules no_epsilon
     new_rule = first(sub_rules...)
-    @info "sequence rule" old_rule=rule new_rule
+    # @info "sequence rule" old_rule=rule new_rule
     return new_rule
 end
 
@@ -244,10 +248,10 @@ function well_formed(input::String)
 
 end
 
-function well_formed(input::String)
+function partial_well_formed(input::String)
     g = make_grammar(
         [:command], # the top-level rule
-        flatten(rules(), Char), # process the rules into a single level and specialize them for crunching Chars
+        flatten(partial_rules(), Char), # process the rules into a single level and specialize them for crunching Chars
     )
     p = P.parse(g, input)
     match = find_match_at!(p, :command, 1)
