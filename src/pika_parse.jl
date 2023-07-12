@@ -4,8 +4,9 @@ using ..Commands, ..Motions, ..Util
 import PikaParser as P
 import PikaParser: satisfy, seq, first, token, some, epsilon, flatten,
     make_grammar, find_match_at!, traverse_match, ParserState, scan,
-    Scan, Token, Tokens, Epsilon, Fail, Seq, First, Some, Many
-using Match
+    Scan, Token, Tokens, Epsilon, Fail, Seq, First, Some, Many, Clause,
+    isterminal
+using Match, AbstractTrees
 export well_formed, parse_command, synonym, partial_well_formed, eval_parse
 include("parse_clauses.jl")
 using .ParseClauses
@@ -44,7 +45,8 @@ function rules()
             :count,
             # P.first(token.(['f', 'F', 't', 'T'])...)
             P.first(token.(collect("fFtT"))...)
-        ), :repeat => some(satisfy(isdigit)),
+        ),
+        :repeat => some(satisfy(isdigit)),
         # like "repeat" but may be missing
         :count => P.first(:repeat, ϵ),
         # :register => seq(token('"'), satisfy(isletter)),
@@ -105,39 +107,10 @@ end
 
 function eval_parse(p::ParserState)
     function fold(m, p, subvals)
-        # @info string(m.rule) m.rule m.view subvals
-        # dump(subvals)
-        # return nothing
-        # @info string(m.rule) m.rule m.view subvals
-        # dump(m)
         a = clause(m, subvals)
         @debug "Result for :$(string(m.rule))" result = a
         println("\n")
         return a
-        #=a = @match m.rule begin
-            :motions => MotionCommand()
-            :motion => m.view
-            :textobject => nothing
-            :findmotion => nothing
-            :repeat => parse(Int, m.view)
-            :count => nothing,
-            # :repeat => nothing
-            # :register => m.view
-            :register => nothing
-            :command => nothing
-        end
-        if a === nothing
-            a = m.view
-        end
-        @info "Result $(string(m.rule))" result = a
-        println()
-        return a
-        =#
-        # m.rule == :repeat ? parse(Int, m.view) :
-        # m.rule == :expr ? subvals[1] :
-        # m.rule == :parens ? subvals[2] :
-        # m.rule == :plusexpr ? subvals[1] + subvals[3] :
-        # m.rule == :minusexpr ? subvals[1] - subvals[3] : nothing,
     end
 
     function open(match, parser)
@@ -162,58 +135,36 @@ Take the rules and generate a list of rules which allows for partial matches.
     e.g. "abc" -> "a", "ab", "abc"
 """
 function partial_rules(rs::Dict{Symbol, P.Clause{G, Any} where G}=rules())::Dict{Symbol, P.Clause}
-    for (name, rule) in rs
-        # @info "unflattened" name rule
-        rs[name] = partial_rule(name, rule)
-    end
-    # rules = flatten(rs, Char)
-    rs
-    # for (name, rule) in rules
-    #     @info "flat" name rule
-    # end
-end
+    
 
-partial_rule(name::Symbol, c::P.Clause) = partial_rule(c)
-partial_rule(p::Pair) = partial_rule(p...)
-partial_rule(p::Tuple) = partial_rule(p...)
+    for (name, rule) in rs
+        rs[name] = partial_rule(name, rule)[2]
+    end
+    rs
+end
 
 """
 Generate a rule which will progressively match `rule`
 e.g. "abc" becomes "a", "ab", "abc"
 """
 function partial_rule end
+partial_rule(name::Symbol, c::P.Clause) = name => partial_rule(c)
+partial_rule(p::Pair) = partial_rule(p...)
+partial_rule(p::Tuple) = partial_rule(p...)
 
 function partial_rule(rule::P.Seq)
     pc = map(partial_rule, rule.children) 
     # partial children
-    
-    # for i in 1:length(rule.children)
     sub_rules = []
     for i in 1:length(rule.children)
-        # child = pc[j]
-        # r = i == 1 ? pc[i] : seq(pc[1:i]...)
-        # for j in 1:i
             r = if i == 1
                 pc[i]
             else
                 seq(pc[1:i]...)
             end
-            # push!(sub_rules, r)
-            # @info "increment" i j pc[1:j] r
-            # @info "increment" i pc[1:i] r
-        # end
         push!(sub_rules, r)
-        # @info "new subrule" i old=pc[i] new=sub_rule
-        # push!(partialized_children, partialized_child)
     end
-    # push!(pc, first(sub_rules...))
-    # end
-    # no_epsilon = filter(sub_rules) do r
-    #     !(r isa Epsilon)
-    # end
-    # @info "filter" sub_rules no_epsilon
     new_rule = first(sub_rules...)
-    # @info "sequence rule" old_rule=rule new_rule
     return new_rule
 end
 
@@ -259,6 +210,25 @@ function partial_well_formed(input::String)
     # eval_parse(p)
     # find_match_at!(p, :command, 1)
 
+end
+
+find_rule(name::Symbol) = find_rule(rules(), name)
+function find_rule(rules, name::Symbol)
+    for rule in PreOrderDFS(rules)
+        if typeof(rule) <: Pair{Symbol, T} where T
+            if rule[1] == name
+                return rule[2]
+            end
+        end
+        # @show rule
+    end
+
+end
+function show_both_rules(name::Symbol)
+    rs = rules()
+    prs = partial_rules()
+    @info "Rule: $name" name=find_rule(rs, name)
+    @info "Partial Rule: $name" partial_rule=find_rule(prs, name)
 end
 
 # function partial_well_formed(cmd::String)
