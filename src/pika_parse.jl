@@ -22,6 +22,30 @@ function islineoperator(m)
     m[1] == m[2] ? 2 : -1
 end
 
+
+
+struct RuleNode
+    # name::Symbol
+    # rule::Union{Symbol, Pair{Symbol, Clause{G, Any}}, Clause{G, Any}} where G
+    name::Union{Symbol, Nothing}
+    rule::Clause{G, Any} where G
+    # r::
+end
+AbstractTrees.children(node::RuleNode) = children(node.rule)
+AbstractTrees.nodevalue(node::RuleNode) = node.name !== nothing ? node.name : node.rule
+
+struct RuleRoot
+    rules::Vector{RuleNode}
+end
+AbstractTrees.children(node::RuleRoot) = node.rules
+AbstractTrees.nodevalue(node::RuleRoot) = :RuleRoot
+function rule_nodes()
+    rs = rules()
+    nodes = map(collect(rs)) do (name, rule)
+        RuleNode(name, rule) 
+    end
+    return RuleRoot(nodes)
+end
 function rules()
     Dict( # motion with oncluded count
         :motions => seq(
@@ -127,16 +151,20 @@ function eval_parse(p::ParserState)
     # traverse_match(p, find_match_at!(p, :motions, 1), fold=fold)
 end
 
-
 """
 Take the rules and generate a list of rules which allows for partial matches.
 
     This takes any Seq and generates a match for each possible sub-sequence.
     e.g. "abc" -> "a", "ab", "abc"
 """
-function partial_rules(rs::Dict{Symbol, P.Clause{G, Any} where G}=rules())::Dict{Symbol, P.Clause}
-    
-
+function partial_rules(rs=rule_nodes())#::Dict{Symbol, P.Clause}
+    # root = RootRule(map(rs))
+    prs = treemap(rs) do rule
+        @info "treemap" rule children(rule)
+        # @show rule
+        return (rule, children(rule))
+    end
+    return prs
     for (name, rule) in rs
         rs[name] = partial_rule(name, rule)[2]
     end
