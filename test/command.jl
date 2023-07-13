@@ -34,7 +34,7 @@ end
     # https://github.com/caleb-allen/VimBindings.jl/issues/60
     @test run("println(|)", "o") == testbuf("println()\n|i|")
     # https://github.com/caleb-allen/VimBindings.jl/issues/57
-    @test run("|A", "C") == testbuf("|")
+    @test run("|A", "C") == testbuf("|i|")
     
     
     # @testset "o and O" begin
@@ -132,8 +132,8 @@ end
 @testset "line operators" begin
     @test run("aaaa bbbb |n|ccc ddd", "C") == testbuf("aaaa bbbb |i|")
     @test run("|n|a", "C") == testbuf("|i|")
-    @test run("aaaa bbbb |n|ccc ddd", "cc") == testbuf("|i|")
-    @test run("aaaa bbbb |n|ccc ddd", "S") == testbuf("|i|")
+    @test run("aaaa bbbb |ccc ddd", "cc") == testbuf("|i|")
+    @test run("aaaa bbbb |ccc ddd", "S") == testbuf("|i|")
 end
 
 @testset "o and O" begin

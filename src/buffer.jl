@@ -75,7 +75,8 @@ function Base.show(io::IO, buf::VimBuffer)
     # reconstruct the "mode" style string, e.g.
     # "this is|i| a buffer in insert mode"
     pos = mark(buf)
-    seek(buf, 0)
+    # seek(buf, 0)
+    seekstart(buf)
     s = read(buf, String)
     reset(buf)
 

@@ -779,37 +779,7 @@ function line(buf::IO)::Motion
     end
     stop = position(buf)
     seek(buf, origin)
-    return Motion(start, stop)
-
-    # if eof(buf)
-    #     if position(buf) > 0
-    #         LE.char_move_left(buf)
-    #     end
-    # end
-
-    # @loop_guard while !eof(buf) && position(buf) > 0
-    #     c = peek(buf, Char)
-    #     if is_newline(c)
-    #         skip(buf, 1)
-    #         break
-    #     end
-    #     LE.char_move_left(buf)
-    # end
-    # start = position(buf)
-    # seek(buf, origin)
-
-    # # find the line end
-    # @loop_guard while !eof(buf)
-    #     c = read(buf, Char)
-    #     if is_newline(c)
-    #         LE.char_move_left(buf)
-    #         break
-    #     end
-    # end
-    # stop = position(buf)
-    # seek(buf, origin)
-
-    # return Motion(start, stop)
+    return Motion(start, stop, inclusive)
 end
 
 end
