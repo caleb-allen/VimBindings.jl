@@ -27,7 +27,7 @@ VimMode(vm::VimMode) = vm
     Defaults to normal mode.
 """
 function testbuf(s::AbstractString)::VimBuffer
-    m = match(r"(.*?)\|(?:([ni])\|)?(.*)", s)
+    m = match(r"(.*?)\|(?:([ni])\|)?(.*)"s, s)
     if m === nothing
         throw(ArgumentError("could not construct VimBuffer with string \"$s\"\n   Expecting a string with a pipe `|` indicating cursor position"))
     end
