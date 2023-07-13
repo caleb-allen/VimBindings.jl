@@ -36,14 +36,15 @@ commands_and_buffers()::Vector{Tuple{String,VimBuffer}} =
         (cmd, testbuf(TEST_STRING))
     end
 
-function run(cmd::String, buf::VimBuffer=testbuf(TEST_STRING))
+run(cmd::String) = run(testbuf(TEST_STRING), cmd)
+function run(buf::VimBuffercmd, cmd::String)
     command = parse_command(cmd)
     execute(buf.buf, command)
 end
 
 function time_commands()
     map(commands_and_buffers()) do (cmd, buf)
-        @elapsed @eval run($cmd, $buf)
+        @elapsed @eval run($buf, $cmd)
     end
 end
 
@@ -92,7 +93,7 @@ using PrecompileTools
             well_formed(cmd)
             partial_well_formed(cmd)
             
-            PkgTools.run(cmd, buf)
+            PkgTools.run(buf, cmd)
         end
 
         PkgTools.run_junctions()
