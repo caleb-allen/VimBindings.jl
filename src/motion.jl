@@ -336,7 +336,7 @@ function line_end(buf::IO)::Motion
     if is_line_end(buf)
         
     end
-    while !is_line_end(buf)
+    @loop_guard while !is_line_end(buf)
         stop = position(buf)
         LE.char_move_right(buf)
     end
@@ -349,12 +349,12 @@ end
 
 function line_begin(buf::IO)::Motion
     origin = position(buf)
-    while !is_line_start(buf)
+    @loop_guard while !is_line_start(buf)
         LE.char_move_left(buf)
     end
     
     # search for the first object character
-    while !is_line_end(buf) && !is_object_start(buf)
+    @loop_guard while !is_line_end(buf) && !is_object_start(buf)
         LE.char_move_right(buf)
     end
 

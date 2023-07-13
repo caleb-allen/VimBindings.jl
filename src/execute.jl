@@ -58,8 +58,8 @@ function execute(buf, command::InsertCommand)::Union{VimMode,Nothing}
     # buf = buffer(s)
     motion = @match command.c begin
         'o' => begin
-            endd = line_end(buf).stop
-            insert(buf, line_end(buf).stop, '\n')
+            endd = line_end(buf) |> max
+            insert(buf, endd, '\n')
             if position(buf) == endd
                 nothing
             else
