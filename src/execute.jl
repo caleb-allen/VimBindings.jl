@@ -91,6 +91,9 @@ function execute(buf, command::InsertCommand)::Union{VimMode,Nothing}
                 motion
             end
         end
+        's' => begin
+            delete(buf, right(buf))
+        end
         _ => gen_motion(buf, command)
     end
     if motion isa Motion

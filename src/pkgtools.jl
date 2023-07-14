@@ -21,7 +21,7 @@ function some_vim_commands()::Vector{String}
         3h 3j 3k 3l
         w W e E b B ^ \$ 0
         dh daw cw ciw caW caw daW cW ct"
-        fa Fa ta Ta a A i I o O x X C cc dd S D
+        fa Fa ta Ta a A i I o O x X C cc dd s S D
         u \x12
         """
     String.(split(s))
