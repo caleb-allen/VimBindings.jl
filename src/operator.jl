@@ -19,7 +19,15 @@ function operator_fn(c::Char)::Function
 end
 
 function change(buf::IO, motion::Motion) #, motion_type :: MotionType)
-    delete(buf, motion)
+    text = String(take!(copy(buf)))
+    left = min(motion)
+    right = min(max(motion), length(text))
+    @debug "delete operator" buf motion text left right
+    yank(buf, motion)
+    move(buf, motion) #, motion_type)
+    LE.edit_splice!(buf, left => right)
+
+    # delete(buf, motion)
 end
 
 # also, when there is whitespace following a word,
@@ -28,6 +36,9 @@ end
 function delete(buf::IO, motion::Motion) #, motion_type :: MotionType)
     text = String(take!(copy(buf)))
     left = min(motion)
+    # if length(cs) > max(motion)
+    #     if motion.motiontype == linewise && cs[max(motion)] == '\n'
+    #         right = max(motion) + 1
     right = min(max(motion), length(text))
     @debug "delete operator" buf motion text left right
     yank(buf, motion)

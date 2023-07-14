@@ -188,26 +188,7 @@ function word_next(buf::IO)::Motion
         stop = position(buf)
     end
     seek(buf, origin)
-    return Motion(origin, stop)
-    #while !eof(buf) && !is_word_start(buf)
-
-    return Motion(start, start)
-    last_c = read(buf, Char)
-    @loop_guard while !eof(buf)
-        c = read(buf, Char)
-        if is_alphanumeric(last_c) && is_punctuation(c)
-            break
-        elseif is_punctuation(last_c) && is_alphanumeric(c)
-            break
-        elseif is_whitespace(last_c) && !is_whitespace(c)
-            break
-        end
-        last_c = c
-    end
-    skip(buf, -1)
-    endd = position(buf)
-    seek(buf, start)
-    return Motion(start, endd, exclusive)
+    return Motion(origin, stop, exclusive)
 end
 
 """
