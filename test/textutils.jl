@@ -30,6 +30,7 @@ using VimBindings.TextUtils
     @test_throws ArgumentError testbuf("")
 end
 
+
 @testset "test buffer with mode" begin
 
     buf = testbuf("asdf|fdsa")
@@ -42,7 +43,7 @@ end
     buf = testbuf("|hello world")
     @test position(buf) == 0
     @test buf.size == 11
-    
+
     before = "The first line\nThe second| line\nThe third line"
     buf = testbuf(before)
     seek(buf, 0)
@@ -52,7 +53,12 @@ end
 end
 
 @testset "chars by cursor" begin
-    chars_by_cursor(testbuf("ab|cd")) == (WordChar('b'), WordChar('c'))
+    @test chars_by_cursor(testbuf("ab|cd")) == (WordChar('b'), WordChar('c'))
+    @test chars_by_cursor(testbuf("π|a")) == (WordChar('π'), WordChar('a'))
+end
+
+@testset "TextChar" begin
+    @test_throws "Invalid character" TextChar('\x80')
 end
 @testset "junction" begin
     @test junction_type('a', ' ') == Set(Junction[Start{Whitespace}(), End{Object}()])
@@ -116,15 +122,15 @@ end
 end
 
 @testset "is line start " begin
-    @test is_line_end(testbuf("|\n")) == true    
+    @test is_line_end(testbuf("|\n")) == true
     @test is_line_end(testbuf("one line\t|\nhello")) == true
     @test is_line_end(testbuf("one line\t\nhello|")) == true
     @test is_line_end(testbuf("one line\t\nhello|\n")) == true
-    @test is_line_end(testbuf("|")) == true    
-    
+    @test is_line_end(testbuf("|")) == true
+
     @test is_line_start(testbuf("|")) == true
-    @test is_line_start(testbuf("|\n")) == true    
-    @test is_line_start(testbuf("\n|hello")) == true    
+    @test is_line_start(testbuf("|\n")) == true
+    @test is_line_start(testbuf("\n|hello")) == true
     @test is_line_start(testbuf("one line|\nhello")) == false
     @test is_line_start(testbuf("one line \n|hello")) == true
 
@@ -141,4 +147,22 @@ end
     buf = testbuf("|hello world")
     @test position(buf) == 0
     @test buf.size == 11
+end
+
+@testset "chars by cursor" begin end
+
+@testset "read left/right char in buffer" begin
+    @test peek_left(testbuf("π|τ")) == 'π'
+    @test peek_right(testbuf("π|τ")) == 'τ'
+
+    @test peek_left(testbuf("|A")) === nothing
+    @test peek_right(testbuf("A|")) === nothing
+
+    # test a buffer whose cursor is in an invalid index
+    buf = IOBuffer("πτ")
+    skip(buf, 1)
+    @test peek_left(buf) == 'π'
+    @test peek_right(buf) == 'τ'
+
+
 end

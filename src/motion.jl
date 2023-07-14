@@ -11,7 +11,7 @@ using Match
 export Motion, MotionType, simple_motions, complex_motions, partial_complex_motions, insert_motions, gen_motion,
     is_stationary, down, up, word_next, word_big_next, word_end, word_back,
     word_big_back, word_big_end, line_end, line_begin, line_zero,
-    find_c, find_c_back, get_safe_name, all_keys, special_keys, exclusive, inclusive, endd,
+    find_c, find_c_back, get_safe_name, all_keys, special_keys, exclusive, inclusive, linewise, endd,
     left, right
 
 # text objects
@@ -178,10 +178,20 @@ end
     3. Going from punctuation to alphanumeric
 """
 function word_next(buf::IO)::Motion
-    mark(buf)
-    start = position(buf)
+    origin = position(buf)
+    stop = origin
+    if is_word_start(buf)
+        read_right(buf)
+    end
+    while !eof(buf) && !is_word_start(buf)
+        read_right(buf)
+        stop = position(buf)
+    end
+    seek(buf, origin)
+    return Motion(origin, stop)
+    #while !eof(buf) && !is_word_start(buf)
 
-    eof(buf) && return Motion(start, start)
+    return Motion(start, start)
     last_c = read(buf, Char)
     @loop_guard while !eof(buf)
         c = read(buf, Char)
@@ -196,7 +206,7 @@ function word_next(buf::IO)::Motion
     end
     skip(buf, -1)
     endd = position(buf)
-    reset(buf)
+    seek(buf, start)
     return Motion(start, endd, exclusive)
 end
 
@@ -204,8 +214,8 @@ end
     The motion to the next big word, e.g. using the `W` command
 """
 function word_big_next(buf::IO)::Motion
-    mark(buf)
-    start = position(buf)
+    origin = position(buf)
+    start = origin
 
     eof(buf) && return Motion(start, start)
     last_c = read(buf, Char)
@@ -218,16 +228,15 @@ function word_big_next(buf::IO)::Motion
     end
     skip(buf, -1)
     endd = position(buf)
-    reset(buf)
+    seek(buf, origin)
     return Motion(start, endd, exclusive)
 end
 
 
 function word_end(buf::IO)::Motion
-    start = position(buf)
+    origin = position(buf)
+    start = origin
     eof(buf) && return Motion(start, start)
-
-    mark(buf)
     # move to the next character, since this command will always
     # move at least 1 (or else it is EOF)
     read(buf, Char)
@@ -250,7 +259,7 @@ function word_end(buf::IO)::Motion
     end
     LE.char_move_left(buf)
     endd = position(buf)
-    reset(buf)
+    seek(buf, origin)
     return Motion(start, endd, inclusive)
 end
 
@@ -303,10 +312,10 @@ function word_big_back(buf::IO)::Motion
 end
 
 function word_big_end(buf::IO)::Motion
-    start = position(buf)
+    origin = position(buf)
+    start = origin
     eof(buf) && return Motion(buf)
 
-    mark(buf)
     # move to the next character, since this command will always
     # move at least 1 (or else it is EOF)
     read(buf, Char)
@@ -326,7 +335,7 @@ function word_big_end(buf::IO)::Motion
     end
     LE.char_move_left(buf)
     endd = position(buf)
-    reset(buf)
+    seek(buf, origin)
     return Motion(start, endd, inclusive)
 end
 

@@ -43,12 +43,8 @@ function execute(buf, command::LineOperatorCommand)::Union{VimMode,Nothing}
     local op_fn = nothing
     for r in 1:command.r1
         # buf = buffer(s)
-        line_motion = line(buf)
+        line_motion = Motion(line(buf), linewise)
         op_fn = operator_fn(command.operator)
-        if command.operator == 'c'
-            # mark this as exclusive so that any newline at the end isn't included
-            line_motion = Motion(line_motion, exclusive)
-        end
         op_fn(buf, line_motion)
     end
     if op_fn == change

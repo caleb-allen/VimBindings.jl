@@ -8,7 +8,8 @@ const LE = REPL.LineEdit
 export is_newline, is_whitespace, is_word_char, TextChar, WordChar, WhitespaceChar, PunctuationChar, ObjectChar,
     chars_by_cursor, junction_type, at_junction_type, Text, Object, Word, Line, Whitespace, Junction, Start, End, In,
     is_alphanumeric, is_alphabetic, is_uppercase, is_lowercase, is_punctuation, is_line_start, is_line_end,
-    is_word_end, is_word_start, is_object_start, is_object_end, is_whitespace_end, is_whitespace_start, is_in_word
+    is_word_end, is_word_start, is_object_start, is_object_end, is_whitespace_end, is_whitespace_start, is_in_word, chars,
+    peek_left, peek_right, read_left, read_right
 
 """
     Determine whether the buffer is currently at the start of a text object.
@@ -52,25 +53,27 @@ Get the
 function chars_by_cursor(buf::IO)::Tuple{Union{TextChar,Nothing},Union{TextChar,Nothing}}
     local c1
     local c0
-    start_pos = position(buf)
-    if eof(buf)
-        c1 = nothing
-    else
-        mark(buf)
-        c1 = read(buf, Char) |> TextChar
-        reset(buf)
-    end
+    c1 = peek_right(buf)
+    c0 = peek_left(buf)
+   # if eof(buf)
+   #     c1 = nothing
+   # else
+   #     while !eof(buf) && 
+   #     c1 = read(buf, Char) |> TextChar
+   #     seek(buf, origin)
+   # end
 
-    if start_pos == 0
-        # beginning of buffer
-        c0 = nothing
-    else
-        mark(buf)
-
-        skip(buf, -1)
-        c0 = read(buf, Char) |> TextChar
-        reset(buf)
-    end
+   # if origin == 0
+   #     # beginning of buffer
+   #     c0 = nothing
+   # else
+   #     # skip(buf, -1)
+   #     for b in 1:char_byte_count
+   #                     
+   #     end
+   #     # c0 = read(buf, Char) |> TextChar
+   #     seek(buf, origin)
+   # end
     return (c0, c1)
 end
 
@@ -120,6 +123,7 @@ Base.promote_rule(::Type{<:TextChar}, ::Type{Char}) = Char
 
 
 function TextChar(c::Char)
+    isvalid(c) || error("Invalid character: $(escape_string(string(c)))")
     return if is_newline(c)
         NewlineChar(c)
     elseif is_whitespace(c)
@@ -155,7 +159,8 @@ end
 
 function junction_type(text::AbstractString)
     length(text) != 2 && error("Cannot determined junction type for $text. Expected string with length 2, instead got $(length(text))")
-    return junction_type(text[1], text[2])
+    chars = collect(text)
+    return junction_type(chars[1], chars[2])
 end
 junction_type(buf::IO) = junction_type(chars_by_cursor(buf)...)
 
