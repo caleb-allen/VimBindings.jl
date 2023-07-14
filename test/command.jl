@@ -35,15 +35,6 @@ end
     @test run("println(|)", "o") == testbuf("println()\n|i|")
     # https://github.com/caleb-allen/VimBindings.jl/issues/57
     @test run("|A", "C") == testbuf("|i|")
-    
-    
-    # @testset "o and O" begin
-    # end
-    #=
-        julia> @testset "o and O" begin
-           @test run("function \|hello()", )
-       end
-       =#
 end
 
 

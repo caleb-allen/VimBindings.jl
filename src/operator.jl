@@ -29,11 +29,7 @@ function delete(buf::IO, motion::Motion) #, motion_type :: MotionType)
     @debug "delete operator" buf motion min(motion) max(motion)
     yank(buf, motion)
     move(buf, motion) #, motion_type)
-    # if min(motion) == max(motion)
-    #     LE.edit_splice!(buf, min(motion))
-    # else
-        LE.edit_splice!(buf, min(motion) => max(motion))
-    # end
+    LE.edit_splice!(buf, min(motion) => max(motion))
     return nothing
 end
 
