@@ -37,6 +37,7 @@ commands_and_buffers()::Vector{Tuple{String,VimBuffer}} =
 function run(cmd::String, buf::VimBuffer=testbuf(TEST_STRING))
     command = parse_command(cmd)
     execute(buf.buf, command)
+    return buf
 end
 
 function time_commands()

@@ -74,11 +74,14 @@ function Base.show(io::IO, buf::VimBuffer)
     # read all of vb into a string
     # reconstruct the "mode" style string, e.g.
     # "this is|i| a buffer in insert mode"
-    pos = mark(buf)
-    # seek(buf, 0)
-    seekstart(buf)
-    s = read(buf, String)
-    reset(buf)
+    pos = position(buf)
+    s = if buf.buf.size <= 0
+        ""
+    else
+        seekstart(buf)
+        read(buf, String)
+    end
+    seek(buf, pos)
 
     a = s[begin:pos]
     b = s[pos+1:end]

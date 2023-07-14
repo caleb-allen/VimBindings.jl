@@ -132,8 +132,8 @@ end
 @testset "line operators" begin
     @test run("aaaa bbbb |n|ccc ddd", "C") == testbuf("aaaa bbbb |i|")
     @test run("|n|a", "C") == testbuf("|i|")
-    @test run("aaaa bbbb |ccc ddd", "cc") == testbuf("|i|")
-    @test run("aaaa bbbb |ccc ddd", "S") == testbuf("|i|")
+    @test run("aaaa bbbb |ccc dd", "cc") == testbuf("|i|")
+    @test run("aaaa bbbb |ccc dd", "S") == testbuf("|i|")
 end
 
 @testset "o and O" begin
