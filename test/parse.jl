@@ -172,3 +172,7 @@ end
     @test parse_command("r5") == ReplaceCommand(1, '5')
     @test parse_command("10rx") == ReplaceCommand(10, 'x')
 end
+
+@testset "parse" begin
+
+end

@@ -131,3 +131,19 @@ end
     @test_broken run("∀ x |∃ y", "rx") == testbuf("∀ x |x y")
 end
 
+@testset "[]()<>{}" begin
+    @test_broken run("function example(arg1, arg2, |arg3)", "di(") == testbuf("function example(|)")
+    @test_broken run("function example(arg1, arg2, |arg3)", "di)") == testbuf("function example(|)")
+    @test_broken run("function example(arg1, arg2, |arg3)", "dib") == testbuf("function example(|)")
+    @test_broken run("function example(arg1, arg2,\n |arg3\n)", "di(") == testbuf("function example(|\n)")
+    @test_broken run("function |example(arg1, arg2, arg3)", "di(") == testbuf("function example(|\n)")
+        
+    @test_broken run("function example(arg1, arg2, |arg3)", "di(") == testbuf("function example(|)")
+    @test_broken run("function example(arg1, arg2, |arg3)", "di)") == testbuf("function example(|)")
+    @test_broken run("function example(arg1, arg2, |arg3)", "dib") == testbuf("function example(|)")
+       
+    @test_broken run("\"inner |quote\"", "di\"") == testbuf("\"|\"")
+    @test_broken run("\"a |quote\"", "da\"") == testbuf("|")
+    @test_broken run("\"inner |quote\nacross lines\"", "da\"") == testbuf("\"inner |quote\nacross lines\"", "da\"")
+end
+
