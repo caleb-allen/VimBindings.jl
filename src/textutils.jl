@@ -126,10 +126,8 @@ function TextChar(c::Char)
         SpaceChar(c)
     elseif is_word_char(c)
         WordChar(c)
-    elseif is_punctuation(c)
-        PunctuationChar(c)
     else
-        error("Char '$c' cannot be described by a TextChar")
+        PunctuationChar(c)
     end
 end
 
