@@ -60,7 +60,7 @@ Is there a vim command you long for that isn't implemented? Please share by usin
 <!-- - [ ] Macros -->
 ## Issues
 ### Method definitions
-Users may see warnings about method definitions being overwritten. VimBindings.jl overwrites some methods in the standard library in order to hook into REPL functionality. These warnings can be ignored.
+Users may see warnings about method definitions being overwritten. VimBindings.jl overwrites some methods in the standard library in order to hook into REPL functionality. This is less than ideal, and there may be an alternate approach which [does not overwrite any REPL code](https://github.com/caleb-allen/VimBindings.jl/issues/70), but in the meantime this should not cause issues unless the package is used in conjunction with other packages which heavily modify the REPL. 
 
 ### Note for tmux users experiencing freezing
 A common practice for users of tmux is to set the `escape-time` setting of tmux to `0`, often after experiencing lag while using vim from within tmux.
