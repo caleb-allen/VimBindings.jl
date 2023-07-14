@@ -1,6 +1,8 @@
 [deps]
+AbstractTrees = "1520ce14-60c1-5f80-bbc7-55ef81b5835c"
 Debugger = "31a5f54b-26ea-5ae9-a837-f05ce5417438"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+PikaParser = "3bbf5609-3e7b-44cd-8549-7c69f321e792"
 Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
 Sockets = "6462fe0b-24de-5631-8697-dd941f90decc"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
