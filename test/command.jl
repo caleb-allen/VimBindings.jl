@@ -124,6 +124,7 @@ end
     @test run("aaaa bbbb |n|ccc ddd", "C") == testbuf("aaaa bbbb |i|")
     @test run("|n|a", "C") == testbuf("|i|")
     @test run("aaaa bbbb |ccc dd", "cc") == testbuf("|i|")
+    @test run("first line\nsecond| line\nthird line", "cc") == testbuf("first line\n|i|\nthird line")
     @test run("aaaa bbbb |ccc dd", "S") == testbuf("|i|")
 end
 

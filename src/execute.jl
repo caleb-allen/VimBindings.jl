@@ -45,6 +45,10 @@ function execute(buf, command::LineOperatorCommand)::Union{VimMode,Nothing}
         # buf = buffer(s)
         line_motion = line(buf)
         op_fn = operator_fn(command.operator)
+        if command.operator == 'c'
+            # mark this as exclusive so that any newline at the end isn't included
+            line_motion = Motion(line_motion, exclusive)
+        end
         op_fn(buf, line_motion)
     end
     if op_fn == change
