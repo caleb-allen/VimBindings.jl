@@ -227,30 +227,17 @@ function word_end(buf::IO)::Motion
 end
 
 function word_back(buf::IO)::Motion
-    start = position(buf)
-    position(buf) == 0 && return Motion(start, start)
+    origin = position(buf)
+    stop = origin
 
-    skip(buf, -1)
-    last_c = peek(buf, Char)
-
-    @loop_guard while position(buf) > 0
-        c = peek(buf, Char)
-        if is_alphanumeric(c) && is_punctuation(last_c)
-            skip(buf, 1)
-            break
-        elseif is_punctuation(c) && is_alphanumeric(last_c)
-            skip(buf, 1)
-            break
-        elseif is_whitespace(c) && !is_whitespace(last_c)
-            skip(buf, 1)
-            break
-        end
-        last_c = c
-        LE.char_move_left(buf)
+    read_left(buf)
+    stop = position(buf)
+    while position(buf) > 0 && !is_word_start(buf)
+        read_left(buf)
+        stop = position(buf)
     end
-    endd = position(buf)
-    seek(buf, start)
-    return Motion(start, endd, exclusive)
+    seek(buf, origin)
+    return Motion(origin, stop, exclusive)
 end
 
 function word_big_back(buf::IO)::Motion
