@@ -691,9 +691,9 @@ function word(buf::IO)::Motion
         word_back(buf)
     end
     eof(buf) && return start
-    skip(buf, 1)
+    read_right(buf)
     @loop_guard while !eof(buf) && is_in_word(buf)
-        skip(buf, 1)
+        read_right(buf)
     end
     endd = Motion(buf)
     seek(buf, origin)
@@ -715,7 +715,7 @@ function WORD(buf::IO)::Motion
 
     local start
     @loop_guard while !is_object_start(buf)
-        skip(buf, -1)
+        read_right(buf)
     end
     start = position(buf)
     seek(buf, origin)
@@ -723,7 +723,7 @@ function WORD(buf::IO)::Motion
 
     local endd
     @loop_guard while !is_object_end(buf)
-        skip(buf, 1)
+        read_right(buf)
     end
     endd = position(buf)
     seek(buf, origin)
@@ -760,12 +760,12 @@ function line(buf::IO)::Motion
     # find the line start
     origin = position(buf)
     while !is_line_start(buf)
-        LE.char_move_left(buf)
+        read_left(buf)
     end
     start = position(buf)
     seek(buf, origin)
     while !is_line_end(buf)
-        LE.char_move_right(buf)
+        read_right(buf)
     end
     stop = position(buf)
     seek(buf, origin)

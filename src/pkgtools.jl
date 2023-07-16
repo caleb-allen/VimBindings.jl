@@ -93,7 +93,6 @@ using PrecompileTools
             well_formed(cmd)
             partial_well_formed(cmd)
 
-            @info "Precompiling cmd" cmd
             PkgTools.run(cmd, buf)
         end
 

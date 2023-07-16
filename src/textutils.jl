@@ -55,25 +55,6 @@ function chars_by_cursor(buf::IO)::Tuple{Union{TextChar,Nothing},Union{TextChar,
     local c0
     c1 = peek_right(buf)
     c0 = peek_left(buf)
-   # if eof(buf)
-   #     c1 = nothing
-   # else
-   #     while !eof(buf) && 
-   #     c1 = read(buf, Char) |> TextChar
-   #     seek(buf, origin)
-   # end
-
-   # if origin == 0
-   #     # beginning of buffer
-   #     c0 = nothing
-   # else
-   #     # skip(buf, -1)
-   #     for b in 1:char_byte_count
-   #                     
-   #     end
-   #     # c0 = read(buf, Char) |> TextChar
-   #     seek(buf, origin)
-   # end
     return (c0, c1)
 end
 

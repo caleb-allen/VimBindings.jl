@@ -36,9 +36,6 @@ end
 function delete(buf::IO, motion::Motion) #, motion_type :: MotionType)
     text = String(take!(copy(buf)))
     left = min(motion)
-    # if length(cs) > max(motion)
-    #     if motion.motiontype == linewise && cs[max(motion)] == '\n'
-    #         right = max(motion) + 1
     right = min(max(motion), length(text))
     @debug "delete operator" buf motion text left right
     yank(buf, motion)
@@ -66,7 +63,6 @@ end
 
 insert(buf::IO, pos::Int, c::Char) = insert(buf, pos, string(c))
 function insert(buf::IO, pos::Int, s::String)
-    # seek()
     LE.edit_splice!(buf, pos => pos, s)
 end
 
