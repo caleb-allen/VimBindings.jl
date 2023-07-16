@@ -8,7 +8,7 @@ const LE = REPL.LineEdit
 export is_newline, is_whitespace, is_word_char, TextChar, WordChar, WhitespaceChar, PunctuationChar, ObjectChar,
     chars_by_cursor, junction_type, at_junction_type, Text, Object, Word, Line, Whitespace, Junction, Start, End, In,
     is_alphanumeric, is_alphabetic, is_uppercase, is_lowercase, is_punctuation, is_line_start, is_line_end,
-    is_word_end, is_word_start, is_object_start, is_object_end, is_whitespace_end, is_whitespace_start, is_in_word, chars,
+    is_word_end, is_word_start, is_object_start, is_object_end, is_in_object, is_whitespace_end, is_whitespace_start, is_in_word, chars,
     peek_left, peek_right, read_left, read_right
 
 """
@@ -46,6 +46,8 @@ function is_in_word(buf)
     typeof(a) == typeof(b) || return false
     at_junction_type(buf, In{>:Word})
 end
+
+is_in_object(buf) = at_junction_type(buf, In{<:Object})
 
 """
 Get the 
@@ -152,6 +154,7 @@ junction_type(char1::Nothing, char2::Char) = junction_type(char1, convert(TextCh
 
 junction_type(char1::Nothing, char2::Nothing) = Set([Start{Line}(), End{Line}()])
 junction_type(char1::Nothing, char2::ObjectChar) = Set([Start{Line}(), Start{Object}()])
+junction_type(char1::ObjectChar, char2::Nothing) = Set([End{Object}(), End{Line}()])
 
 junction_type(char1::WhitespaceChar, char2::ObjectChar) = Set([Start{Object}(), End{Whitespace}()])
 junction_type(char1::NewlineChar, char2::ObjectChar) = Set([Start{Line}(), Start{Object}()])
@@ -159,7 +162,6 @@ junction_type(char1::NewlineChar, char2::ObjectChar) = Set([Start{Line}(), Start
 junction_type(char1::ObjectChar, char2::WhitespaceChar) = Set([End{Object}(), Start{Whitespace}()])
 junction_type(char1::ObjectChar, char2::NewlineChar) = Set([End{Object}(), End{Line}()])
 
-junction_type(char1::ObjectChar, char2::Nothing) = Set([End{Object}(), End{Line}()])
 
 junction_type(char1::Nothing, char2::WhitespaceChar) = Set([Start{Whitespace}(), Start{Line}()])
 junction_type(char1::WhitespaceChar, char2::Nothing) = Set([End{Whitespace}(), End{Line}()])
@@ -170,8 +172,8 @@ junction_type(char1::NewlineChar, char2::SpaceChar) = Set([Start{Line}(), Start{
 junction_type(char1::Nothing, char2::NewlineChar) = Set([Start{Line}(), End{Line}()])
 junction_type(char1::NewlineChar, char2::Nothing) = Set([Start{Line}()])
 
-junction_type(char1::WordChar, char2::PunctuationChar) = Set([Start{Word}(), End{Word}()])
-junction_type(char1::PunctuationChar, char2::WordChar) = Set([Start{Word}(), End{Word}()])
+junction_type(char1::WordChar, char2::PunctuationChar) = Set([Start{Word}(), End{Word}(), In{Object}()])
+junction_type(char1::PunctuationChar, char2::WordChar) = Set([Start{Word}(), End{Word}(), In{Object}()])
 
 junction_type(char1::T, char2::T) where {T<:ObjectChar} = Set([In{Word}()])
 junction_type(char1::T, char2::T) where {T<:SpaceChar} = Set([In{Whitespace}()])

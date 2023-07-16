@@ -121,6 +121,13 @@ end
     @test is_in_word(testbuf("|hello%%%%")) == false
 end
 
+@testset "is inside object" begin
+    @test is_in_object(testbuf("hello|world")) == true
+    @test is_in_object(testbuf("hello| world")) == false
+    @test is_in_object(testbuf("hello|%%%%")) == true
+    @test is_in_object(testbuf("hello%%|%%")) == true
+    @test is_in_object(testbuf("|hello%%%%")) == false
+end
 @testset "is line start " begin
     @test is_line_end(testbuf("|\n")) == true
     @test is_line_end(testbuf("one line\t|\nhello")) == true

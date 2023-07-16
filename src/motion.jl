@@ -196,52 +196,34 @@ end
 """
 function word_big_next(buf::IO)::Motion
     origin = position(buf)
-    start = origin
-
-    eof(buf) && return Motion(start, start)
-    last_c = read(buf, Char)
-    @loop_guard while !eof(buf)
-        c = read(buf, Char)
-        if is_whitespace(last_c) && !is_whitespace(c)
-            break
-        end
-        last_c = c
+    stop = origin
+    if is_object_start(buf)
+        read_right(buf)
     end
-    skip(buf, -1)
-    endd = position(buf)
+    while !eof(buf) && !is_object_start(buf)
+        read_right(buf)
+        stop = position(buf)
+    end
     seek(buf, origin)
-    return Motion(start, endd, exclusive)
+    return Motion(origin, stop, exclusive)
 end
 
 
 function word_end(buf::IO)::Motion
     origin = position(buf)
-    start = origin
-    eof(buf) && return Motion(start, start)
-    # move to the next character, since this command will always
-    # move at least 1 (or else it is EOF)
-    read(buf, Char)
-
-    first_word_char = !eof(buf) && read(buf, Char)
-    # find the first character of the word we will be moving to the end of
-    @loop_guard while !eof(buf) && position(buf) != start && is_whitespace(first_word_char)
-        first_word_char = read(buf, Char)
+    stop = origin
+    # find the next word
+    read_right(buf)
+    if is_word_end(buf)
+        stop = position(buf)
+        read_right(buf)
     end
-
-    @loop_guard while !eof(buf)
-        c = read(buf, Char)
-        if is_punctuation(first_word_char) && !is_punctuation(c)
-            LE.char_move_left(buf)
-            break
-        elseif is_alphanumeric(first_word_char) && !is_alphanumeric(c)
-            LE.char_move_left(buf)
-            break
-        end
+    while !eof(buf) && !is_word_end(buf)
+        stop = position(buf)
+        read_right(buf)
     end
-    LE.char_move_left(buf)
-    endd = position(buf)
     seek(buf, origin)
-    return Motion(start, endd, inclusive)
+    return Motion(origin, stop, inclusive)
 end
 
 function word_back(buf::IO)::Motion
@@ -294,30 +276,18 @@ end
 
 function word_big_end(buf::IO)::Motion
     origin = position(buf)
-    start = origin
-    eof(buf) && return Motion(buf)
-
-    # move to the next character, since this command will always
-    # move at least 1 (or else it is EOF)
-    read(buf, Char)
-
-    first_word_char = !eof(buf) && read(buf, Char)
-    # find the first character of the word we will be moving to the end of
-    @loop_guard while !eof(buf) && position(buf) != start && is_whitespace(first_word_char)
-        first_word_char = read(buf, Char)
+    stop = origin
+    read_right(buf)
+    # find the next word
+    while !eof(buf) && !is_in_object(buf)
+        read_right(buf)
     end
-
-    @loop_guard while !eof(buf)
-        c = read(buf, Char)
-        if is_whitespace(c)
-            LE.char_move_left(buf)
-            break
-        end
+    while !eof(buf) && is_in_object(buf)
+        stop = position(buf)
+        read_right(buf)
     end
-    LE.char_move_left(buf)
-    endd = position(buf)
     seek(buf, origin)
-    return Motion(start, endd, inclusive)
+    return Motion(origin, stop, inclusive)
 end
 
 function line_end(buf::IO)::Motion
