@@ -11,7 +11,7 @@ using Match
 export Motion, MotionType, simple_motions, complex_motions, partial_complex_motions, insert_motions, gen_motion,
     is_stationary, down, up, word_next, word_big_next, word_end, word_back,
     word_big_back, word_big_end, line_end, line_begin, line_zero,
-    find_c, find_c_back, get_safe_name, all_keys, special_keys, exclusive, inclusive, endd,
+    find_c, find_c_back, get_safe_name, all_keys, special_keys, exclusive, inclusive, linewise, endd,
     left, right
 
 # text objects
@@ -52,14 +52,16 @@ end
 
 # Motion(to :: TextObject) = Motion(to.start, to.stop)
 
-Base.min(motion::Motion) =
-    if motion.motiontype == inclusive && motion.stop <= motion.start
+function Base.min(motion::Motion)
+    m = if motion.motiontype == inclusive && motion.stop < motion.start
         min(motion.start, motion.stop - 1)
     else
         min(motion.start, motion.stop)
     end
+    return m
+end
 Base.max(motion::Motion) =
-    if motion.motiontype == inclusive && motion.stop > motion.start
+    if motion.motiontype == inclusive && motion.stop >= motion.start
         max(motion.start, motion.stop + 1)
     else
         max(motion.start, motion.stop)
@@ -176,209 +178,129 @@ end
     3. Going from punctuation to alphanumeric
 """
 function word_next(buf::IO)::Motion
-    mark(buf)
-    start = position(buf)
-
-    eof(buf) && return Motion(start, start)
-    last_c = read(buf, Char)
-    @loop_guard while !eof(buf)
-        c = read(buf, Char)
-        if is_alphanumeric(last_c) && is_punctuation(c)
-            break
-        elseif is_punctuation(last_c) && is_alphanumeric(c)
-            break
-        elseif is_whitespace(last_c) && !is_whitespace(c)
-            break
-        end
-        last_c = c
+    origin = position(buf)
+    stop = origin
+    if is_word_start(buf)
+        read_right(buf)
     end
-    skip(buf, -1)
-    endd = position(buf)
-    reset(buf)
-    return Motion(start, endd, exclusive)
+    @loop_guard while !eof(buf) && !is_word_start(buf)
+        read_right(buf)
+        stop = position(buf)
+    end
+    seek(buf, origin)
+    return Motion(origin, stop, exclusive)
 end
 
 """
     The motion to the next big word, e.g. using the `W` command
 """
 function word_big_next(buf::IO)::Motion
-    mark(buf)
-    start = position(buf)
-
-    eof(buf) && return Motion(start, start)
-    last_c = read(buf, Char)
-    @loop_guard while !eof(buf)
-        c = read(buf, Char)
-        if is_whitespace(last_c) && !is_whitespace(c)
-            break
-        end
-        last_c = c
+    origin = position(buf)
+    stop = origin
+    if is_object_start(buf)
+        read_right(buf)
     end
-    skip(buf, -1)
-    endd = position(buf)
-    reset(buf)
-    return Motion(start, endd, exclusive)
+    @loop_guard while !eof(buf) && !is_object_start(buf)
+        read_right(buf)
+        stop = position(buf)
+    end
+    seek(buf, origin)
+    return Motion(origin, stop, exclusive)
 end
 
 
 function word_end(buf::IO)::Motion
-    start = position(buf)
-    eof(buf) && return Motion(start, start)
-
-    mark(buf)
-    # move to the next character, since this command will always
-    # move at least 1 (or else it is EOF)
-    read(buf, Char)
-
-    first_word_char = !eof(buf) && read(buf, Char)
-    # find the first character of the word we will be moving to the end of
-    @loop_guard while !eof(buf) && position(buf) != start && is_whitespace(first_word_char)
-        first_word_char = read(buf, Char)
+    origin = position(buf)
+    stop = origin
+    # find the next word
+    read_right(buf)
+    if is_word_end(buf)
+        stop = position(buf)
+        read_right(buf)
     end
-
-    @loop_guard while !eof(buf)
-        c = read(buf, Char)
-        if is_punctuation(first_word_char) && !is_punctuation(c)
-            LE.char_move_left(buf)
-            break
-        elseif is_alphanumeric(first_word_char) && !is_alphanumeric(c)
-            LE.char_move_left(buf)
-            break
-        end
+    @loop_guard while !eof(buf) && !is_word_end(buf)
+        stop = position(buf)
+        read_right(buf)
     end
-    LE.char_move_left(buf)
-    endd = position(buf)
-    reset(buf)
-    return Motion(start, endd, inclusive)
+    seek(buf, origin)
+    return Motion(origin, stop, inclusive)
 end
 
 function word_back(buf::IO)::Motion
-    start = position(buf)
-    position(buf) == 0 && return Motion(start, start)
+    origin = position(buf)
+    stop = origin
 
-    skip(buf, -1)
-    last_c = peek(buf, Char)
-
-    @loop_guard while position(buf) > 0
-        c = peek(buf, Char)
-        if is_alphanumeric(c) && is_punctuation(last_c)
-            skip(buf, 1)
-            break
-        elseif is_punctuation(c) && is_alphanumeric(last_c)
-            skip(buf, 1)
-            break
-        elseif is_whitespace(c) && !is_whitespace(last_c)
-            skip(buf, 1)
-            break
-        end
-        last_c = c
-        LE.char_move_left(buf)
+    read_left(buf)
+    stop = position(buf)
+    @loop_guard while position(buf) > 0 && !is_word_start(buf)
+        read_left(buf)
+        stop = position(buf)
     end
-    endd = position(buf)
-    seek(buf, start)
-    return Motion(start, endd, exclusive)
+    seek(buf, origin)
+    return Motion(origin, stop, exclusive)
 end
 
 function word_big_back(buf::IO)::Motion
-    start = position(buf)
-    position(buf) == 0 && return Motion(start, start)
+    origin = position(buf)
+    stop = origin
 
-    skip(buf, -1)
-    last_c = peek(buf, Char)
-
-    @loop_guard while position(buf) > 0
-        c = peek(buf, Char)
-        if is_whitespace(c) && !is_whitespace(last_c)
-            skip(buf, 1)
-            break
-        end
-        last_c = c
-        LE.char_move_left(buf)
+    read_left(buf)
+    stop = position(buf)
+    @loop_guard while position(buf) > 0 && !is_object_start(buf)
+        read_left(buf)
+        stop = position(buf)
     end
-    endd = position(buf)
-    seek(buf, start)
-    return Motion(start, endd, exclusive)
+    seek(buf, origin)
+    return Motion(origin, stop, exclusive)
 end
 
 function word_big_end(buf::IO)::Motion
-    start = position(buf)
-    eof(buf) && return Motion(buf)
-
-    mark(buf)
-    # move to the next character, since this command will always
-    # move at least 1 (or else it is EOF)
-    read(buf, Char)
-
-    first_word_char = !eof(buf) && read(buf, Char)
-    # find the first character of the word we will be moving to the end of
-    @loop_guard while !eof(buf) && position(buf) != start && is_whitespace(first_word_char)
-        first_word_char = read(buf, Char)
+    origin = position(buf)
+    stop = origin
+    read_right(buf)
+    # find the next word
+    @loop_guard while !eof(buf) && !is_in_object(buf)
+        read_right(buf)
     end
-
-    @loop_guard while !eof(buf)
-        c = read(buf, Char)
-        if is_whitespace(c)
-            LE.char_move_left(buf)
-            break
-        end
+    @loop_guard while !eof(buf) && is_in_object(buf)
+        stop = position(buf)
+        read_right(buf)
     end
-    LE.char_move_left(buf)
-    endd = position(buf)
-    reset(buf)
-    return Motion(start, endd, inclusive)
+    seek(buf, origin)
+    return Motion(origin, stop, inclusive)
 end
 
 function line_end(buf::IO)::Motion
-    mark(buf)
-    start = position(buf)
-
-    @loop_guard while !eof(buf)
-        c = read(buf, Char)
-        if is_linebreak(c)
-            break
-        end
+    origin = position(buf)
+    stop = position(buf)
+    if is_line_end(buf)
+        
     end
-    skip(buf, -1)
-    endd = position(buf)
-    reset(buf)
-    return Motion(start, endd, inclusive)
+    @loop_guard while !is_line_end(buf)
+        stop = position(buf)
+        LE.char_move_right(buf)
+    end
+    seek(buf, origin)
+    # if origin == stop
+    #     return Motion(origin, stop + 1, inclusive)
+    # end
+    return Motion(origin, stop, inclusive)
 end
 
 function line_begin(buf::IO)::Motion
-    start = position(buf)
-    position(buf) == 0 && return Motion(start, start)
-
-    # skip(buf, -1)
-
-    first_line_char = start
-    @loop_guard while position(buf) > 0
+    origin = position(buf)
+    @loop_guard while !is_line_start(buf)
         LE.char_move_left(buf)
-        c = peek(buf, Char)
-        if is_linebreak(c)
-            break
-        end
-        if !is_whitespace(c)
-            first_line_char = position(buf)
-        end
     end
-    if first_line_char == start
-        skip(buf, 1)
-        @loop_guard while !eof(buf)
-            c = read(buf, Char)
-            if !is_whitespace(c)
-                skip(buf, -1)
-                first_line_char = position(buf)
-                break
-            end
-            if is_linebreak(c)
-                break
-            end
-        end
+    
+    # search for the first object character
+    @loop_guard while !is_line_end(buf) && !is_object_start(buf)
+        LE.char_move_right(buf)
     end
 
-    endd = first_line_char
-    seek(buf, start)
-    return Motion(start, endd, exclusive)
+    stop = position(buf)
+    seek(buf, origin)
+    return Motion(origin, stop, exclusive)
 end
 
 """
@@ -392,7 +314,7 @@ function line_zero(buf::IO)::Motion
     @loop_guard while position(buf) > 0
         LE.char_move_left(buf)
         c = peek(buf, Char)
-        if is_linebreak(c)
+        if is_newline(c)
             break
         end
         first_line_char = position(buf)
@@ -401,18 +323,6 @@ function line_zero(buf::IO)::Motion
     seek(buf, start)
     return Motion(start, endd)
 end
-
-# function line_end (buf)
-#     start = position(buf)
-#     while !eof(buf)
-#         c = read(buf, Char)
-#         if newline(c)
-#             break
-#         end
-#     end
-#     endd = position(buf)
-#     return Motion(start, endd)
-# end
 
 function endd(buf::IO)::Motion
 
@@ -651,7 +561,6 @@ function get_safe_name(s::AbstractString)::Symbol
     return get_safe_name(s[1])
 end
 
-LE.char_move_left(vb::VimBuffer) = LE.char_move_left(vb.buf)
 
 
 
@@ -714,15 +623,15 @@ is also considered to be a word.
 """
 function word(buf::IO)::Motion
     origin = position(buf)
-    start = if is_object_start(buf)
+    start = if is_word_start(buf)
         Motion(buf)
     else
         word_back(buf)
     end
     eof(buf) && return start
-    skip(buf, 1)
-    @loop_guard while !eof(buf) && is_in_object(buf)
-        skip(buf, 1)
+    read_right(buf)
+    @loop_guard while !eof(buf) && is_in_word(buf)
+        read_right(buf)
     end
     endd = Motion(buf)
     seek(buf, origin)
@@ -743,16 +652,16 @@ function WORD(buf::IO)::Motion
     is_whitespace(peek(buf, Char)) && return Motion(origin, origin)
 
     local start
-    @loop_guard while !is_non_whitespace_start(buf)
-        skip(buf, -1)
+    @loop_guard while !is_object_start(buf)
+        read_right(buf)
     end
     start = position(buf)
     seek(buf, origin)
 
 
     local endd
-    @loop_guard while !is_non_whitespace_end(buf)
-        skip(buf, 1)
+    @loop_guard while !is_object_end(buf)
+        read_right(buf)
     end
     endd = position(buf)
     seek(buf, origin)
@@ -788,35 +697,17 @@ end
 function line(buf::IO)::Motion
     # find the line start
     origin = position(buf)
-    if eof(buf)
-        if position(buf) > 0
-            LE.char_move_left(buf)
-        end
-    end
-
-    @loop_guard while !eof(buf) && position(buf) > 0
-        c = peek(buf, Char)
-        if is_linebreak(c)
-            skip(buf, 1)
-            break
-        end
-        LE.char_move_left(buf)
+    while !is_line_start(buf)
+        read_left(buf)
     end
     start = position(buf)
     seek(buf, origin)
-
-    # find the line end
-    @loop_guard while !eof(buf)
-        c = read(buf, Char)
-        if is_linebreak(c)
-            LE.char_move_left(buf)
-            break
-        end
+    while !is_line_end(buf)
+        read_right(buf)
     end
     stop = position(buf)
     seek(buf, origin)
-
-    return Motion(start, stop)
+    return Motion(start, stop, inclusive)
 end
 
 end

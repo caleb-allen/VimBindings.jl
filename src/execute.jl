@@ -43,7 +43,7 @@ function execute(buf, command::LineOperatorCommand)::Union{VimMode,Nothing}
     local op_fn = nothing
     for r in 1:command.r1
         # buf = buffer(s)
-        line_motion = line(buf)
+        line_motion = Motion(line(buf), linewise)
         op_fn = operator_fn(command.operator)
         op_fn(buf, line_motion)
     end
@@ -58,8 +58,8 @@ function execute(buf, command::InsertCommand)::Union{VimMode,Nothing}
     # buf = buffer(s)
     motion = @match command.c begin
         'o' => begin
-            endd = line_end(buf).stop
-            insert(buf, line_end(buf).stop, '\n')
+            endd = line_end(buf) |> max
+            insert(buf, endd, '\n')
             if position(buf) == endd
                 nothing
             else
@@ -86,6 +86,9 @@ function execute(buf, command::InsertCommand)::Union{VimMode,Nothing}
             else
                 motion
             end
+        end
+        's' => begin
+            delete(buf, right(buf))
         end
         _ => gen_motion(buf, command)
     end
