@@ -27,6 +27,14 @@ end
     # https://github.com/caleb-allen/VimBindings.jl/issues/46
     @test run("|Hello world", "cw") == testbuf("|i| world")
     @test run("|Hello world", "dw") == testbuf("|world")
+    
+    # https://github.com/caleb-allen/VimBindings.jl/issues/61
+    @test run("Hello world|", "A") == testbuf("Hello world|i|")
+    
+    # https://github.com/caleb-allen/VimBindings.jl/issues/60
+    @test run("println(|)", "o") == testbuf("println()\n|i|")
+    # https://github.com/caleb-allen/VimBindings.jl/issues/57
+    @test run("|A", "C") == testbuf("|i|")
 end
 
 
@@ -114,8 +122,19 @@ end
 
 @testset "line operators" begin
     @test run("aaaa bbbb |n|ccc ddd", "C") == testbuf("aaaa bbbb |i|")
-    @test run("aaaa bbbb |n|ccc ddd", "cc") == testbuf("|i|")
-    @test run("aaaa bbbb |n|ccc ddd", "S") == testbuf("|i|")
+    @test run("|n|a", "C") == testbuf("|i|")
+    @test run("aaaa bbbb |ccc dd", "cc") == testbuf("|i|")
+    @test run("first line\nsecond| line\nthird line", "cc") == testbuf("first line\n|i|\nthird line")
+    @test_broken run("first line\nsecond| line\nthird line", "dd") == testbuf("first line\n|third line")
+    @test_broken run("first line\nsecond |line", "dd") == testbuf("first line|")
+    @test_broken run("first| line\nsecond line", "dd") == testbuf("|second line")
+    @test run("aaaa bbbb |ccc dd", "S") == testbuf("|i|")
+    @test run("aaaa bbbb |ccc dd", "dd") == testbuf("|")
+end
+
+@testset "o and O" begin
+    @test run("function |hello()", "o") == testbuf("function hello()\n|i|")
+    @test run("function |hello()", "O") == testbuf("|i|\nfunction hello()")
 end
 
 @testset "unicode" begin

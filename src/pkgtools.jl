@@ -8,8 +8,8 @@ The end of this file contains precompilation code
 module PkgTools
 import ..VimBuffer, ..parse_command, ..testbuf, ..execute, ..well_formed, ..partial_well_formed
 import ..Changes: record, undo!, redo!, freeze, thaw!, reset!
-import ..TextUtils: junction_type, TextChar, is_object_start, is_whitespace_start,
-    is_non_whitespace_start, is_object_end, is_non_whitespace_end, is_whitespace_end
+import ..TextUtils: junction_type, TextChar, is_word_start, is_whitespace_start,
+    is_object_start, is_word_end, is_object_end, is_whitespace_end
 using Combinatorics
 
 const TEST_STRING = """abcdefghijklmnopqrstuvwxyz "' 0987654321 A B C D E F G H| I J K L M N O P Q R S T U V W X Y Z 98 76 54 32 21 !@#%^9^&*() abcdefghijklmnopqrstuvwxyz '" 0987654321"""
@@ -21,7 +21,7 @@ function some_vim_commands()::Vector{String}
         3h 3j 3k 3l
         w W e E b B ^ \$ 0
         dh daw cw ciw caW caw daW cW ct"
-        fa Fa ta Ta a A i I o O x X C S dd D
+        fa Fa ta Ta a A i I o O x X C cc dd s S D
         u \x12
         """
     String.(split(s))
@@ -39,6 +39,7 @@ commands_and_buffers()::Vector{Tuple{String,VimBuffer}} =
 function run(cmd::String, buf::VimBuffer=testbuf(TEST_STRING))
     command = parse_command(cmd)
     execute(buf.buf, command)
+    return buf
 end
 
 function time_commands()
@@ -73,11 +74,11 @@ function run_junctions()
 
     buf = testbuf("Hello Vim|!")
 
-    is_object_start(buf)
+    is_word_start(buf)
     is_whitespace_start(buf)
-    is_non_whitespace_start(buf)
+    is_object_start(buf)
+    is_word_end(buf)
     is_object_end(buf)
-    is_non_whitespace_end(buf)
     is_whitespace_end(buf)
 end
 
@@ -91,7 +92,7 @@ using PrecompileTools
         for (cmd, buf) in commands
             well_formed(cmd)
             partial_well_formed(cmd)
-            
+
             PkgTools.run(cmd, buf)
         end
 

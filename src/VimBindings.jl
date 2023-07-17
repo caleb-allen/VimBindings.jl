@@ -172,6 +172,8 @@ function init()
     return
 end
 
+LE.char_move_left(vb::VimBuffer) = LE.char_move_left(vb.buf)
+LE.char_move_right(vb::VimBuffer) = LE.char_move_right(vb.buf)
 """
 Make necessary modifications to vim state for a new prompt
 """

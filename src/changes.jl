@@ -15,20 +15,32 @@ function Base.show(io::IO, rec::BufferRecord)
     i = min(length(rec.text), rec.cursor_index)
     a = ""
     b = ""
-    if i > 0
-        a = rec.text[begin:nextind(rec.text, i-1)]
-        b = rec.text[nextind(rec.text, i):end]
+    if length(rec.text) > 0
+        if rec.cursor_index > 0
+            # a = rec.text[begin:prevind(rec.text, i)]
+            a = rec.text[begin:thisind(rec.text, i)]
+            b = rec.text[nextind(rec.text, i):end]
+        else
+            b = rec.text
+        end
     end
-    print(io, "BufferRecord(\"" * a * "|" * b * "\"), $(rec.cursor_index))")
+    print(io, "BufferRecord(\"" * escape_string(a) * "|" * escape_string(b) * "\"), $(rec.cursor_index))")
 end
 
 
 function freeze(buf::IO, pos = position(buf))::BufferRecord
-    origin = position(buf)
-    seek(buf, 0)
-    s = read(buf, String)
-    seek(buf, origin)
-    return BufferRecord(s, pos)
+    # buf = copy(buffer)
+    text = String(take!(copy(buf)))
+    @debug "freeze buffer record" buf pos text
+    # s = ""
+    # if buf.size > 0
+        # origin = position(buf)
+        # seekstart(buf)
+        # why is this read causing "InexactError"?
+        # s = read(buf, String)
+        # seek(buf, origin)
+    # end
+    return BufferRecord(text, pos)
 end
 
 """
@@ -87,7 +99,7 @@ function record(buf::IO; cursor_index=position(buf))
         current.prev[] = latest[]
         latest[].next[] = current
         latest[] = current
-        @debug "Recorded latest entry" record
+        @debug "Recorded latest entry" record record.text
     else
         @debug "Did not record new entry; record is equal to previous entry" record
     end
@@ -136,16 +148,21 @@ end
 Base.:(==)(x::Entry, y::Entry) = x.record == y.record && x.id == y.id
 
 function show_full_history(selected::Entry=latest[])
-    r = root_of(selected)
-    buf = IOBuffer()
-    for entry in r
-        write(buf, '\n')
-        write(buf, show(buf, entry))
-    end
-    seek(buf, 0)
-    hist_string = "\n" * read(buf, String)
+    try
+        r = root_of(selected)
+        buf = IOBuffer()
+        for entry in r
+            write(buf, '\n')
+            write(buf, show(buf, entry))
+        end
+        seek(buf, 0)
+        hist_string = "\n" * read(buf, String)
 
-    @debug hist_string
+        @debug hist_string
+    catch ex
+        @warn "Error while showing history" exception=(ex, catch_backtrace())
+    end
+
 end
 
 
@@ -194,9 +211,9 @@ function Base.show(io::IO, entry::Entry)
     else
         write(io, "\t")
     end
-    write(io, "Entry($(entry.id), \"")
+    write(io, "Entry($(entry.id), ")
     show(io, entry.record)
-    write(io, "\")")
+    write(io, ")")
 end
 
 

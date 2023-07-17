@@ -20,16 +20,28 @@ function operator_fn(c::Char)::Function
 end
 
 function change(buf::IO, motion::Motion) #, motion_type :: MotionType)
-    delete(buf, motion)
+    text = String(take!(copy(buf)))
+    left = min(motion)
+    right = min(max(motion), length(text))
+    @debug "delete operator" buf motion text left right
+    yank(buf, motion)
+    move(buf, motion) #, motion_type)
+    LE.edit_splice!(buf, left => right)
+
+    # delete(buf, motion)
 end
 
 # also, when there is whitespace following a word,
 # "dw" deletes that whitespace
 # and "cw" only removes the inner word
 function delete(buf::IO, motion::Motion) #, motion_type :: MotionType)
+    text = String(take!(copy(buf)))
+    left = min(motion)
+    right = min(max(motion), length(text))
+    @debug "delete operator" buf motion text left right
     yank(buf, motion)
     move(buf, motion) #, motion_type)
-    LE.edit_splice!(buf, min(motion) => max(motion))
+    LE.edit_splice!(buf, left => right)
     return nothing
 end
 
@@ -51,16 +63,16 @@ function yank(buf::IO, motion::Motion)::Union{String,Nothing}
     return text
 end
 
-function insert(buf::IO, pos::Integer, text)
-    s = string(text)
+insert(buf::IO, pos::Int, c::Char) = insert(buf, pos, string(c))
+function insert(buf::IO, pos::Int, s::String)
     LE.edit_splice!(buf, pos => pos, s)
 end
 
 function cut(buf::IO, motion::Motion)::String
-    mark(buf)
+    origin = position(buf)
     seek(buf, min(motion))
     chars = [read(buf, Char) for i in 1:length(motion) if !eof(buf)]
-    reset(buf)
+    seek(buf, origin)
     return String(chars)
 end
 
