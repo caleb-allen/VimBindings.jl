@@ -183,7 +183,7 @@ function word_next(buf::IO)::Motion
     if is_word_start(buf)
         read_right(buf)
     end
-    while !eof(buf) && !is_word_start(buf)
+    @loop_guard while !eof(buf) && !is_word_start(buf)
         read_right(buf)
         stop = position(buf)
     end
@@ -200,7 +200,7 @@ function word_big_next(buf::IO)::Motion
     if is_object_start(buf)
         read_right(buf)
     end
-    while !eof(buf) && !is_object_start(buf)
+    @loop_guard while !eof(buf) && !is_object_start(buf)
         read_right(buf)
         stop = position(buf)
     end
@@ -218,7 +218,7 @@ function word_end(buf::IO)::Motion
         stop = position(buf)
         read_right(buf)
     end
-    while !eof(buf) && !is_word_end(buf)
+    @loop_guard while !eof(buf) && !is_word_end(buf)
         stop = position(buf)
         read_right(buf)
     end
@@ -232,7 +232,7 @@ function word_back(buf::IO)::Motion
 
     read_left(buf)
     stop = position(buf)
-    while position(buf) > 0 && !is_word_start(buf)
+    @loop_guard while position(buf) > 0 && !is_word_start(buf)
         read_left(buf)
         stop = position(buf)
     end
@@ -241,24 +241,17 @@ function word_back(buf::IO)::Motion
 end
 
 function word_big_back(buf::IO)::Motion
-    start = position(buf)
-    position(buf) == 0 && return Motion(start, start)
+    origin = position(buf)
+    stop = origin
 
-    skip(buf, -1)
-    last_c = peek(buf, Char)
-
-    @loop_guard while position(buf) > 0
-        c = peek(buf, Char)
-        if is_whitespace(c) && !is_whitespace(last_c)
-            skip(buf, 1)
-            break
-        end
-        last_c = c
-        LE.char_move_left(buf)
+    read_left(buf)
+    stop = position(buf)
+    @loop_guard while position(buf) > 0 && !is_object_start(buf)
+        read_left(buf)
+        stop = position(buf)
     end
-    endd = position(buf)
-    seek(buf, start)
-    return Motion(start, endd, exclusive)
+    seek(buf, origin)
+    return Motion(origin, stop, exclusive)
 end
 
 function word_big_end(buf::IO)::Motion
@@ -266,10 +259,10 @@ function word_big_end(buf::IO)::Motion
     stop = origin
     read_right(buf)
     # find the next word
-    while !eof(buf) && !is_in_object(buf)
+    @loop_guard while !eof(buf) && !is_in_object(buf)
         read_right(buf)
     end
-    while !eof(buf) && is_in_object(buf)
+    @loop_guard while !eof(buf) && is_in_object(buf)
         stop = position(buf)
         read_right(buf)
     end
@@ -330,18 +323,6 @@ function line_zero(buf::IO)::Motion
     seek(buf, start)
     return Motion(start, endd)
 end
-
-# function line_end (buf)
-#     start = position(buf)
-#     while !eof(buf)
-#         c = read(buf, Char)
-#         if newline(c)
-#             break
-#         end
-#     end
-#     endd = position(buf)
-#     return Motion(start, endd)
-# end
 
 function endd(buf::IO)::Motion
 
