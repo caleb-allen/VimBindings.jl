@@ -1,8 +1,6 @@
 # Features
 This document describes the features of vim emulated by VimBindings.jl.
 
-The following symbols indicate the status of a feature:
-
 !!! info "Implementation Status Indicators"
 
     These symbols indicate the state of a feature
@@ -13,7 +11,8 @@ The following symbols indicate the status of a feature:
 
     🚧 Planned or In Progress
 
-```@index
+```@contents
+Pages = ["features.md"]
 ```
 
 
@@ -148,6 +147,9 @@ The undo and redo implementation is not vi compatible; "uu" will undo two times,
 | [m      | go to previous start of a method                       | ❌           |
 | [M      | go to previous end of a method                         | ❌           |
 
+## Requesting Features
+If there is a feature you would like to see implemented, please let us know by adding it to the
+["Key bind request" thread](https://github.com/caleb-allen/VimBindings.jl/issues/15).
 
 ## References
 Many of these descriptions are adapted from the vim documentation of the respective commands.
