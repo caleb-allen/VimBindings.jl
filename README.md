@@ -1,95 +1,40 @@
-VimBindings.jl is a Julia package which brings vim emulation directly to the Julia REPL. Feedback is welcome!
+# VimBindings.jl
+VimBindings.jl is a Julia package which brings vim emulation directly to the Julia REPL.
 
+[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://caleb-allen.github.io/VimBindings.jl/stable)
 ![latest ci](https://github.com/caleb-allen/VimBindings.jl/actions/workflows/test.yaml/badge.svg)
 
-
-## Installation
-
+### Installation
 ```julia
 julia> import Pkg
 
 julia> Pkg.add("VimBindings")
 ```
 
-## Running
-
-
-VimBindings.jl can be loaded from `startup.jl` like so:
+Then, place the following in your julia startup file (usually `~/.julia/config/startup.jl`)
 
 ```julia
-# DO NOT place this code inside atreplinit!
 if isinteractive()
     @eval using VimBindings
 end
 ```
-> **Warning**
-> VimBindings.jl must be loaded **before** the REPL is initialized. This means that the call `@eval using VimBindings` must be called outside of `atreplinit` so that it can modify the behavior of REPL code before it is loaded.
 
-## Usage
-### Insert mode
-Insert mode is similar to the standard REPL experience. Insert mode is indicated with a pipe | cursor.
+### Features
+- Modifies REPL to allow binding to Escape key
+- vim-like bindings available in all REPL modes
+- Motions (e.g. `hjkl`, word motions like `w`, `W`, `b`, `e`, etc.)
+- Operators (`c` and `d`)
+- Text objects (e.g. `daw`, `ciw`)
+- Undo and redo implementation with vim-like semantics
 
-### Normal mode
-Navigate to Normal mode by striking `Esc`. Normal mode is indicated with a block █ cursor.
+A complete list of features can be found in [the documentation](https://caleb-allen.github.io/VimBindings.jl/ https://caleb-allen.github.io/VimBindings.jl/latest/features/#Features)
 
-<!-- #### Motion -->
-<!-- The following list describes the supported navigation commands: -->
+### Documentation
 
-<!-- - Character motions: `h`, `j`, `k`, `l` -->
-<!-- - Word motions: `w`, `W`, `e`, `E`, `b`, `B` -->
-<!-- - in-line motions: `^`, `$`, `0` -->
+Please see the [documentation](https://caleb-allen.github.io/VimBindings.jl/latest)
 
-<!-- Numbers may be prepended to motion commands, for example `5w` to move 5 words. -->
-
-## Features
-Here are a few of the features of the package, as well as goal features of the package.
-
-- [x] Basic editing (e.g. `dw`, `cw`, `x`)
-- [x] Binding the escape key from the REPL
-- [x] More advanced editing with text objects (e.g. `diw`)
-- [x] History integration
-- [x] Undo/Redo with `u` and `C-r`
-- [ ] Full support for Unicode characters
-- [ ] System clipboard integration
-- [ ] Registers
-
-### Requesting unimplemented commands
+### Feedback
 
 Is there a vim command you long for that isn't implemented? Please share by using the [Key bind request thread](https://github.com/caleb-allen/VimBindings.jl/issues/15)
-<!-- - [ ] Visual mode -->
-<!-- - [ ] Macros -->
-## Issues
-### Method definitions
-Users may see warnings about method definitions being overwritten. VimBindings.jl overwrites some methods in the standard library in order to hook into REPL functionality. This is less than ideal, and there may be an alternate approach which [does not overwrite any REPL code](https://github.com/caleb-allen/VimBindings.jl/issues/70), but in the meantime this should not cause issues unless the package is used in conjunction with other packages which heavily modify the REPL. 
 
-### Note for tmux users experiencing freezing
-A common practice for users of tmux is to set the `escape-time` setting of tmux to `0`, often after experiencing lag while using vim from within tmux.
-
-Tmux users wishing to use julia with `VimBindings.jl` should set `escape-time` to a value above `0`, for example:
-
-```bash
-# .tmux.conf
-set -g escape-time 5
-```
-
-Using `escape-time` set to `0` may cause the VimBindings.jl library to sieze completely and become unresponsive. A higher value will fix this and won't cause noticeable lag. The technical reason for this can be seen in [this issue](https://github.com/caleb-allen/VimBindings.jl/issues/18#issuecomment-1381018008).
-
-
-# Feedback
-
-VimBindings.jl is early in development and likely has bugs! Issues with bug reports or general feedback is welcome.
-
-Is your favorite vim binding missing? Open an issue with the tag "keybind request" to let me know!
-
-
-<!-- ## Addendum: Techical/historical curiosities -->
-
-<!-- ### Why has the Julia REPL not supported vim bindings before? -->
-
-<!-- Technically, it did! In the very (very) early days of Julia, the REPL was based on GNU Readline, a library for implementing applications with a CLI. For a load of very good reasons, the REPL [was rewritten]((https://github.com/JuliaLang/julia/pull/6270)) in Julia and lost this capability as a side effect. --> 
-
-<!-- There are many reasons the REPL has not gained vim bindings in the intervening time, not least of which is the effort required. Implementing a vim emulation layer is not a trivial pursuit: [ideavim](https://github.com/JetBrains/ideavim/) for IntelliJ has roughly 100k lines of code; [vimium](https://github.com/philc/vimium) for chromium is in the order of 10k lines of code. -->
-
-<!-- There are also specific technical barriers that a vim package must overcome. For instance, it is surprisingly difficult and fragile to bind the `Escape` key in a terminal application, to the point that the REPL [does not support it](https://github.com/JuliaLang/julia/issues/28598). Users of `vim` from within `tmux` have likely experienced firsthand the consequences of this bizarre historical artifact when they strike the `Escape` key and have an unexpected 500ms of lag before anything happens. This is one of the many creative solutions developers have come up with to tackle the issue. -->
-
-<!-- Finally, the REPL is fundamentally about being a REPL: Read, Evaluate, Print, Loop. The REPL code is oriented around just that. The features required for vim emulation are --> 
+Issues with bug reports or general feedback is welcome.

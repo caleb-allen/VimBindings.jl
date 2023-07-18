@@ -3,7 +3,6 @@ using VimBindings
 
 makedocs(
     sitename = "VimBindings",
-    # format = Documenter.HTML(),
     modules = [VimBindings],
     format = Documenter.HTML(
         prettyurls = get(ENV, "CI", nothing) == "true"
@@ -19,5 +18,4 @@ makedocs(
 # for more information.
 deploydocs(
     repo = "github.com/caleb-allen/VimBindings.jl.git",
-    push_preview = true
 )
