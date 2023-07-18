@@ -1,7 +1,12 @@
+```@contents
+Pages = ["features.md"]
+Depth = 3
+```
+
 # Features
 This document describes the features of vim emulated by VimBindings.jl.
 
-!!! info "Implementation Status Indicators"
+!!! info
 
     These symbols indicate the state of a feature
 
@@ -11,57 +16,52 @@ This document describes the features of vim emulated by VimBindings.jl.
 
     🚧 Planned or In Progress
 
-```@contents
-Pages = ["features.md"]
-```
-
-
-### Motions
+## Motions
 Commands for moving the cursor.
 
 A motion command may be prepended with a `count` to repeat the motion, for example the motion `3w` moves 3 words to the right. 
 
-| Command | Description                                                               | Implemented |
-|:--------|:--------------------------------------------------------------------------|:------------|
-| `h`     | left                                                                      | ✅           |
-| `l`     | right                                                                     | ✅           |
-| `j`     | down                                                                      | ✅           |
-| `k`     | up                                                                        | ✅           |
-| `w`     | next word                                                                 | ✅           |
-| `W`     | next WORD                                                                 | ✅           |
-| `e`     | end of word                                                               | ✅           |
-| `E`     | end of WORD                                                               | ✅           |
-| `b`     | previous word                                                             | ✅           |
-| `B`     | previous WORD                                                             | ✅           |
-| `^`     | beginning of line (excluding whitespace)                                  | ✅           |
-| `0`     | first character of line (including whitespace)                            | ✅           |
-| `$`     | end of line                                                               | ✅           |
-| `f{x}`  | the next occurence of {x}                                                 | ✅           |
-| `F{x}`  | the Previous occurence of {x}                                             | ✅           |
-| `t{x}`  | till before the next occurence of {x}                                     | ✅           |
-| `T{x}`  | till after the previous occurence of {x}                                  | ✅           |
-| `%`     | find the next item in the line and jump to its match. Items can be ([{}]) | ❌           |
-| `(`     | `count` sentences backward                                                | ❌           |
-| `)`     | `count` sentences forward                                                 | ❌           |
-| `{`     | `count` paragraphs backward                                               | ❌           |
-| `}`     | `count` paragraphs forward                                                | ❌           |
-| `]]`    | `count` sections forward or to the next `{` in the first column           | ❌           |
-| `][`    | `count` sections forward or to the next `}` in the first column           | ❌           |
-| `[[`    | `count` sections backward or to the previous `{` in the first column      | ❌           |
-| `[]`    | `count` sections backward or to the previous `}` in the first column      | ❌           |
+> | Command | Description                                                               | Implemented |
+> |:--------|:--------------------------------------------------------------------------|:------------|
+> | `h`     | left                                                                      | ✅           |
+> | `l`     | right                                                                     | ✅           |
+> | `j`     | down                                                                      | ✅           |
+> | `k`     | up                                                                        | ✅           |
+> | `w`     | next word                                                                 | ✅           |
+> | `W`     | next WORD                                                                 | ✅           |
+> | `e`     | end of word                                                               | ✅           |
+> | `E`     | end of WORD                                                               | ✅           |
+> | `b`     | previous word                                                             | ✅           |
+> | `B`     | previous WORD                                                             | ✅           |
+> | `^`     | beginning of line (excluding whitespace)                                  | ✅           |
+> | `0`     | first character of line (including whitespace)                            | ✅           |
+> | `$`     | end of line                                                               | ✅           |
+> | `f{x}`  | the next occurence of {x}                                                 | ✅           |
+> | `F{x}`  | the Previous occurence of {x}                                             | ✅           |
+> | `t{x}`  | till before the next occurence of {x}                                     | ✅           |
+> | `T{x}`  | till after the previous occurence of {x}                                  | ✅           |
+> | `%`     | find the next item in the line and jump to its match. Items can be ([{}]) | ❌           |
+> | `(`     | `count` sentences backward                                                | ❌           |
+> | `)`     | `count` sentences forward                                                 | ❌           |
+> | `{`     | `count` paragraphs backward                                               | ❌           |
+> | `}`     | `count` paragraphs forward                                                | ❌           |
+> | `]]`    | `count` sections forward or to the next `{` in the first column           | ❌           |
+> | `][`    | `count` sections forward or to the next `}` in the first column           | ❌           |
+> | `[[`    | `count` sections backward or to the previous `{` in the first column      | ❌           |
+> | `[]`    | `count` sections backward or to the previous `}` in the first column      | ❌           |
     
-### Operators
+## Operators
 A motion can be used in after an operator to have the command operate on the text in the motion.
 
 > | Command | Description | Implemented                                                              |
-> |---------|-------------|--------------------------------------------------------------------------|
+> |:--------|:------------|:-------------------------------------------------------------------------|
 > | `c`       | change      | ✅                                                                        |
 > | `d`       | delete      | ✅                                                                        |
 > | `y`       | yank        | 🚧 (see [issue](https://github.com/caleb-allen/VimBindings.jl/issues/3)) |
 
 An operator may be prepended with a `count` to repeat the operation. For example, `3dW` will execute the `dW` operation 3 times.
 
-### Text Objects
+## Text Objects
 Text object commands can only be used after an operator. Commands that start with `a` select "a"n object including white space, the commands starting with `i` select an "inner" object without white space, or just the white space. Thus the "inner" commands always select less text than the "a" commands.
 
 Definitions of text objects:
@@ -88,7 +88,7 @@ Definitions of text objects:
 > | `ap/ip`    | a paragraph, inner paragraph | ❌                                                                         |
 > | `at/at`    | a tag block, inner tag block | ❌                                                                         |
 
-### Inserting Text
+## Inserting Text
 
 Insert commands can be used to insert new text.
 
@@ -104,7 +104,7 @@ Insert commands can be used to insert new text.
 > | `gi`      | insert text where Insert mode was stopped last time | ❌           |
 
 
-### Deleting and Changing text
+## Deleting and Changing text
 
 > | Command | Description                                                                                  | Implemented |
 > |:--------|:---------------------------------------------------------------------------------------------|:------------|
@@ -120,7 +120,7 @@ Insert commands can be used to insert new text.
 > | `R`       | enter replace mode                                                                           | ❌           |
 > | `J`       | join lines                                                                                   | ❌           |
 
-### Undo and Redo
+## Undo and Redo
 
 VimBindings.jl implements the core semantics of undo and redo as implemented by vim, with the exception that VimBindings.jl does not implement an undo tree or undo branches. Undo/redo is implemented as a list.
 
@@ -133,7 +133,7 @@ The undo and redo implementation is not vi compatible; "uu" will undo two times,
 > | `U`       | undo the latest changes on oneline | ❌           |
 
 
-### Miscellaneous
+## Miscellaneous
 
 > | Command | Description                                            | Implemented |
 > |:--------|:-------------------------------------------------------|:------------|
@@ -155,10 +155,10 @@ The undo and redo implementation is not vi compatible; "uu" will undo two times,
 > | `[m`      | go to previous start of a method                       | ❌           |
 > | `[M`      | go to previous end of a method                         | ❌           |
 
-### Requesting Features
+## Requesting Features
 If there is a feature you would like to see implemented, please let us know by adding it to the
 ["Key bind request" thread](https://github.com/caleb-allen/VimBindings.jl/issues/15).
 
-### References
+## References
 Many of these descriptions are adapted from the vim documentation of the respective commands.
 
