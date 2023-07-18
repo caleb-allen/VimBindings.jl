@@ -19,4 +19,5 @@ makedocs(
 # for more information.
 deploydocs(
     repo = "github.com/caleb-allen/VimBindings.jl.git",
+    push_preview = true
 )
