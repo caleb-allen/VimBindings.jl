@@ -4,3 +4,5 @@ test/Manifest.toml
 **.~undo-tree~
 
 LocalPreferences.toml
+
+build/
