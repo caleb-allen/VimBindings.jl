@@ -2,7 +2,7 @@ using Documenter
 using VimBindings
 
 makedocs(
-    sitename = "VimBindings",
+    sitename = "VimBindings.jl",
     modules = [VimBindings],
     format = Documenter.HTML(
         prettyurls = get(ENV, "CI", nothing) == "true"
