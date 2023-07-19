@@ -31,7 +31,7 @@ A complete list of features can be found in [the documentation](https://caleb-al
 
 ### Documentation
 
-For more information about installation, configuration, and features please see the [documentation](https://caleb-allen.github.io/VimBindings.jl/)
+For more information about installation, configuration, and features please see the [documentation](https://caleb-allen.github.io/VimBindings.jl/dev/)
 
 ### Feedback
 
