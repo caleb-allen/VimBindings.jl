@@ -186,19 +186,11 @@ struct PasteCommand <: Command
     r1::Int
     c::Char
 end
+
 function PasteCommand(n1::Union{Int, Nothing}, c::Char)
     r1 = isnothing(n1) ? 1 : n1
     PasteCommand(r1, c)
 end
-function PasteCommand(n1::Union{Int,Nothing}, c1::Char, c2::Char)
-    @debug "Parsed PasteCommand" n1 c1 c2
-    # `^R` is parsed as two characters instead of 1
-    r1 = isnothing(n1) ? 1 : n1
-    
-    PasteCommand(r1, c)
-end
-
-
 
 function key(cmd::Command)::Char
     error("method `key` not implemented for type $(typeof(cmd))")
