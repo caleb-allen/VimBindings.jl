@@ -57,8 +57,8 @@ end
 
 function yank(buf::IO, motion::Motion)::Union{String,Nothing}
     text = cut(buf, motion)
-    !isempty(text) && clipboard(text)
-    @debug "yanked text" yanked=text
+    clipboard(text)
+    @debug "yanked text" yanked = text
     # put!(nothing, text)
     return text
 end
@@ -81,7 +81,7 @@ function put(buf::IO, reg::Char='"') # default unnamed register
     text::String = try
         clipboard() |> rstrip
     catch ex
-        @error "Could not read clipboard" exception=(ex, catch_backtrace())
+        @error "Could not read clipboard" exception = (ex, catch_backtrace())
         ""
     end
     if text === nothing

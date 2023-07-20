@@ -178,6 +178,9 @@ function execute(buf, command::HistoryCommand)
 end
 
 function execute(buf, command::PasteCommand)
+    if command.c == 'P'
+        read_left(buf)
+    end
     put(buf)
     return nothing
 end

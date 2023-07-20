@@ -150,3 +150,8 @@ end
     @test_broken run("∀ x |∃ y", "rx") == testbuf("∀ x |x y")
 end
 
+@testset "yank / put" begin
+    # @test run("abcd|e 12345", "yaw") == testbuf("abcd|x 12345")
+    
+end
+
