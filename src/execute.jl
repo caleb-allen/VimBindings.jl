@@ -130,6 +130,7 @@ function execute(buf, command::OperatorCommand)::Union{VimMode,Nothing}
         @warn """Can't 'yank' text; Registers are not yet implemented.
 
         To enable integration with the system clipboard, run the following command:
+        Ensure you do not have a project activated so the preference is set globally.
 
         \tVimBindings.Config.system_clipboard!(true)
 

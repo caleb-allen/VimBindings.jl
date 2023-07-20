@@ -31,7 +31,9 @@ The preferences for VimBindings.jl and their values.
 """
 function preferences()
     map(prefs) do p
-        p => @eval $(p[1])()
+        (:preference => p[1],
+            :value => @eval $(p[1])(),
+            :default => p[2])
     end
 end
 
@@ -53,14 +55,9 @@ for (name, default) in prefs
 end
 
 function pref!(name, value)
-    set_preferences!(VB_UUID, name => value, export_prefs=true, force=true)
+    @set_preferences!(name => value)
     @info "Preference set. Please restart the REPL in order for this change to take effect."
 end
-pref(name, default = nothing) = load_preference(VB_UUID, name, default)
-
-# const CLIPBOARD_DEFAULT=false
-
-# system_clipboard!(enabled::Bool=CLIPBOARD_DEFAULT) = pref!("system_clipboard", enabled)
-# system_clipboard()::Bool = pref("system_clipboard", CLIPBOARD_DEFAULT)
+pref(name, default = nothing) = @load_preference(name, default)
 
 end

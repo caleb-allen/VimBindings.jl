@@ -108,7 +108,8 @@ function put(buf::IO, reg::Char='"') # default unnamed register
         println(stdout)
         @warn """Can't 'put' text; Registers are not yet implemented.
 
-        To enable integration with the system clipboard, run the following command:
+        To enable integration with the system clipboard, run the following command.
+        Ensure you do not have a project activated so the preference is set globally.
 
             \tVimBindings.Config.system_clipboard!(true)
 
