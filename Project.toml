@@ -1,7 +1,14 @@
+authors = ["Caleb Allen <caleb.e.allen@gmail.com> and contributors"]
 name = "VimBindings"
 uuid = "51b3953f-5e5d-4a6b-bd62-c64b6fa1518a"
-authors = ["Caleb Allen <caleb.e.allen@gmail.com> and contributors"]
 version = "0.3.7"
+
+[compat]
+Combinatorics = "1.0"
+DataStructures = "0.18.13"
+Match = "~1.2.0"
+PrecompileTools = "1.1"
+julia = "1"
 
 [deps]
 Combinatorics = "861a8166-3701-5b0c-9a16-15d98fcdc6aa"

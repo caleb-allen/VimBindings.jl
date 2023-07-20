@@ -29,6 +29,7 @@ const VTE_CURSOR_STYLE_STEADY_UNDERLINE = "\033[4 q"
 const VTE_CURSOR_STYLE_BLINK_IBEAM = "\033[5 q"
 const VTE_CURSOR_STYLE_STEADY_IBEAM = "\033[6 q"
 
+include("config.jl")
 include("util.jl")
 using .Util
 
@@ -50,6 +51,7 @@ using .TextUtils
 using .Operators
 using .Registers
 using .Changes
+using .Config
 
 mutable struct VimState
     registers::Dict{Char,String}
