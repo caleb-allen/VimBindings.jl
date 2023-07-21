@@ -4,13 +4,18 @@ User configuration of VimBindings.jl behavior
 """
 module Config
 using Preferences, UUIDs
+import ..VimBindings as VB
 # package ID
-const VB_UUID = UUID("51b3953f-5e5d-4a6b-bd62-c64b6fa1518a")
+# const VB_UUID = UUID("51b3953f-5e5d-4a6b-bd62-c64b6fa1518a")
+
 
 function __init__()
     if system_clipboard()
         println(stdout)
-        @warn """System clipboard integration is enabled.
+        @warn """System clipboard integration is enabled for VimBindings.jl.
+
+        The commands `y`, `p` and `P` are enabled for the system clipboard.
+        Note that registers are not implemented.
 
         The feature is not well tested;
         Feel free to share your experience with the feature on this github issue
@@ -26,6 +31,18 @@ function __init__()
     end
 end
 
+# idea taken from PreferenceTools.jl
+function _in_global_env(f)
+    # imported at runtime, after REPL is instantiated
+    @eval import Pkg
+    proj = Pkg.project().path
+    try
+        Pkg.activate(; io=devnull)
+        f()
+    finally
+        Pkg.activate(proj; io=devnull)
+    end
+end
 """
 The preferences for VimBindings.jl and their values.
 """
@@ -55,9 +72,13 @@ for (name, default) in prefs
 end
 
 function pref!(name, value)
-    @set_preferences!(name => value)
-    @info "Preference set. Please restart the REPL in order for this change to take effect."
+    _in_global_env() do
+        set_preferences!(VB, name => value, force=true)
+        @info "Preference set. Please restart the REPL in order for this change to take effect."
+    end
 end
-pref(name, default = nothing) = @load_preference(name, default)
+pref(name, default = nothing) = load_preference(VB, name, default)
+
 
 end
+
