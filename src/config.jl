@@ -3,7 +3,7 @@ User configuration of VimBindings.jl behavior
 
 """
 module Config
-using Preferences, UUIDs
+using Preferences
 import ..VimBindings as VB
 
 

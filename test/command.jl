@@ -45,6 +45,9 @@ end
     @test run("a|sdf", "\$") == testbuf("asd|f")
     @test run("asd|f", "\$") == testbuf("asd|f")
 
+    @test run("f|irst.second", "w") == testbuf("first|.second")
+    @test run("first|.second", "w") == testbuf("first.|second")
+
 end
 
 @testset "0: beginning of line" begin
