@@ -1,7 +1,7 @@
 module Commands
 export Command, MotionCommand, OperatorCommand, LineOperatorCommand, InsertCommand,
     SynonymCommand, SimpleMotionCommand, CompositeMotionCommand, TextObjectCommand, ReplaceCommand,
-    ZeroCommand, HistoryCommand, ParseValue, command_constructor
+    ZeroCommand, HistoryCommand, PasteCommand, ParseValue, command_constructor
 export key
 
 abstract type Command end
@@ -180,6 +180,16 @@ function HistoryCommand(n1::Union{Int,Nothing}, c1::Char, c2::Char)
             "`. Expecting `^R`.")
     end
     HistoryCommand(r1, c)
+end
+
+struct PasteCommand <: Command
+    r1::Int
+    c::Char
+end
+
+function PasteCommand(n1::Union{Int, Nothing}, c::Char)
+    r1 = isnothing(n1) ? 1 : n1
+    PasteCommand(r1, c)
 end
 
 function key(cmd::Command)::Char

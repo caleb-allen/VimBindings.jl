@@ -6,6 +6,7 @@ using ..Motions
 using ..Parse
 using ..Operators
 using ..Changes
+using ..Config
 
 using Match
 import REPL: LineEdit as LE
@@ -41,6 +42,7 @@ function execute(buf, command::MotionCommand)::Union{VimMode,ReplAction,Nothing}
 end
 function execute(buf, command::LineOperatorCommand)::Union{VimMode,Nothing}
     local op_fn = nothing
+
     for r in 1:command.r1
         # buf = buffer(s)
         line_motion = Motion(line(buf), linewise)
@@ -122,6 +124,25 @@ function execute(buf, command::OperatorCommand)::Union{VimMode,Nothing}
             command = new
         end
     end
+    if command.operator == 'y' && !Config.system_clipboard()
+
+        println(stdout)
+        @warn """Can't 'yank' text; Registers are not yet implemented.
+
+        To enable integration with the system clipboard, run the following command:
+
+        \tVimBindings.Config.system_clipboard!(true)
+
+        This will enable `y`, `p` and `P`.
+
+        The system clipboard integration is not well tested;
+        Please share your experience with the feature on this github issue
+        https://github.com/caleb-allen/VimBindings.jl/issues/7
+
+        Follow progress on the progress of the registers feature, see
+        https://github.com/caleb-allen/VimBindings.jl/issues/3
+        """
+    end
     for r1 in 1:command.r1
         # TODO the iteration on `action.r1` should probably happen in `gen_motion`
         for r2 in 1:command.action.r1
@@ -175,6 +196,14 @@ function execute(buf, command::HistoryCommand)
             error("invalid history command: $command")
         end
     end
+end
+
+function execute(buf, command::PasteCommand)
+    if command.c == 'p'
+        read_right(buf)
+    end
+    put(buf)
+    return nothing
 end
 
 end

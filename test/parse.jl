@@ -172,3 +172,11 @@ end
     @test parse_command("r5") == ReplaceCommand(1, '5')
     @test parse_command("10rx") == ReplaceCommand(10, 'x')
 end
+
+@testset "parse paste command" begin
+    @test parse_command("p") == PasteCommand(1, 'p')
+    @test parse_command("P") == PasteCommand(1, 'P')
+
+    @test parse_command("4p") == PasteCommand(4, 'p')
+    @test parse_command("5P") == PasteCommand(5, 'P')
+end

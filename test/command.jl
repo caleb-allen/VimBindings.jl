@@ -45,6 +45,13 @@ end
     @test run("a|sdf", "\$") == testbuf("asd|f")
     @test run("asd|f", "\$") == testbuf("asd|f")
 
+    @test run("f|irst.second", "w") == testbuf("first|.second")
+    @test run("first|.second", "w") == testbuf("first.|second")
+    @test run("first|..second", "w") == testbuf("first..|second")
+    @test run("f|irst..second", "w") == testbuf("first|..second")
+    @test run("f|irst  second", "w") == testbuf("first  |second")
+    @test run("first  |second third", "w") == testbuf("first  second |third")
+
 end
 
 @testset "0: beginning of line" begin
@@ -148,5 +155,10 @@ end
     @test run("abcd|e 12345", "rx") == testbuf("abcd|x 12345")
     @test run("|abcde", "3rx") == testbuf("xx|xde")
     @test_broken run("∀ x |∃ y", "rx") == testbuf("∀ x |x y")
+end
+
+@testset "yank / put" begin
+    # @test run("abcd|e 12345", "yaw") == testbuf("abcd|x 12345")
+    
 end
 

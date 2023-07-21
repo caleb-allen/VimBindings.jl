@@ -66,6 +66,7 @@ const RULES = TupleDict(
     "^(?<n1>$REPEAT)(?<op>$OPERATOR)(?<n2>$REPEAT)(?|($TEXTOBJECT)|($MOTION))\$" |> Regex => OperatorCommand,
     "^(?<n1>$REPEAT)(?<op>$OPERATOR)(?<n2>$REPEAT)((?|$(complex_motion())))\$" |> Regex => OperatorCommand,
     "^(?<n1>$REPEAT)(?<op>$OPERATOR)(\\k<op>)\$" |> Regex => LineOperatorCommand,
+    "^(?<n1>$REPEAT)(?<op>p|P)\$" |> Regex => PasteCommand,
     "^(?<n1>$REPEAT)r(.)\$" |> Regex => ReplaceCommand
 )
 
@@ -80,6 +81,7 @@ const PARTIAL_RULES = (
     "^(?<n1>$REPEAT)((?<op>$OPERATOR)((?<n2>$REPEAT)((?|($PARTIALTEXTOBJECT)|($MOTION)))?)?)?\$" |> Regex,  # OperatorCommand
     "^(?<n1>$REPEAT)((?<op>$OPERATOR)((?<n2>$REPEAT)((?|$(complex_motion(true))))?)?)?\$" |> Regex,  # OperatorCommand (2)
     "^(?<n1>$REPEAT)((?<op>$OPERATOR)(\\k<op>)?)?\$" |> Regex,  # LineOperatorCommand
+    "^(?<n1>$REPEAT)(?<op>p|P)?\$" |> Regex,   # PasteCommand,
     "^(?<n1>$REPEAT)(r(.)?)?\$" |> Regex  # ReplaceCommand
 )
 # Note that many of these are redundant. This is written for consistency.
