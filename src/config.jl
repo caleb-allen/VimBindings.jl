@@ -5,8 +5,6 @@ User configuration of VimBindings.jl behavior
 module Config
 using Preferences, UUIDs
 import ..VimBindings as VB
-# package ID
-# const VB_UUID = UUID("51b3953f-5e5d-4a6b-bd62-c64b6fa1518a")
 
 
 function __init__()

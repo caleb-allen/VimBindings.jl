@@ -70,7 +70,6 @@ function yank(buf::IO, motion::Motion)::Union{String,Nothing}
         end
 
         @debug "yanked text" yanked = text
-        # put!(nothing, text)
         return text
     else
         return ""

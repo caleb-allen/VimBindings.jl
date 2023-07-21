@@ -103,7 +103,7 @@ function record(buf::IO; cursor_index=position(buf))
     else
         @debug "Did not record new entry; record is equal to previous entry" record
     end
-    # show_full_history(latest[])
+    show_full_history(latest[])
 end
 
 """
@@ -118,7 +118,7 @@ function undo!(buf::IO)
 
     latest[] = staged
 
-    # show_full_history()
+    show_full_history()
     @debug "undo! to previous entry"
 end
 
@@ -132,7 +132,7 @@ function redo!(buf::IO)
     thaw!(buf, staged.record)
 
     latest[] = staged
-    # show_full_history()
+    show_full_history()
 end
 
 """
