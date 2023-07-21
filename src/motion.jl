@@ -182,6 +182,7 @@ function word_next(buf::IO)::Motion
     stop = origin
     if is_word_start(buf)
         read_right(buf)
+        stop = position(buf)
     end
     @loop_guard while !eof(buf) && !is_word_start(buf)
         read_right(buf)

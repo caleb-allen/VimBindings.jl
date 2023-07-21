@@ -47,6 +47,10 @@ end
 
     @test run("f|irst.second", "w") == testbuf("first|.second")
     @test run("first|.second", "w") == testbuf("first.|second")
+    @test run("first|..second", "w") == testbuf("first..|second")
+    @test run("f|irst..second", "w") == testbuf("first|..second")
+    @test run("f|irst  second", "w") == testbuf("first  |second")
+    @test run("first  |second third", "w") == testbuf("first  second |third")
 
 end
 

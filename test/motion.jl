@@ -42,6 +42,11 @@ end
     @test motion == Motion(0, 11, inclusive)
 end
 
+@testset "word next" begin
+    buf = testbuf("one|.two")
+    @test word_next(buf) == Motion(3, 4, exclusive)
+end
+
 @testset "big word" begin
     buf = IOBuffer("push!(LOAD_PATH, dirname(file))")
     motion = word_big_next(buf)
