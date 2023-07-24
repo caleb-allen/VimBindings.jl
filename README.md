@@ -1,7 +1,7 @@
 # VimBindings.jl
 VimBindings.jl is a Julia package which brings vim emulation directly to the Julia REPL.
 
-[![](https://img.shields.io/badge/docs-dev-blue.svg)](https://caleb-allen.github.io/VimBindings.jl/dev)
+[![](https://img.shields.io/badge/docs-blue.svg)](https://caleb-allen.github.io/VimBindings.jl/)
 ![latest ci](https://github.com/caleb-allen/VimBindings.jl/actions/workflows/test.yaml/badge.svg)
 
 ### Installation
@@ -27,11 +27,11 @@ end
 - Text objects (e.g. `daw`, `ciw`)
 - Undo and redo implementation with vim-like semantics
 
-A complete list of features can be found in [the documentation](https://caleb-allen.github.io/VimBindings.jl/dev/features/)
+A complete list of features can be found in [the documentation](https://caleb-allen.github.io/VimBindings.jl/stable/features/)
 
 ### Documentation
 
-For more information about installation, configuration, and features please see the [documentation](https://caleb-allen.github.io/VimBindings.jl/dev/)
+For more information about installation, configuration, and features please see the [documentation](https://caleb-allen.github.io/VimBindings.jl/)
 
 ### Feedback
 
