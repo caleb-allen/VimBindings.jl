@@ -3,7 +3,7 @@
 VimBindings.jl is a Julia package which brings vim emulation directly to the Julia REPL. Feedback is welcome!
 
 ```@contents
-Pages = ["index.md", "features.md"]
+Pages = ["index.md", "features.md", "config.md"]
 ```
 
 

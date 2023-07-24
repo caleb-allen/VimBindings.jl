@@ -45,10 +45,8 @@ end
 The preferences for VimBindings.jl and their values.
 """
 function preferences()
-    map(prefs) do p
-        (:preference => p[1],
-            :value => @eval $(p[1])(),
-            :default => p[2])
+    for (name, default) in prefs
+        @info "$name" value=(@eval $name()) default
     end
 end
 

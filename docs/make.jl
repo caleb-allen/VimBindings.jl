@@ -9,7 +9,8 @@ makedocs(
     ),
     pages = [
         "index.md",
-        "features.md"
+        "features.md",
+        "config.md"
     ]
 )
 
