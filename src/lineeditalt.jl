@@ -85,8 +85,7 @@ function LE.match_input(f::Function, s::Union{Nothing,LE.MIState}, term, cs::Vec
             @debug result
             if result isa Fallback
                 return fallback_fn(s, p)
-            end
-            if result isa FallbackAlternate
+            elseif result isa FallbackAlternate
                 alt_fn = get_fn(keymap, result.cs)
                 r = Base.invokelatest(alt_fn, s, p, c)
                 if isa(r, Symbol)
@@ -94,6 +93,8 @@ function LE.match_input(f::Function, s::Union{Nothing,LE.MIState}, term, cs::Vec
                 else
                     return :ok
                 end
+            elseif result isa NeovimAction
+                LE.refresh_line(s)
             end
             return :ok
         end
@@ -188,6 +189,7 @@ struct FallbackAlternate <: StrikeKeyResult
 end
 FallbackAlternate(s::AbstractString) = FallbackAlternate(collect(s))
 struct VimAction <: StrikeKeyResult end
+struct NeovimAction <: StrikeKeyResult end
 # e.g. invalid/incomplete vim command
 # struct InvalidAction <: StrikeKeyResult end
 

@@ -87,3 +87,7 @@ Threads related to vim bindings:
 
 - https://discourse.julialang.org/t/vim-mode-in-repl-command-line/9023
 - https://discourse.julialang.org/t/vim-bindings-on-the-horizon/86801
+
+
+#### Vim Transition diagram
+https://rawgit.com/darcyparker/1886716/raw/eab57dfe784f016085251771d65a75a471ca22d4/vimModeStateDiagram.svg
