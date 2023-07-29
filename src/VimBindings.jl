@@ -41,7 +41,12 @@ include("operator.jl")
 include("parse.jl")
 include("changes.jl")
 include("execute.jl")
-include("lineeditalt.jl")
+
+function __init__()
+    if ccall(:jl_generating_output, Cint, ()) == 0
+        include(joinpath(@__DIR__, "lineeditalt.jl"))
+    end
+end
 
 using .Parse
 using .Commands
