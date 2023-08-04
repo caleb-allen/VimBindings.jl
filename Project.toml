@@ -18,7 +18,7 @@ Sockets = "6462fe0b-24de-5631-8697-dd941f90decc"
 [compat]
 Combinatorics = "1.0"
 DataStructures = "0.18.13"
-Match = "~1.2.0"
+Match = "~1.2.0, 2"
 PrecompileTools = "1.1"
 Preferences = "1.4"
 julia = "1"
