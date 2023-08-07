@@ -170,7 +170,7 @@ junction_type(char1::SpaceChar, char2::NewlineChar) = Set([End{Whitespace}(), En
 junction_type(char1::NewlineChar, char2::SpaceChar) = Set([Start{Line}(), Start{Whitespace}()])
 
 junction_type(char1::Nothing, char2::NewlineChar) = Set([Start{Line}(), End{Line}()])
-junction_type(char1::NewlineChar, char2::Nothing) = Set([Start{Line}()])
+junction_type(char1::NewlineChar, char2::Nothing) = Set([Start{Line}(), End{Line}()])
 
 junction_type(char1::WordChar, char2::PunctuationChar) = Set([Start{Word}(), End{Word}(), In{Object}()])
 junction_type(char1::PunctuationChar, char2::WordChar) = Set([Start{Word}(), End{Word}(), In{Object}()])
@@ -184,9 +184,11 @@ Whether the given buffer is currently at a junction of type junc
 function at_junction_type(buf, junc_type)
     for junc in junction_type(buf)
         if junc isa junc_type
+            @debug "at_junction_type?" junc_type chars_by_cursor(buf) at_junction_type = true
             return true
         end
     end
+    @debug "at_junction_type?" junc_type chars_by_cursor(buf) at_junction_type = false
     return false
 end
 # Text helpers

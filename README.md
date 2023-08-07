@@ -38,3 +38,7 @@ For more information about installation, configuration, and features please see 
 Is there a vim command you long for that isn't implemented? Please share by using the [Key bind request thread](https://github.com/caleb-allen/VimBindings.jl/issues/15)
 
 Issues with bug reports or general feedback is welcome.
+
+### In Memoriam
+
+This project is only possible because of the incredible work of Bram Moolenaar, the creator of vim. His passing marks the loss of a world class hacker, and an amazing leader both in open source projects and in humanitarian aid with [ICCF Holland](https://iccf-holland.org/). It is with a heavy heart that we dedicate this project to his memory.
