@@ -14,7 +14,7 @@ function VimMode(s::AbstractString)
     return @match s begin
         "i" => insert_mode
         "n" => normal_mode
-        nothing => normal_mode
+        _ => normal_mode
     end
 end
 
