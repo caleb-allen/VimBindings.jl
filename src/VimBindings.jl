@@ -41,6 +41,7 @@ include("operator.jl")
 include("parse.jl")
 include("changes.jl")
 include("execute.jl")
+include("nvim.jl")
 
 function __init__()
     if ccall(:jl_generating_output, Cint, ()) == 0
@@ -57,6 +58,7 @@ using .Operators
 using .Registers
 using .Changes
 using .Config
+using .Nvim
 
 mutable struct VimState
     registers::Dict{Char,String}
@@ -76,6 +78,11 @@ const global INITIALIZED = Ref(false)
 
 function strike_key(c, s::LE.MIState)::StrikeKeyResult
     @debug "strike key" key = escape_string(c)
+    if c == "\x03" || c == "\x04"
+        return Fallback(collect(c))
+    end
+    Nvim.nvim_strike_key(c, s)
+    return NeovimAction()
     if c == "\e\e"
         empty!(KEY_STACK)
         return VimAction()
@@ -166,6 +173,7 @@ function init()
     if INITIALIZED[]
         return
     end
+    Nvim.start(5555)
     atexit() do
         @debug "Reset cursor style"
         print(stdout, VTE_CURSOR_STYLE_STEADY_BLOCK)
@@ -258,6 +266,7 @@ function trigger_normal_mode(s::LE.MIState)
     iobuffer = LineEdit.buffer(s)
     record(iobuffer, cursor_index=STATE.last_edit_index)
     if STATE.mode !== normal_mode
+        Nvim.setup_normal_mode(s)
         STATE.mode = normal_mode
         left(iobuffer)(iobuffer)
         LE.refresh_line(s)
@@ -291,10 +300,24 @@ function debug_mode(state::REPL.LineEdit.MIState, repl::LineEditREPL, char::Stri
     println(socket, "character: ", char)
 end
 
-function enable_logging()
+struct VimLogger
+    io
+    _module
+end
+
+function Logging.shouldlog(vl::VimLogger, level, _module, group, id)
+    return _module == vl._module && level
+end
+
+function enable_logging(mod = nothing)
     pipe = connect(1234)
+    if mod !== nothing
+        ENV["JULIA_DEBUG"] = mod
+    end
+
     io = IOContext(pipe, :color => true)
-    l = ConsoleLogger(io, Debug; right_justify=4)
+    # l = ConsoleLogger(io, Debug; right_justify=4)
+    l = ConsoleLogger(io, Info; right_justify=4)
     Base.global_logger(l)
 end
 

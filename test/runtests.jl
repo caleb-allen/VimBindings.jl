@@ -2,6 +2,7 @@ import VimBindings: word_next, word_end, word_big_next, Motion, is_punctuation, 
 using Test
 using VimBindings.PkgTools
 
+include("nvim.jl")
 include("changes.jl")
 include("parse.jl")
 include("textutils.jl")
