@@ -312,7 +312,7 @@ The keyword arguments correspond to enabling/disabling logs from specific files:
 - `lineeditalt` for alterations to the LineEdit.jl
 
 """
-function enable_logging(; changes=false, lineeditalt=false)
+function enable_logging(; changes=false, lineeditalt=false, textutils=false)
     pipe = connect(1234)
     io = IOContext(pipe, :color => true)
     l = ConsoleLogger(io, Debug; right_justify=4)
@@ -321,11 +321,17 @@ function enable_logging(; changes=false, lineeditalt=false)
         endswith(file, "lineeditalt.jl") && (lineeditalt || return false)
         endswith(file, "changes.jl") && (changes || return false)
         return true
-        # @show log_args
-        # @show typeof(log_args)
-        # startswith(log_args.message, "Yo Dawg!")
     end
-    filtered_logger = ActiveFilteredLogger(vim_filter, l)
+    early_filter(logger) =
+        EarlyFilteredLogger(logger) do log
+            level, _module, group, id = log
+            _module == Changes && (changes || return false)
+            _module == TextUtils && (textutils || return false)
+            _module == LineEdit && (lineeditalt || return false)
+            return true
+        end
+    early_log = early_filter(l)
+    filtered_logger = ActiveFilteredLogger(vim_filter, early_log)
     Base.global_logger(filtered_logger)
 
 end

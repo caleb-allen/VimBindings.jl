@@ -133,10 +133,10 @@ end
     @test run("aaaa bbbb |ccc dd", "cc") == testbuf("|i|")
     @test run("first line\nsecond| line\nthird line", "cc") == testbuf("first line\n|i|\nthird line")
     @test run("first line\nsecond| line\nthird line", "dd") == testbuf("first line\n|third line")
-    @test run("first line\nsecond |line", "dd") == testbuf("first line|")
+    @test run("first line\nsecond |line", "dd") == testbuf("|first line")
     @test run("first| line\nsecond line", "dd") == testbuf("|second line")
-    @test run("function f()\n|end", "dd", "|function f()")
-    @test run("function f()\n|", "dd", "|function f()")
+    @test run("function f()\n|end", "dd") == testbuf("|function f()")
+    @test run("function f()\n|", "dd") == testbuf("|function f()")
     @test run("aaaa bbbb |ccc dd", "S") == testbuf("|i|")
     @test run("aaaa bbbb |ccc dd", "dd") == testbuf("|")
 end

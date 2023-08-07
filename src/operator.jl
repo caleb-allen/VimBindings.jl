@@ -24,12 +24,10 @@ function change(buf::IO, motion::Motion) #, motion_type :: MotionType)
     text = String(take!(copy(buf)))
     left = min(motion)
     right = min(max(motion), length(text))
-    @debug "delete operator" buf motion text left right
+    @debug "change operator" buf motion text left right
     yank(buf, motion)
     move(buf, motion) #, motion_type)
     LE.edit_splice!(buf, left => right)
-
-    # delete(buf, motion)
 end
 
 # also, when there is whitespace following a word,
@@ -39,10 +37,38 @@ function delete(buf::IO, motion::Motion) #, motion_type :: MotionType)
     text = String(take!(copy(buf)))
     left = min(motion)
     right = min(max(motion), length(text))
-    @debug "delete operator" buf motion text left right
+    # if motion.motiontype == linewise
+    #         end
+    move_cursor = Motion(buf)
+    if motion.motiontype == linewise
+        # if we're deleting a line, include the '\n' at the beginning
+        if left > 1
+            left -= 1
+        elseif right < length(text)
+            # if we're on the first line, but there is a '\n' at the end,
+            # delete that '\n' as well
+            right += 1
+        end
+        # if the line is being deleted, we want to move the cursor to the start of the current line
+        # (where the line below will soon be)
+        if right < length(text)
+            move_cursor = line_begin(buf)
+        else
+            line_begin(buf)(buf)
+            read_left(buf)
+
+            move_cursor = line_begin(buf)
+            # otherwise we should move the cursor to the start of the previous line
+        end
+    end
+    @debug "delete operator" buf motion text left right move_cursor
     yank(buf, motion)
     move(buf, motion) #, motion_type)
     LE.edit_splice!(buf, left => right)
+
+    if motion.motiontype == linewise
+        move_cursor(buf)
+    end
     return nothing
 end
 
@@ -63,7 +89,7 @@ function yank(buf::IO, motion::Motion)::Union{String,Nothing}
             clipboard(text)
         catch e
             if e isa LoadError
-                @error "Error while copying text to clipboard" text exception=(ex, catch_backtrace())
+                @error "Error while copying text to clipboard" text exception = (ex, catch_backtrace())
             else
                 rethrow(e)
             end
@@ -96,7 +122,7 @@ function put(buf::IO, reg::Char='"') # default unnamed register
             clipboard() |> rstrip
         catch ex
             @error "Could not read clipboard" exception = (ex, catch_backtrace())
-                ""
+            ""
         end
         if text === nothing
             return
@@ -121,7 +147,7 @@ function put(buf::IO, reg::Char='"') # default unnamed register
         https://github.com/caleb-allen/VimBindings.jl/issues/3
         """
     end
-  end
+end
 
 function LE.edit_splice!(buf::VimBuffer, range::Pair{Int,Int}, text::AbstractString)
     LE.edit_splice!(buf.buf, range, text)
