@@ -27,10 +27,10 @@ end
     # https://github.com/caleb-allen/VimBindings.jl/issues/46
     @test run("|Hello world", "cw") == testbuf("|i| world")
     @test run("|Hello world", "dw") == testbuf("|world")
-    
+
     # https://github.com/caleb-allen/VimBindings.jl/issues/61
     @test run("Hello world|", "A") == testbuf("Hello world|i|")
-    
+
     # https://github.com/caleb-allen/VimBindings.jl/issues/60
     @test run("println(|)", "o") == testbuf("println()\n|i|")
     # https://github.com/caleb-allen/VimBindings.jl/issues/57
@@ -132,9 +132,11 @@ end
     @test run("|n|a", "C") == testbuf("|i|")
     @test run("aaaa bbbb |ccc dd", "cc") == testbuf("|i|")
     @test run("first line\nsecond| line\nthird line", "cc") == testbuf("first line\n|i|\nthird line")
-    @test_broken run("first line\nsecond| line\nthird line", "dd") == testbuf("first line\n|third line")
-    @test_broken run("first line\nsecond |line", "dd") == testbuf("first line|")
-    @test_broken run("first| line\nsecond line", "dd") == testbuf("|second line")
+    @test run("first line\nsecond| line\nthird line", "dd") == testbuf("first line\n|third line")
+    @test run("first line\nsecond |line", "dd") == testbuf("first line|")
+    @test run("first| line\nsecond line", "dd") == testbuf("|second line")
+    @test run("function f()\n|end", "dd", "|function f()")
+    @test run("function f()\n|", "dd", "|function f()")
     @test run("aaaa bbbb |ccc dd", "S") == testbuf("|i|")
     @test run("aaaa bbbb |ccc dd", "dd") == testbuf("|")
 end
@@ -159,6 +161,6 @@ end
 
 @testset "yank / put" begin
     # @test run("abcd|e 12345", "yaw") == testbuf("abcd|x 12345")
-    
+
 end
 

@@ -13,7 +13,7 @@ using Base: AnyDict
 using REPL
 using REPL.LineEdit
 using Match
-using Logging
+using LoggingExtras, Logging
 import REPL.LineEdit: KeyAlias, edit_splice!, buffer, refresh_line
 import Base: AnyDict, show_unquoted
 using Sockets
@@ -291,11 +291,43 @@ function debug_mode(state::REPL.LineEdit.MIState, repl::LineEditREPL, char::Stri
     println(socket, "character: ", char)
 end
 
-function enable_logging()
+"""
+Enable logging to pipe at 1234.
+
+To read the logs, run the following:
+
+`nc -l -p 1234`
+
+If you're repeatedly reloading the REPL, wrapping the command in a loop is helpful:
+
+```
+while true
+    echo "listening for logs"
+    nc -l -p 1234
+end
+```
+
+The keyword arguments correspond to enabling/disabling logs from specific files:
+- `changes` for undo/redo history
+- `lineeditalt` for alterations to the LineEdit.jl
+
+"""
+function enable_logging(; changes=false, lineeditalt=false)
     pipe = connect(1234)
     io = IOContext(pipe, :color => true)
     l = ConsoleLogger(io, Debug; right_justify=4)
-    Base.global_logger(l)
+    function vim_filter(log_args)
+        level, message, _module, group, id, file, line, kwargs = log_args
+        endswith(file, "lineeditalt.jl") && (lineeditalt || return false)
+        endswith(file, "changes.jl") && (changes || return false)
+        return true
+        # @show log_args
+        # @show typeof(log_args)
+        # startswith(log_args.message, "Yo Dawg!")
+    end
+    filtered_logger = ActiveFilteredLogger(vim_filter, l)
+    Base.global_logger(filtered_logger)
+
 end
 
 function debug_info()
