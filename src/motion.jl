@@ -479,7 +479,7 @@ function gen_motion(buf, cmd::TextObjectCommand)::Motion
         "W" => WORD
     end
     if selection === nothing || text_object_fn === nothing
-        error("Could not create a text object with \"$name\"")
+        error("Could not create a text object with \"$(cmd.name)\"")
     end
     motion = selection(buf, text_object_fn)
     @debug "generated motion for TextObjectCommand" cmd motion

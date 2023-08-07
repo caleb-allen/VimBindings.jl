@@ -32,6 +32,7 @@ function execute(buf, command::MotionCommand)::Union{VimMode,ReplAction,Nothing}
             repl_action = @match key(command) begin
                 'j' => history_down
                 'k' => history_up
+                _ => nothing
             end
         else
             # execute the motion object
