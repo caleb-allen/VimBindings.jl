@@ -53,12 +53,6 @@ end
 # Motion(to :: TextObject) = Motion(to.start, to.stop)
 
 function Base.min(motion::Motion)
-    # if motion.motiontype == linewise
-    #     m = min(motion.start, motion.stop)
-    #     if m > 1
-    #         return m - 1
-    #     end
-    # end
     return if motion.motiontype == inclusive && motion.stop < motion.start
         min(motion.start, motion.stop - 1)
     else
@@ -659,7 +653,7 @@ function WORD(buf::IO)::Motion
 
     local start
     @loop_guard while !is_object_start(buf)
-        read_right(buf)
+        read_left(buf)
     end
     start = position(buf)
     seek(buf, origin)
