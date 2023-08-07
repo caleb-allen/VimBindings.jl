@@ -53,12 +53,17 @@ end
 # Motion(to :: TextObject) = Motion(to.start, to.stop)
 
 function Base.min(motion::Motion)
-    m = if motion.motiontype == inclusive && motion.stop < motion.start
+    # if motion.motiontype == linewise
+    #     m = min(motion.start, motion.stop)
+    #     if m > 1
+    #         return m - 1
+    #     end
+    # end
+    return if motion.motiontype == inclusive && motion.stop < motion.start
         min(motion.start, motion.stop - 1)
     else
         min(motion.start, motion.stop)
     end
-    return m
 end
 Base.max(motion::Motion) =
     if motion.motiontype == inclusive && motion.stop >= motion.start
@@ -275,7 +280,7 @@ function line_end(buf::IO)::Motion
     origin = position(buf)
     stop = position(buf)
     if is_line_end(buf)
-        
+
     end
     @loop_guard while !is_line_end(buf)
         stop = position(buf)
@@ -293,7 +298,7 @@ function line_begin(buf::IO)::Motion
     @loop_guard while !is_line_start(buf)
         LE.char_move_left(buf)
     end
-    
+
     # search for the first object character
     @loop_guard while !is_line_end(buf) && !is_object_start(buf)
         LE.char_move_right(buf)
@@ -698,12 +703,12 @@ end
 function line(buf::IO)::Motion
     # find the line start
     origin = position(buf)
-    while !is_line_start(buf)
+    @loop_guard while !is_line_start(buf)
         read_left(buf)
     end
     start = position(buf)
     seek(buf, origin)
-    while !is_line_end(buf)
+    @loop_guard while !is_line_end(buf)
         read_right(buf)
     end
     stop = position(buf)
