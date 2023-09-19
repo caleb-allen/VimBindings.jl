@@ -58,41 +58,41 @@ function execute(buf, command::LineOperatorCommand)::Union{VimMode,Nothing}
     return nothing
 end
 
-const insert_functions::Dict{Char, Function} = Dict{Char, Function}(
-        'o' => buf -> begin
-            endd = line_end(buf) |> max
-            insert(buf, endd, '\n')
-            if position(buf) == endd
-                nothing
-            else
-                down(buf)
-            end
-        end,
-        'O' => buf -> begin
-            insert(buf, line_zero(buf).stop, '\n')
-            up(buf)
-        end,
-        'i' => buf -> Motion(buf),
-        'I' => buf -> line_begin(buf),
-        'a' => buf -> begin
-            if !eof(buf)
-                right(buf)
-            else
-                Motion(buf)
-            end
-        end,
-        'A' => buf -> begin
-            motion = line_end(buf)
-            if !eof(buf)
-                Motion(motion.start, motion.stop + 1)
-            else
-                motion
-            end
-        end,
-        's' => buf -> begin
-            delete(buf, right(buf))
+const insert_functions = Dict{Char,Function}(
+    'o' => buf -> begin
+        endd = line_end(buf) |> max
+        insert(buf, endd, '\n')
+        if position(buf) == endd
+            nothing
+        else
+            down(buf)
         end
-        # _ => gen_motion(buf, command)
+    end,
+    'O' => buf -> begin
+        insert(buf, line_zero(buf).stop, '\n')
+        up(buf)
+    end,
+    'i' => buf -> Motion(buf),
+    'I' => buf -> line_begin(buf),
+    'a' => buf -> begin
+        if !eof(buf)
+            right(buf)
+        else
+            Motion(buf)
+        end
+    end,
+    'A' => buf -> begin
+        motion = line_end(buf)
+        if !eof(buf)
+            Motion(motion.start, motion.stop + 1)
+        else
+            motion
+        end
+    end,
+    's' => buf -> begin
+        delete(buf, right(buf))
+    end
+    # _ => gen_motion(buf, command)
 )
 
 function execute(buf, command::InsertCommand)::Union{VimMode,Nothing}
