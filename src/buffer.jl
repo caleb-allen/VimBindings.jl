@@ -1,5 +1,4 @@
 module Buffer
-using Match
 import REPL.LineEdit as LE
 export VimBuffer, mode, VimMode, normal_mode, insert_mode, testbuf, readall, freeze,
     BufferRecord, chars, peek_left, peek_right, read_left, read_right
@@ -11,10 +10,12 @@ export VimBuffer, mode, VimMode, normal_mode, insert_mode, testbuf, readall, fre
 end
 
 function VimMode(s::AbstractString)
-    return @match s begin
-        "i" => insert_mode
-        "n" => normal_mode
-        _ => normal_mode
+    return if s == "i"
+        insert_mode
+    elseif s == "n"
+        normal_mode
+    else
+        normal_mode
     end
 end
 

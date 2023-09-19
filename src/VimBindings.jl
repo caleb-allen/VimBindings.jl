@@ -12,7 +12,6 @@ using REPL
 using Base: AnyDict
 using REPL
 using REPL.LineEdit
-using Match
 using LoggingExtras, Logging
 import REPL.LineEdit: KeyAlias, edit_splice!, buffer, refresh_line
 import Base: AnyDict, show_unquoted
