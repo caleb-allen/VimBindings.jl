@@ -6,7 +6,6 @@ const LE = LineEdit
 using ..TextUtils
 using ..Util
 using ..Commands
-using Match
 
 export Motion, MotionType, simple_motions, complex_motions, partial_complex_motions, insert_motions, gen_motion,
     is_stationary, down, up, word_next, word_big_next, word_end, word_back,
@@ -468,14 +467,15 @@ end
 
 function gen_motion(buf, cmd::TextObjectCommand)::Motion
     m = match(r"^([ai])(.)$", cmd.name)
-    selection = @match m[1] begin
-        "i" => inner
-        "a" => a
+    selection = if m[1] == "i"
+        inner
+    elseif m[1] == "a"
+        a
     end
-
-    text_object_fn = @match m[2] begin
-        "w" => word
-        "W" => WORD
+    text_object_fn = if m[2] == "w"
+        word
+    elseif m[2] == "W"
+        WORD
     end
     if selection === nothing || text_object_fn === nothing
         error("Could not create a text object with \"$(cmd.name)\"")

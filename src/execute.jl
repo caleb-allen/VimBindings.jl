@@ -8,7 +8,6 @@ using ..Operators
 using ..Changes
 using ..Config
 
-using Match
 import REPL: LineEdit as LE
 
 export execute, ReplAction, history_up, history_down
@@ -29,10 +28,13 @@ function execute(buf, command::MotionCommand)::Union{VimMode,ReplAction,Nothing}
         # call the command's function to generate the motion object
         motion = gen_motion(buf, command)
         if is_stationary(motion)
-            repl_action = @match key(command) begin
-                'j' => history_down
-                'k' => history_up
-                _ => nothing
+            k = key(command)
+            repl_action = if k == 'j'
+                history_down
+            elseif k == 'k'
+                history_up
+            else
+                nothing
             end
         else
             # execute the motion object
@@ -56,11 +58,8 @@ function execute(buf, command::LineOperatorCommand)::Union{VimMode,Nothing}
     return nothing
 end
 
-function execute(buf, command::InsertCommand)::Union{VimMode,Nothing}
-    # cmds = [aAiIoO]
-    # buf = buffer(s)
-    motion = @match command.c begin
-        'o' => begin
+const insert_functions::Dict{Char, Function} = Dict{Char, Function}(
+        'o' => buf -> begin
             endd = line_end(buf) |> max
             insert(buf, endd, '\n')
             if position(buf) == endd
@@ -68,32 +67,39 @@ function execute(buf, command::InsertCommand)::Union{VimMode,Nothing}
             else
                 down(buf)
             end
-        end
-        'O' => begin
+        end,
+        'O' => buf -> begin
             insert(buf, line_zero(buf).stop, '\n')
             up(buf)
-        end
-        'i' => Motion(buf)
-        'I' => line_begin(buf)
-        'a' => begin
+        end,
+        'i' => buf -> Motion(buf),
+        'I' => buf -> line_begin(buf),
+        'a' => buf -> begin
             if !eof(buf)
                 right(buf)
             else
                 Motion(buf)
             end
-        end
-        'A' => begin
+        end,
+        'A' => buf -> begin
             motion = line_end(buf)
             if !eof(buf)
                 Motion(motion.start, motion.stop + 1)
             else
                 motion
             end
-        end
-        's' => begin
+        end,
+        's' => buf -> begin
             delete(buf, right(buf))
         end
-        _ => gen_motion(buf, command)
+        # _ => gen_motion(buf, command)
+)
+
+function execute(buf, command::InsertCommand)::Union{VimMode,Nothing}
+    motion = if command.c in keys(insert_functions)
+        insert_functions[command.c](buf)
+    else
+        gen_motion(buf, command)
     end
     if motion isa Motion
         motion(buf)
