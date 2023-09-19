@@ -31,13 +31,22 @@ A complete list of features can be found in [the documentation](https://caleb-al
 
 ### Documentation
 
-For more information about installation, configuration, and features please see the [documentation](https://caleb-allen.github.io/VimBindings.jl/)
+For more information about installation, configuration, and a full list of features, please see the [documentation](https://caleb-allen.github.io/VimBindings.jl/stable/)
+
+
+
 
 ### Feedback
 
 Is there a vim command you long for that isn't implemented? Please share by using the [Key bind request thread](https://github.com/caleb-allen/VimBindings.jl/issues/15)
 
 Issues with bug reports or general feedback is welcome.
+
+### JuliaCon 2023 Talk
+
+You can view the JuliaCon Talk about this package on YouTube:
+
+[![REPL Without a Pause: Bringing VimBindings.jl to the Julia REPL | Caleb Allen | JuliaCon 2023](https://img.youtube.com/vi/XmR1f17pYFQ/0.jpg)](https://www.youtube.com/watch?v=XmR1f17pYFQ)
 
 ### In Memoriam
 
