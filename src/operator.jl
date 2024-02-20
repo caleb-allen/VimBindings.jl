@@ -35,8 +35,11 @@ end
 # and "cw" only removes the inner word
 function delete(buf::IO, motion::Motion) #, motion_type :: MotionType)
     text = String(take!(copy(buf)))
+    @debug "delete range:" min(motion) max(motion) length(text) textwidth(text)
     left = min(motion)
-    right = min(max(motion), length(text))
+    # right = min(max(motion), length(text))
+    right = max(motion)
+    @debug "delete range:" left right
     # if motion.motiontype == linewise
     #         end
     move_cursor = Motion(buf)

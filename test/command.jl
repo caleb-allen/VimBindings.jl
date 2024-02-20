@@ -147,10 +147,24 @@ end
 end
 
 @testset "unicode" begin
+    # https://github.com/caleb-allen/VimBindings.jl/issues/95
+    @test run("(0b0000 ⊻ 0b000|0)", "x") == testbuf("(0b0000 ⊻ 0b000|)")
+    @test run("0b0000 ⊻ 0b000|0", "x") == testbuf("0b0000 ⊻ 0b00|0")
+
     s = "\u2200 x \u2203 y"
     s = "∀ x ∃ y"
-    @test_broken run("|∀ x ∃ y", "w") == testbuf("∀ |x ∃ y")
-    @test_broken run("∀ x |∃ y", "w") == testbuf("∀ x |∃ y")
+    @test run("|∀ x ∃ y", "w") == testbuf("∀ |x ∃ y")
+    @test run("∀ x |∃ y", "w") == testbuf("∀ x |∃ y")
+
+
+
+end
+
+@testset "x on last char should move left" begin
+    # https://github.com/caleb-allen/VimBindings.jl/issues/92
+
+    @test run("foo() = :ba|r", "x") == testbuf("foo() = :b|a")
+
 end
 
 @testset "replace character" begin
