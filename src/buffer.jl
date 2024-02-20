@@ -49,7 +49,7 @@ struct VimBuffer <: IO
     mode::VimMode
 end
 
-VimBuffer(str::String)::VimBuffer = testbuf(str)
+VimBuffer() = VimBuffer(IOBuffer(), normal_mode)
 
 mode(vb::VimBuffer) = vb.mode
 # TODO modify VimBuffer operations to operate on Characters rather than bytes

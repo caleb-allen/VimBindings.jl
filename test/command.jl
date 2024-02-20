@@ -95,6 +95,8 @@ end
     @test run("a %%%|asdf b", "ciw") == testbuf("a %%%|i| b")
     @test run("a |asdf b", "ciw") == testbuf("a |i| b")
 
+    @test run("{3: three|}", "daw") == testbuf("3: thre|e")
+    @test run("{3: thre|e}", "daw") == testbuf("3:|}")
 end
 
 @testset "fFtT" begin
@@ -160,17 +162,26 @@ end
 
 end
 
-@testset "x on last char should move left" begin
+@testset "delete at end of line should move left" begin
     # https://github.com/caleb-allen/VimBindings.jl/issues/92
 
     @test run("foo() = :ba|r", "x") == testbuf("foo() = :b|a")
+    @test run("foo() = :ba|r\nbaz", "x") == testbuf("foo() = :b|a\nbaz")
+    @test run("foo() = :ba|r\nbaz", "x") != testbuf("foo() = :ba|\nbaz")
+
+    # with text objects, too
+    @test run("abcd\nxyz ef|g", "daw") == testbuf("abcd\nxyz| ")
+
+    @test run("abcd\nef|g", "daw") == testbuf("abcd\n|")
 
 end
 
 @testset "replace character" begin
     @test run("abcd|e 12345", "rx") == testbuf("abcd|x 12345")
     @test run("|abcde", "3rx") == testbuf("xx|xde")
-    @test_broken run("∀ x |∃ y", "rx") == testbuf("∀ x |x y")
+    @test run("∀ x |∃ y", "rx") == testbuf("∀ x |x y")
+
+    @test run("∀ x ∃ |y", "rx") == testbuf("∀ x |∃ |x")
 end
 
 @testset "yank / put" begin

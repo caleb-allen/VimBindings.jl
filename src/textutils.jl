@@ -172,6 +172,8 @@ junction_type(char1::NewlineChar, char2::SpaceChar) = Set([Start{Line}(), Start{
 junction_type(char1::Nothing, char2::NewlineChar) = Set([Start{Line}(), End{Line}()])
 junction_type(char1::NewlineChar, char2::Nothing) = Set([Start{Line}(), End{Line}()])
 
+junction_type(char1::NewlineChar, char2::NewlineChar) = Set([Start{Line}(), End{Line}()])
+
 junction_type(char1::WordChar, char2::PunctuationChar) = Set([Start{Word}(), End{Word}(), In{Object}()])
 junction_type(char1::PunctuationChar, char2::WordChar) = Set([Start{Word}(), End{Word}(), In{Object}()])
 
