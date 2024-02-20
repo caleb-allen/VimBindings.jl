@@ -41,8 +41,17 @@ function execute(buf, command::MotionCommand)::Union{VimMode,ReplAction,Nothing}
             motion(buf)
         end
     end
+    if command isa CompositeMotionCommand
+        @debug "Saving latest search command to state" command
+        STATE.latest_find = command
+    end
     return repl_action
 end
+
+function execute(buf, command::RepeatMotionCommand)::Union{VimMode,Nothing}
+
+end
+
 function execute(buf, command::LineOperatorCommand)::Union{VimMode,Nothing}
     local op_fn = nothing
 

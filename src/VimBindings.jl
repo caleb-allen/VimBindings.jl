@@ -62,11 +62,12 @@ mutable struct VimState
     register::Char
     mode::VimMode
     last_edit_index::Int # where the most recent edit started
+    latest_find::Union{Nothing, CompositeMotionCommand}
 end
 
 
 
-const global STATE = VimState(Dict{Char,String}(), '"', insert_mode, 0)
+const global STATE = VimState(Dict{Char,String}(), '"', insert_mode, 0, nothing)
 const global KEY_STACK = Char[]
 const global INITIALIZED = Ref(false)
 

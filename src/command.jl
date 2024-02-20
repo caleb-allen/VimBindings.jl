@@ -16,6 +16,15 @@ struct SimpleMotionCommand <: MotionCommand
     name :: Char
 end
 
+"""
+Command which repeats a motion, e.g. `;` or `,` repeats a search
+"""
+struct RepeatMotionCommand <: MotionCommand
+    r1 :: Int
+    name :: Char
+    latest_find :: CompositeMotionCommand
+end
+
 SimpleMotionCommand(::Nothing, name :: Char) = SimpleMotionCommand(1, name)
 
 function Base.:(==)(cmd1 :: Command, cmd2 :: Command)
