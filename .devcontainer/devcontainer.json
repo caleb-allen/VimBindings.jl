@@ -1,0 +1,9 @@
+{
+  "image": "mcr.microsoft.com/devcontainers/universal:2",
+  "features": {
+    "ghcr.io/nikobockerman/devcontainer-features/fish-persistent-data:2": {},
+    "ghcr.io/julialang/devcontainer-features/julia:1": {
+      "channel": "1.10",
+    }
+  }
+}
