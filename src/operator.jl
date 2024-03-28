@@ -69,7 +69,9 @@ function delete(buf::IO, motion::Motion) #, motion_type :: MotionType)
     if motion.motiontype == linewise
         move_cursor(buf)
     elseif is_line_end(buf) && !is_line_start(buf)
-        snap_into_line(buf)
+        let motion = snap_into_line(buf)
+            motion(buf)
+        end
     end
 
     return nothing

@@ -90,6 +90,16 @@ First line
     @test line_begin(buf) == Motion(4, 0, exclusive)
 end
 
+@testset "snap into line" begin
+    s = """Hello!|
+    world"""
+    buf = testbuf(s)
+    m = snap_into_line(buf)
+    m(buf)
+    @test buf == testbuf("""Hello|!
+    world""")
+end
+
 @testset "exclusive / inclusive motions" begin
     m = Motion(1, 2, exclusive)
     @test min(m) == 1

@@ -173,3 +173,18 @@ end
 
 
 end
+
+
+@testset "is text in a line" begin
+    s = """Hello!|
+    world"""
+    buf = testbuf(s)
+    @test is_line_end(buf) == true
+    @test is_line_start(buf) == false
+
+    s = """Hello!
+    |world"""
+    buf = testbuf(s)
+    @test is_line_end(buf) == false
+    @test is_line_start(buf) == true
+end

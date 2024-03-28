@@ -62,11 +62,13 @@ end
 
 @testset "hl with delete" begin
     @test run("asdf|", "h") == testbuf("asd|f")
-    @test run("asdf|", "l") == testbuf("asdf|")
-    @test run("asdf|", "dh") == testbuf("asd|")
-    @test run("asdf|", "dl") == testbuf("asdf|")
+    @test run("asd|f", "l") == testbuf("asd|f")
+    @test run("asd|f", "dh") == testbuf("as|f")
+    @test run("asd|f", "dl") == testbuf("as|d")
     @test run("|asdf", "dl") == testbuf("|sdf")
-    @test run("asdf|", "X") == testbuf("asd|")
+    @test run("|asdf", "dh") == testbuf("|asdf")
+    @test run("asd|f", "X") == testbuf("as|f")
+    @test run("asd|f", "x") == testbuf("as|d")
 end
 
 @testset "de" begin
