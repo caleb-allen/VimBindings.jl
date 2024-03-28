@@ -128,7 +128,7 @@ end
     @test is_in_object(testbuf("hello%%|%%")) == true
     @test is_in_object(testbuf("|hello%%%%")) == false
 end
-@testset "is line start " begin
+@testset "start and end of lines" begin
     @test is_line_end(testbuf("|\n")) == true
     @test is_line_end(testbuf("one line\t|\nhello")) == true
     @test is_line_end(testbuf("one line\t\nhello|")) == true
@@ -141,6 +141,18 @@ end
     @test is_line_start(testbuf("one line|\nhello")) == false
     @test is_line_start(testbuf("one line \n|hello")) == true
 
+    @test is_line_max(testbuf("""
+    |hello world!
+    """)) == false
+
+    @test is_line_max(testbuf("""
+    hello world|!
+    """)) == true
+    
+    @test is_line_max(testbuf("|")) == true
+    @test is_line_max(testbuf("foo|")) == true
+    @test is_line_max(testbuf("fo|o")) == true
+    @test is_line_max(testbuf("f|oo")) == false
 end
 
 @testset "test buffer" begin

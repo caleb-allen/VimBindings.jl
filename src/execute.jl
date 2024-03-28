@@ -37,8 +37,13 @@ function execute(buf, command::MotionCommand)::Union{VimMode,ReplAction,Nothing}
                 nothing
             end
         else
-            # execute the motion object
-            motion(buf)
+            k = key(command)
+            if !(k == 'l' && is_line_max(buf))
+                # we shouldn't move past the last character of the line
+
+                # execute the motion object
+                motion(buf)
+            end
         end
     end
     return repl_action
@@ -89,9 +94,6 @@ const insert_functions = Dict{Char,Function}(
             motion
         end
     end,
-    's' => buf -> begin
-        delete(buf, right(buf))
-    end
     # _ => gen_motion(buf, command)
 )
 
@@ -119,7 +121,7 @@ function execute(buf, command::OperatorCommand)::Union{VimMode,Nothing}
     # see vim help :h cw regarding this exception
     if command.operator == 'c' && command.action.name in ['w', 'W']
         # in the middle of a word
-        if at_junction_type(buf, In{>:Word}) || at_junction_type(buf, Start{>:Word})
+        if at_junction_type(In{>:Word}, buf) || at_junction_type(Start{>:Word}, buf)
             new_name = if command.action.name == 'w'
                 'e'
             else
@@ -172,7 +174,8 @@ function execute(buf, command::SynonymCommand)::Union{VimMode,Nothing}
         'X' => "dh",
         'C' => "c\$",
         'D' => "d\$",
-        'S' => "cc"
+        'S' => "cc",
+        's' => "cl",
     )
     new_command = parse_command("$(command.r1)$(synonyms[command.operator])")
 

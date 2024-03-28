@@ -41,7 +41,8 @@ end
 @testset "basic movements" begin
     @test run("asdf|", "h") == testbuf("asd|f")
     @test run("asdf|", "l") == testbuf("asdf|")
-    @test run("asd|f", "l") == testbuf("asdf|")
+    @test run("asd|f", "l") == testbuf("asd|f")
+    @test run("|asdf", "l") == testbuf("a|sdf")
     @test run("a|sdf", "\$") == testbuf("asd|f")
     @test run("asd|f", "\$") == testbuf("asd|f")
 
@@ -69,6 +70,9 @@ end
     @test run("|asdf", "dh") == testbuf("|asdf")
     @test run("asd|f", "X") == testbuf("as|f")
     @test run("asd|f", "x") == testbuf("as|d")
+    
+    @test run("|asdf", "s") == testbuf("|i|sdf")
+    @test run("asd|f", "s") == testbuf("asd|i|")
 end
 
 @testset "de" begin
@@ -152,6 +156,7 @@ end
 
 @testset "unicode" begin
     # https://github.com/caleb-allen/VimBindings.jl/issues/95
+    @test run("fo|o", "x") == testbuf("f|o")
     @test run("(0b0000 ⊻ 0b000|0)", "x") == testbuf("(0b0000 ⊻ 0b000|)")
     @test run("0b0000 ⊻ 0b000|0", "x") == testbuf("0b0000 ⊻ 0b00|0")
 

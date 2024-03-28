@@ -113,7 +113,7 @@ end
 
 function left(buf::IO)::Motion
     start = position(buf)
-    @loop_guard while position(buf) > 0
+    @loop_guard while position(buf) > 0 && !is_line_start(buf)
         seek(buf, position(buf) - 1)
         c = peek(buf)
         (((c & 0x80) == 0) || ((c & 0xc0) == 0xc0)) && break

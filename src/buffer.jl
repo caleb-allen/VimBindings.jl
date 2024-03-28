@@ -1,7 +1,7 @@
 module Buffer
 import REPL.LineEdit as LE
 export VimBuffer, mode, VimMode, normal_mode, insert_mode, testbuf, readall, freeze,
-    BufferRecord, chars, peek_left, peek_right, read_left, read_right
+    BufferRecord, chars, peek_left, peek_right, peek_two_right, read_left, read_right
 
 @enum VimMode begin
     normal_mode
@@ -123,6 +123,19 @@ function peek_right(buf::IO)::Union{Char,Nothing}
     end
     seek(buf, origin)
     return nothing
+end
+
+"""
+Read up to 2 valid UTF-8 character right of the current position and leave the buffer in the same position.
+
+Returns a tuple with each successful character (or nothing for a character not read successfully)
+"""
+function peek_two_right(buf::IO)
+    origin = position(buf)
+    c1 = read_right(buf)
+    c2 = read_right(buf)
+    seek(buf, origin)
+    return (c1, c2)
 end
 
 """
