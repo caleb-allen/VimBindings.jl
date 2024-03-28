@@ -81,7 +81,7 @@ end
 # blank entry. Both `prev` and `next` reference itself. id of 1.
 # for the root of a list (the first entry)
 function Entry()
-    record = VimBuffer("|") |> freeze
+    record = IOBuffer() |> freeze
     return Entry(record)
 end
 

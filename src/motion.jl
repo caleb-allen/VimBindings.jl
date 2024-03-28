@@ -11,7 +11,7 @@ export Motion, MotionType, simple_motions, complex_motions, partial_complex_moti
     is_stationary, down, up, word_next, word_big_next, word_end, word_back,
     word_big_back, word_big_end, line_end, line_begin, line_zero,
     find_c, find_c_back, get_safe_name, all_keys, special_keys, exclusive, inclusive, linewise, endd,
-    left, right
+    left, right, snap_into_line
 
 # text objects
 export line
@@ -322,6 +322,17 @@ function line_zero(buf::IO)::Motion
     seek(buf, start)
     return Motion(start, endd)
 end
+
+"""
+Ensure the cursor is within the current line. In other words,
+move left if that will put us on text that is within the line.
+"""
+snap_into_line(buf::IO)::Motion =
+    if is_line_end(buf) && !is_line_start(buf)
+        left(buf)
+    else
+        Motion(buf)
+    end
 
 function endd(buf::IO)::Motion
 

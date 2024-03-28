@@ -5,13 +5,13 @@ import VimBindings.PkgTools: run as run_command
 
 @testset "BufferRecord and freeze" begin
     reset!()
-    a = freeze(VimBuffer("Hello world|!"))
-    b = freeze(VimBuffer("Hello worl|d"))
+    a = freeze(testbuf("Hello world|!"))
+    b = freeze(testbuf("Hello worl|d"))
 
     @test a != b
-    @test freeze(VimBuffer("Hello world|!")) != BufferRecord("Hello |!", 1)
-    @test freeze(VimBuffer("Hello world|!")) == BufferRecord("Hello world!", 11)
-    @test freeze(VimBuffer("Hello|i| world!")) == BufferRecord("Hello world!", 5)
+    @test freeze(testbuf("Hello world|!")) != BufferRecord("Hello |!", 1)
+    @test freeze(testbuf("Hello world|!")) == BufferRecord("Hello world!", 11)
+    @test freeze(testbuf("Hello|i| world!")) == BufferRecord("Hello world!", 5)
 
     # The record includes the cursor location but does not include it in equality
     @test BufferRecord("Hello world!", 7) == BufferRecord("Hello world!", 5)

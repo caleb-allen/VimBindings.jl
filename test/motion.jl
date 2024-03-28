@@ -24,10 +24,10 @@ end
     motion = word_next(buf)
     @test motion == Motion(0, 5, exclusive)
 
-    buf = VimBuffer("hell|o world!")
+    buf = testbuf("hell|o world!")
     motion = word_next(buf)
     motion(buf)
-    @test buf == VimBuffer("hello |world!")
+    @test buf == testbuf("hello |world!")
 end
 
 @testset "word end" begin
