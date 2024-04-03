@@ -185,7 +185,13 @@ end
 function execute(buf, command::ReplaceCommand)::Union{VimMode,Nothing}
     inserted = 0
     for r1 in 1:command.r1
+        move_right = is_line_max(buf)
         delete(buf, right(buf))
+        if move_right
+            let motion = right(buf)
+                motion(buf)
+            end
+        end
         inserted += LE.edit_insert(buf, command.replacement)
     end
     if inserted > 0

@@ -61,7 +61,7 @@ struct Entry
 end
 
 
-Entry(s::String) = Entry(freeze(testbuf("|")))
+Entry(s::String) = Entry(freeze(VimBuffer()))
 # entry where both `prev` and `next` reference itself
 function Entry(record::BufferRecord)
     e = Entry(1, Ref{Entry}(), Ref{Entry}(), record)

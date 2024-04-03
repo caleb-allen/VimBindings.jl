@@ -23,8 +23,8 @@ end
 function change(buf::IO, motion::Motion) #, motion_type :: MotionType)
     text = String(take!(copy(buf)))
     left = min(motion)
-    right = min(max(motion), length(text))
-    @debug "change operator" buf motion text left right
+    right = min(max(motion), sizeof(text))
+    @debug "change operator" buf motion text left right max(motion) length(text)
     yank(buf, motion)
     move(buf, motion) #, motion_type)
     LE.edit_splice!(buf, left => right)
