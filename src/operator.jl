@@ -23,8 +23,8 @@ end
 function change(buf::IO, motion::Motion) #, motion_type :: MotionType)
     text = String(take!(copy(buf)))
     left = min(motion)
-    right = min(max(motion), length(text))
-    @debug "change operator" buf motion text left right
+    right = min(max(motion), sizeof(text))
+    @debug "change operator" buf motion text left right max(motion) length(text)
     yank(buf, motion)
     move(buf, motion) #, motion_type)
     LE.edit_splice!(buf, left => right)
@@ -35,10 +35,10 @@ end
 # and "cw" only removes the inner word
 function delete(buf::IO, motion::Motion) #, motion_type :: MotionType)
     text = String(take!(copy(buf)))
+    @debug "delete range:" min(motion) max(motion) length(text) textwidth(text)
     left = min(motion)
-    right = min(max(motion), length(text))
-    # if motion.motiontype == linewise
-    #         end
+    right = max(motion)
+    @debug "delete range:" left right
     move_cursor = Motion(buf)
     if motion.motiontype == linewise
         # if we're deleting a line, include the '\n' at the beginning
@@ -68,7 +68,12 @@ function delete(buf::IO, motion::Motion) #, motion_type :: MotionType)
 
     if motion.motiontype == linewise
         move_cursor(buf)
+    elseif is_line_end(buf) && !is_line_start(buf)
+        let motion = snap_into_line(buf)
+            motion(buf)
+        end
     end
+
     return nothing
 end
 

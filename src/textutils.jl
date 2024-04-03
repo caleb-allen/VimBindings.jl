@@ -1,3 +1,6 @@
+"""
+Getting carried away with types and multiple dispatch: text utility style
+"""
 module TextUtils
 import Base: *
 using REPL
@@ -9,33 +12,41 @@ export is_newline, is_whitespace, is_word_char, TextChar, WordChar, WhitespaceCh
     chars_by_cursor, junction_type, at_junction_type, Text, Object, Word, Line, Whitespace, Junction, Start, End, In,
     is_alphanumeric, is_alphabetic, is_uppercase, is_lowercase, is_punctuation, is_line_start, is_line_end,
     is_word_end, is_word_start, is_object_start, is_object_end, is_in_object, is_whitespace_end, is_whitespace_start, is_in_word, chars,
-    peek_left, peek_right, read_left, read_right
+    peek_left, peek_right, read_left, read_right, is_line_max
 
 """
     Determine whether the buffer is currently at the start of a text object.
     Whitespace is not included as a text object.
 """
-is_word_start(buf) = at_junction_type(buf, Start{>:Word})
-is_whitespace_start(buf) = at_junction_type(buf, Start{>:Whitespace})
+is_word_start(buf) = at_junction_type(Start{>:Word}, buf)
+is_whitespace_start(buf) = at_junction_type(Start{>:Whitespace}, buf)
 """
 Whether the buffer is currently at the start of a non-whitespace
 block
 """
-is_object_start(buf) = at_junction_type(buf, Start{>:Object})
+is_object_start(buf) = at_junction_type(Start{>:Object}, buf)
 
 """
     Whether the buffer is currently at the end of a text object. Whitespace is not included as a text object.
 """
-is_word_end(buf) = at_junction_type(buf, End{>:Word})
-is_object_end(buf) = at_junction_type(buf, End{>:Object})
-is_whitespace_end(buf) = at_junction_type(buf, End{>:Whitespace})
+is_word_end(buf) = at_junction_type(End{>:Word}, buf)
+is_object_end(buf) = at_junction_type(End{>:Object}, buf)
+is_whitespace_end(buf) = at_junction_type(End{>:Whitespace}, buf)
 
 """
     Whether the buffer is at the start of a line, in the literal sense
     In other words, is the char before the cursor a newline
 """
-is_line_start(buf) = at_junction_type(buf, Start{>:Line})
-is_line_end(buf) = at_junction_type(buf, End{>:Line})
+is_line_start(buf) = at_junction_type(Start{>:Line}, buf)
+is_line_end(buf) = at_junction_type(End{>:Line}, buf)
+
+"""
+Whether the buffer's location is the right-most that the cursor is allowed to go; the "end of the line" so that the cursor does not get placed at a newline where there is not actually a character to operate on.
+"""
+function is_line_max(buf)
+    c1, c2 = peek_two_right(buf)
+    return at_junction_type(End{>:Line}, c1, c2)
+end
 
 
 """
@@ -44,10 +55,10 @@ Whether the buffer is currently in an object of a continuous type (not between t
 function is_in_word(buf)
     a, b = chars_by_cursor(buf)
     typeof(a) == typeof(b) || return false
-    at_junction_type(buf, In{>:Word})
+    at_junction_type(In{>:Word}, buf)
 end
 
-is_in_object(buf) = at_junction_type(buf, In{<:Object})
+is_in_object(buf) = at_junction_type(In{<:Object}, buf)
 
 """
 Get the 
@@ -172,6 +183,8 @@ junction_type(char1::NewlineChar, char2::SpaceChar) = Set([Start{Line}(), Start{
 junction_type(char1::Nothing, char2::NewlineChar) = Set([Start{Line}(), End{Line}()])
 junction_type(char1::NewlineChar, char2::Nothing) = Set([Start{Line}(), End{Line}()])
 
+junction_type(char1::NewlineChar, char2::NewlineChar) = Set([Start{Line}(), End{Line}()])
+
 junction_type(char1::WordChar, char2::PunctuationChar) = Set([Start{Word}(), End{Word}(), In{Object}()])
 junction_type(char1::PunctuationChar, char2::WordChar) = Set([Start{Word}(), End{Word}(), In{Object}()])
 
@@ -181,8 +194,15 @@ junction_type(char1::T, char2::T) where {T<:SpaceChar} = Set([In{Whitespace}()])
 """
 Whether the given buffer is currently at a junction of type junc
 """
-function at_junction_type(buf, junc_type)
-    for junc in junction_type(buf)
+function at_junction_type(junc_type, obj::Vararg)
+    juncs = junction_type(obj...)
+    # return at_junction_type(junction_type(obj, junc_type...))
+    return at_junction_type(junc_type, juncs)
+end
+
+function at_junction_type(junc_type, juncs::Set)
+    # TODO nuke this whole thing
+    for junc in juncs
         if junc isa junc_type
             @debug "at_junction_type?" junc_type chars_by_cursor(buf) at_junction_type = true
             return true

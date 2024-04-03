@@ -53,8 +53,8 @@ end
 const UNDO_REDO = "(?|(u)|(\x12))"
 const TEXTOBJECT = "$REPEAT[ai][wWsp]"
 const PARTIALTEXTOBJECT = "$REPEAT[ai]([wWsp])?"
-const DELETECHARS = "[xXDCS]"
-const INSERTCHARS = "[aAiIoOs]"
+const DELETECHARS = "[xXDCSs]"
+const INSERTCHARS = "[aAiIoO]"
 const OPERATOR = "[ydc]"
 const RULES = TupleDict(
     "^(?<c>$INSERTCHARS)\$" |> Regex => InsertCommand, # insert commands

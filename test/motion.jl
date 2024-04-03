@@ -24,10 +24,10 @@ end
     motion = word_next(buf)
     @test motion == Motion(0, 5, exclusive)
 
-    buf = VimBuffer("hell|o world!")
+    buf = testbuf("hell|o world!")
     motion = word_next(buf)
     motion(buf)
-    @test buf == VimBuffer("hello |world!")
+    @test buf == testbuf("hello |world!")
 end
 
 @testset "word end" begin
@@ -88,6 +88,16 @@ First line
 
     seek(buf, 4)
     @test line_begin(buf) == Motion(4, 0, exclusive)
+end
+
+@testset "snap into line" begin
+    s = """Hello!|
+    world"""
+    buf = testbuf(s)
+    m = snap_into_line(buf)
+    m(buf)
+    @test buf == testbuf("""Hello|!
+    world""")
 end
 
 @testset "exclusive / inclusive motions" begin

@@ -61,7 +61,7 @@ struct Entry
 end
 
 
-Entry(s::String) = Entry(freeze(testbuf("|")))
+Entry(s::String) = Entry(freeze(VimBuffer()))
 # entry where both `prev` and `next` reference itself
 function Entry(record::BufferRecord)
     e = Entry(1, Ref{Entry}(), Ref{Entry}(), record)
@@ -81,7 +81,7 @@ end
 # blank entry. Both `prev` and `next` reference itself. id of 1.
 # for the root of a list (the first entry)
 function Entry()
-    record = VimBuffer("|") |> freeze
+    record = IOBuffer() |> freeze
     return Entry(record)
 end
 

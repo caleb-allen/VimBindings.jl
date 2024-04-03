@@ -1,7 +1,7 @@
 module Buffer
 import REPL.LineEdit as LE
 export VimBuffer, mode, VimMode, normal_mode, insert_mode, testbuf, readall, freeze,
-    BufferRecord, chars, peek_left, peek_right, read_left, read_right
+    BufferRecord, chars, peek_left, peek_right, peek_two_right, read_left, read_right
 
 @enum VimMode begin
     normal_mode
@@ -35,8 +35,11 @@ function testbuf(s::AbstractString)::VimBuffer
     end
     (a, mode, b) = (m[1], m[2], m[3])
     buf = IOBuffer(; read=true, write=true, append=true)
-    write(buf, a * b)
-    seek(buf, length(a))
+    cursor_index = write(buf, a)
+    after_cursor = write(buf, b)
+    # @debug "creating testbuf" cursor_index after_cursor
+
+    seek(buf, cursor_index)
     vim_mode = VimMode(mode)
     return VimBuffer(buf, vim_mode)
 end
@@ -46,10 +49,13 @@ struct VimBuffer <: IO
     mode::VimMode
 end
 
-VimBuffer(str::String)::VimBuffer = testbuf(str)
+VimBuffer() = VimBuffer(IOBuffer(), normal_mode)
 
 mode(vb::VimBuffer) = vb.mode
 # TODO modify VimBuffer operations to operate on Characters rather than bytes
+# Status: Removed uses of
+# - [ ] length()
+# - [ ] skip() in favor of skipchars, or else ensure skip operatoes on characters only
 Base.position(vb::VimBuffer) = position(vb.buf)
 Base.seek(vb::VimBuffer, n) = seek(vb.buf, n)
 Base.mark(vb::VimBuffer) = mark(vb.buf)
@@ -106,7 +112,7 @@ end
 """
 Read 1 valid UTF-8 character right of the current position and leave the buffer in the same position.
 """
-function peek_right(buf::IO)::Union{Char, Nothing}
+function peek_right(buf::IO)::Union{Char,Nothing}
     origin = position(buf)
     while !eof(buf)
         c = read(buf, Char)
@@ -120,11 +126,24 @@ function peek_right(buf::IO)::Union{Char, Nothing}
 end
 
 """
+Read up to 2 valid UTF-8 character right of the current position and leave the buffer in the same position.
+
+Returns a tuple with each successful character (or nothing for a character not read successfully)
+"""
+function peek_two_right(buf::IO)
+    origin = position(buf)
+    c1 = read_right(buf)
+    c2 = read_right(buf)
+    seek(buf, origin)
+    return (c1, c2)
+end
+
+"""
 Read 1 valid UTF-8 character right of the current position.
 
 Place the cursor after the char that is read, if any.
 """
-function read_right(buf::IO)::Union{Char, Nothing}
+function read_right(buf::IO)::Union{Char,Nothing}
     origin = position(buf)
     while !eof(buf)
         c = read(buf, Char)

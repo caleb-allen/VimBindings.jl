@@ -24,3 +24,7 @@ end
     # @test space(testbuf("this | space")) == (4, 5)
     # @test space(testbuf("this  |space")) == (6, 6)
 end
+
+@testset "inner/outer" begin
+
+end

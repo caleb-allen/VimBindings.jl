@@ -44,6 +44,13 @@ Once logging is enabled, you should see something like this from `nc`:
 └ @ VimBindings ~/.julia/dev/VimBindings/src/VimBindings.jl:161
 ```
 
+# Disabling precompile
+
+```
+using VimBindings, Preferences
+set_preferences!(VimBindings, "precompile_workload" => false; force=true)
+```
+
 # Useful References
 ### Vim plugins for other editors
 - https://github.com/JetBrains/ideavim

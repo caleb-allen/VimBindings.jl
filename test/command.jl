@@ -41,7 +41,8 @@ end
 @testset "basic movements" begin
     @test run("asdf|", "h") == testbuf("asd|f")
     @test run("asdf|", "l") == testbuf("asdf|")
-    @test run("asd|f", "l") == testbuf("asdf|")
+    @test run("asd|f", "l") == testbuf("asd|f")
+    @test run("|asdf", "l") == testbuf("a|sdf")
     @test run("a|sdf", "\$") == testbuf("asd|f")
     @test run("asd|f", "\$") == testbuf("asd|f")
 
@@ -62,20 +63,27 @@ end
 
 @testset "hl with delete" begin
     @test run("asdf|", "h") == testbuf("asd|f")
-    @test run("asdf|", "l") == testbuf("asdf|")
-    @test run("asdf|", "dh") == testbuf("asd|")
-    @test run("asdf|", "dl") == testbuf("asdf|")
+    @test run("asd|f", "l") == testbuf("asd|f")
+    @test run("asd|f", "dh") == testbuf("as|f")
+    @test run("asd|f", "dl") == testbuf("as|d")
     @test run("|asdf", "dl") == testbuf("|sdf")
-    @test run("asdf|", "X") == testbuf("asd|")
+    @test run("|asdf", "dh") == testbuf("|asdf")
+    @test run("asd|f", "X") == testbuf("as|f")
+    @test run("asd|f", "x") == testbuf("as|d")
+
+    @test run("|asdf", "s") == testbuf("|i|sdf")
+    @test run("asd|f", "s") == testbuf("asd|i|")
 end
 
 @testset "de" begin
-    @test run("a|sdf", "de") == testbuf("a|")
+    @test run("a|sdf qwerty", "de") == testbuf("a| qwerty")
+    @test run("a|sdf", "de") == testbuf("|a")
     @test run("a|sdf abcd", "de") == testbuf("a| abcd")
 end
 
 @testset "dw" begin
-    @test run("a|", "dw") == testbuf("a|")
+    @test run("|", "dw") == testbuf("|")
+    @test run("|a", "dw") == testbuf("|")
     @test run("a|sdf abcd", "dw") == testbuf("a|abcd")
 end
 @testset "distinct behavior of dw and cw" begin
@@ -95,6 +103,8 @@ end
     @test run("a %%%|asdf b", "ciw") == testbuf("a %%%|i| b")
     @test run("a |asdf b", "ciw") == testbuf("a |i| b")
 
+    @test_skip run("{3: three|}", "daw") == testbuf("{3: thre|e")
+    @test_skip run("{3: thre|e}", "daw") == testbuf("{3:|}")
 end
 
 @testset "fFtT" begin
@@ -114,8 +124,8 @@ end
 end
 
 @testset "D" begin
-    @test run("aaaa bbbb |ccc ddd", "d\$") == testbuf("aaaa bbbb |")
-    @test run("aaaa bbbb |ccc ddd", "D") == testbuf("aaaa bbbb |")
+    @test run("aaaa bbbb |ccc ddd", "d\$") == testbuf("aaaa bbbb| ")
+    @test run("aaaa bbbb |ccc ddd", "D") == testbuf("aaaa bbbb| ")
     @test run("aaaa bbbb |ccc ddd", "D") == run("aaaa bbbb |ccc ddd", "d\$")
 end
 
@@ -147,16 +157,44 @@ end
 end
 
 @testset "unicode" begin
+    # https://github.com/caleb-allen/VimBindings.jl/issues/95
+    @test run("fo|o", "x") == testbuf("f|o")
+    @test run("(0b0000 ⊻ 0b000|0)", "x") == testbuf("(0b0000 ⊻ 0b000|)")
+    @test run("0b0000 ⊻ 0b000|0", "x") == testbuf("0b0000 ⊻ 0b00|0")
+
     s = "\u2200 x \u2203 y"
     s = "∀ x ∃ y"
-    @test_broken run("|∀ x ∃ y", "w") == testbuf("∀ |x ∃ y")
-    @test_broken run("∀ x |∃ y", "w") == testbuf("∀ x |∃ y")
+    @test run("|∀ x ∃ y", "w") == testbuf("∀ |x ∃ y")
+    @test run("∀ x |∃ y", "w") == testbuf("∀ x ∃ |y")
+
+
+
+end
+
+@testset "delete at end of line should move left" begin
+    # https://github.com/caleb-allen/VimBindings.jl/issues/92
+
+    @test run("foo() = :ba|r", "x") == testbuf("foo() = :b|a")
+    @test run("foo() = :ba|r\nbaz", "x") == testbuf("foo() = :b|a\nbaz")
+    @test run("foo() = :ba|r\nbaz", "x") != testbuf("foo() = :ba|\nbaz")
+
+    # with text objects, too
+    @test run("abcd\nxyz ef|g", "daw") == testbuf("abcd\nxyz| ")
+
+    @test run("abcd\nef|g", "daw") == testbuf("abcd\n|")
+
 end
 
 @testset "replace character" begin
     @test run("abcd|e 12345", "rx") == testbuf("abcd|x 12345")
     @test run("|abcde", "3rx") == testbuf("xx|xde")
-    @test_broken run("∀ x |∃ y", "rx") == testbuf("∀ x |x y")
+    @test run("∀ x |∃ y", "rx") == testbuf("∀ x |x y")
+
+    t = run("∀ x ∃ |n|y", "rx") 
+    result = testbuf("∀ x ∃ |n|x")
+    
+    @test_broken t == result
+
 end
 
 @testset "yank / put" begin
