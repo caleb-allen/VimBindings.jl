@@ -8,7 +8,7 @@ using ..Util
 using ..Commands
 
 export Motion, MotionType, simple_motions, complex_motions, partial_complex_motions, insert_motions, gen_motion,
-    is_stationary, down, up, word_next, word_big_next, word_end, word_back,
+    is_stationary, distance, down, up, word_next, word_big_next, word_end, word_back,
     word_big_back, word_big_end, line_end, line_begin, line_zero,
     find_c, find_c_back, get_safe_name, all_keys, special_keys, exclusive, inclusive, linewise, endd,
     left, right, snap_into_line
@@ -79,9 +79,11 @@ endd(motion::Motion)::Int =
         motion.stop
     end
 
-is_stationary(motion::Motion)::Bool = motion.start == motion.stop
+is_stationary(motion::Motion)::Bool = max(motion) == min(motion)
 
-Base.length(motion::Motion) = max(motion) - min(motion)
+distance(motion::Motion) = max(motion) - min(motion)
+
+sign(motion::Motion) = Base.sign(motion.start - endd(motion))
 
 function Base.:+(motion1::Motion, motion2::Motion)
     low = Base.min(
@@ -386,6 +388,14 @@ function find_c_back(buf::IO, query_c::Int)
     return find_c_back(buf, '0' + query_c)
 end
 
+function repeat_find(buf::IO)
+    latest = STATE.latest_find
+    
+end
+
+function repeat_find_reverse(buf::IO)
+end
+
 const insert_motions = Dict{Char,Any}(
     'i' => (buf) -> Motion(buf),
     'I' => (buf) -> line_begin(buf),
@@ -419,6 +429,8 @@ const simple_motions = Dict{Char,Any}(
     '^' => line_begin, # exclusive)
     '$' => line_end, # inclusive)
     '0' => line_zero, # TODO how to parse this? it's a digit, not an alphabetical character.
+    ';' => repeat_find,
+    ',' => repeat_find_reverse,
     '{' => nothing,
     '}' => nothing,
     '(' => nothing,
