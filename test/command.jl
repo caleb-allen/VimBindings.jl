@@ -197,6 +197,31 @@ end
 
 end
 
+@testset "change case" begin
+    @test run("abcd|e 12345", "~") == testbuf("abcdE| 12345")
+    @test run("abcdE| 12345", "~") == testbuf("abcdE |12345")
+    @test run("abcdE |12345", "~") == testbuf("abcdE 1|2345")
+    @test run("""abc|de
+    fghijk""", "5~") == testbuf("""abc|de
+    fghijk""")
+    @test run("|abcde", "3~") == testbuf("ABC|de")
+    @test run("|abcde", "3~") == testbuf("ABC|de")
+end
+
+#=
+@testset "increment and decrement" begin
+    @test run("x = |5", "C-a") == testbuf("x = |6")
+    @test run("x = |5", "C-x") == testbuf("x = |4")
+    @test run("x = |5", "2C-a") == testbuf("x = |7")
+    @test run("x = |5", "2C-x") == testbuf("x = |3")
+    @test run("x = |5", "C-aC-a") == testbuf("x = |7")
+    @test run("x = |5", "C-xC-x") == testbuf("x = |3")
+    @test run("x = |5", "2C-a") == testbuf("x = |7")
+end
+=#
+
+
+
 @testset "yank / put" begin
     # @test run("abcd|e 12345", "yaw") == testbuf("abcd|x 12345")
 
