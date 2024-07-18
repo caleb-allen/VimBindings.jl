@@ -7,28 +7,6 @@ using Preferences
 import ..VimBindings as VB
 
 
-function __init__()
-    if system_clipboard()
-        println(stdout)
-        @warn """System clipboard integration is enabled for VimBindings.jl.
-
-        The commands `y`, `p` and `P` are enabled for the system clipboard.
-        Note that registers are not implemented.
-
-        The feature is not well tested;
-        Feel free to share your experience with the feature on this github issue
-        https://github.com/caleb-allen/VimBindings.jl/issues/7
-        Remember to include information about your setup.
-
-        Disable the feature by running
-        \t VimBindings.Config.system_clipboard!(false)
-
-
-        """
-
-    end
-end
-
 # idea taken from PreferenceTools.jl
 function _in_global_env(f)
     # imported at runtime, after REPL is instantiated
