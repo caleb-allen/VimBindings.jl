@@ -405,7 +405,7 @@ const insert_motions = Dict{Char,Any}(
         end
     end
 )
-const simple_motions = Dict{Char,Any}(
+const simple_motions = Dict{Char,Function}(
     'h' => left,
     'l' => right,
     'j' => down,
@@ -419,6 +419,7 @@ const simple_motions = Dict{Char,Any}(
     '^' => line_begin, # exclusive)
     '$' => line_end, # inclusive)
     '0' => line_zero, # TODO how to parse this? it's a digit, not an alphabetical character.
+    #=
     '{' => nothing,
     '}' => nothing,
     '(' => nothing,
@@ -426,6 +427,7 @@ const simple_motions = Dict{Char,Any}(
     'G' => nothing,
     'H' => nothing,
     'L' => nothing
+    =#
 )
 
 const complex_motions = Dict{Regex,Any}(
