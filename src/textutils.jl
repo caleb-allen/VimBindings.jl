@@ -204,11 +204,11 @@ function at_junction_type(junc_type, juncs::Set)
     # TODO nuke this whole thing
     for junc in juncs
         if junc isa junc_type
-            @debug "at_junction_type?" junc_type chars_by_cursor(buf) at_junction_type = true
+            # @debug "at_junction_type?" junc_type at_junction_type = true
             return true
         end
     end
-    @debug "at_junction_type?" junc_type chars_by_cursor(buf) at_junction_type = false
+    # @debug "at_junction_type?" junc_type at_junction_type = false
     return false
 end
 # Text helpers

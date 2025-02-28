@@ -29,6 +29,7 @@ VimMode(vm::VimMode) = vm
     Defaults to normal mode.
 """
 function testbuf(s::AbstractString)::VimBuffer
+    # issue with testbuf!
     m = match(r"(.*?)\|(?:([ni])\|)?(.*)"s, s)
     if m === nothing
         throw(ArgumentError("could not construct VimBuffer with string \"$s\"\n   Expecting a string with a pipe `|` indicating cursor position"))
@@ -37,6 +38,7 @@ function testbuf(s::AbstractString)::VimBuffer
     buf = IOBuffer(; read=true, write=true, append=true)
     cursor_index = write(buf, a)
     after_cursor = write(buf, b)
+    @debug "creating testbuf" from=s start=a mode endd=b
     # @debug "creating testbuf" cursor_index after_cursor
 
     seek(buf, cursor_index)
@@ -62,8 +64,8 @@ Base.mark(vb::VimBuffer) = mark(vb.buf)
 Base.peek(vb::VimBuffer, ::Type{T}) where {T} = peek(vb.buf, T)
 Base.peek(vb::VimBuffer) = peek(vb.buf)
 Base.reset(vb::VimBuffer) = reset(vb.buf)
-Base.read(vb::VimBuffer, ::Type{Char}) = read(vb.buf, Char)
-Base.read(vb::VimBuffer, ::Type{String}) = read(vb.buf, String)
+Base.read(vb::VimBuffer) = read(vb.buf)
+Base.read(vb::VimBuffer, t) = read(vb.buf, t)
 Base.take!(vb::VimBuffer) = take!(vb.buf)
 Base.eof(vb::VimBuffer) = eof(vb.buf)
 Base.skip(vb::VimBuffer, o) = skip(vb.buf, o)
