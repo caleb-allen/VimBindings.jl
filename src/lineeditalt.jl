@@ -160,8 +160,6 @@ function LE.match_input(k::Dict{Char}, s::Union{Nothing,LE.MIState}, term::Union
     return LE.match_input(get(k, key, nothing), s, term, cs, keymap)
 end
 
-LE.prompt_string(t::REPL.TextInterface) = "$(typeof(t))"
-
 """
 Get the key binding function `key` from `keymap`
 """
