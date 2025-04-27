@@ -180,20 +180,6 @@ end
 #     return m
 # end
 
-function Base.Dict(m::RegexMatch)
-    d = OrderedDict{Symbol,Any}()
-    idx_to_capture_name = Base.PCRE.capture_names(m.regex.regex)
-    if !isempty(m.captures)
-        for i = 1:Base.length(m.captures)
-            capture_name = get(idx_to_capture_name, i, i) |> Symbol
-            d[capture_name] = m.captures[i]
-        end
-    end
-    # Dict(Symbol(n)=>m[Symbol(n)] for n in values(Base.PCRE.capture_names(m.regex.regex)))
-    return d
-end
-
-
 
 function text_object_part(cmd::AbstractString)::Union{String,Nothing}
     m = match(REGS.text_object, cmd)
