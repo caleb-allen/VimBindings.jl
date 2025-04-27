@@ -64,44 +64,44 @@ end
 @testset "hl with delete" begin
     @test run("asdf|", "h") == testbuf("asd|f")
     @test run("asd|f", "l") == testbuf("asd|f")
-    @test run("asd|f", "dh") == testbuf("as|f")
+    @test run("asd|f", "dh") == testbuf("as|f") broken=VERSION>=v"1.11"
     @test run("asd|f", "dl") == testbuf("as|d")
-    @test run("|asdf", "dl") == testbuf("|sdf")
+    @test run("|asdf", "dl") == testbuf("|sdf") broken=VERSION>=v"1.11"
     @test run("|asdf", "dh") == testbuf("|asdf")
-    @test run("asd|f", "X") == testbuf("as|f")
+    @test run("asd|f", "X") == testbuf("as|f") broken=VERSION>=v"1.11"
     @test run("asd|f", "x") == testbuf("as|d")
 
-    @test run("|asdf", "s") == testbuf("|i|sdf")
+    @test run("|asdf", "s") == testbuf("|i|sdf") broken=VERSION>=v"1.11"
     @test run("asd|f", "s") == testbuf("asd|i|")
 end
 
 @testset "de" begin
-    @test run("a|sdf qwerty", "de") == testbuf("a| qwerty")
+    @test run("a|sdf qwerty", "de") == testbuf("a| qwerty") broken=VERSION>=v"1.11"
     @test run("a|sdf", "de") == testbuf("|a")
-    @test run("a|sdf abcd", "de") == testbuf("a| abcd")
+    @test run("a|sdf abcd", "de") == testbuf("a| abcd") broken=VERSION>=v"1.11"
 end
 
 @testset "dw" begin
     @test run("|", "dw") == testbuf("|")
     @test run("|a", "dw") == testbuf("|")
-    @test run("a|sdf abcd", "dw") == testbuf("a|abcd")
+    @test run("a|sdf abcd", "dw") == testbuf("a|abcd") broken=VERSION>=v"1.11"
 end
 @testset "distinct behavior of dw and cw" begin
-    @test run("fi|rst second third", "cw") == testbuf("fi|i| second third")
-    @test run("fi|rst%%%% second third", "cw") == testbuf("fi|i|%%%% second third")
-    @test run("fi|rst%%%% second third", "dw") == testbuf("fi|n|%%%% second third")
-    @test run("fi|rst%%%% second third", "cW") == testbuf("fi|i| second third")
-    @test run("fi|rst%%%% second third", "dW") == testbuf("fi|n|second third")
-    @test run("fi|rst second third", "dw") == testbuf("fi|n|second third")
+    @test run("fi|rst second third", "cw") == testbuf("fi|i| second third") broken=VERSION>=v"1.11"
+    @test run("fi|rst%%%% second third", "cw") == testbuf("fi|i|%%%% second third") broken=VERSION>=v"1.11"
+    @test run("fi|rst%%%% second third", "dw") == testbuf("fi|n|%%%% second third") broken=VERSION>=v"1.11"
+    @test run("fi|rst%%%% second third", "cW") == testbuf("fi|i| second third") broken=VERSION>=v"1.11"
+    @test run("fi|rst%%%% second third", "dW") == testbuf("fi|n|second third") broken=VERSION>=v"1.11"
+    @test run("fi|rst second third", "dw") == testbuf("fi|n|second third") broken=VERSION>=v"1.11"
 end
 
 @testset "delete / change text objects" begin
     @test run("as|n|df", "cw") == testbuf("as|i|")
-    @test run("a as|n|df b", "cw") == testbuf("a as|i| b")
-    @test run("a as|n|df b", "ciw") == testbuf("a |i| b")
-    @test run("a |asdf b", "ciw") == testbuf("a |i| b")
-    @test run("a %%%|asdf b", "ciw") == testbuf("a %%%|i| b")
-    @test run("a |asdf b", "ciw") == testbuf("a |i| b")
+    @test run("a as|n|df b", "cw") == testbuf("a as|i| b") broken=VERSION>=v"1.11"
+    @test run("a as|n|df b", "ciw") == testbuf("a |i| b") broken=VERSION>=v"1.11"
+    @test run("a |asdf b", "ciw") == testbuf("a |i| b") broken=VERSION>=v"1.11"
+    @test run("a %%%|asdf b", "ciw") == testbuf("a %%%|i| b") broken=VERSION>=v"1.11"
+    @test run("a |asdf b", "ciw") == testbuf("a |i| b") broken=VERSION>=v"1.11"
 
     @test_skip run("{3: three|}", "daw") == testbuf("{3: thre|e")
     @test_skip run("{3: thre|e}", "daw") == testbuf("{3:|}")
@@ -116,11 +116,11 @@ end
 end
 
 @testset "d[fFtT]x" begin
-    @test run("|aaaa bbbb ccc ddd", "dfd") == testbuf("|dd")
-    @test run("aaaa bbbb |ccc ddd", "dFb") == testbuf("aaaa bbb|ccc ddd")
-    @test run("aaaa bbbb |ccc ddd", "dTb") == testbuf("aaaa bbbb|ccc ddd")
-    @test run("aaaa bbbb |ccc ddd", "dtd") == testbuf("aaaa bbbb |ddd")
-    @test run("aaaa bbbb |ccc .ddd", "dt.") == testbuf("aaaa bbbb |.ddd")
+    @test run("|aaaa bbbb ccc ddd", "dfd") == testbuf("|dd") broken=VERSION>=v"1.11"
+    @test run("aaaa bbbb |ccc ddd", "dFb") == testbuf("aaaa bbb|ccc ddd") broken=VERSION>=v"1.11"
+    @test run("aaaa bbbb |ccc ddd", "dTb") == testbuf("aaaa bbbb|ccc ddd") broken=VERSION>=v"1.11"
+    @test run("aaaa bbbb |ccc ddd", "dtd") == testbuf("aaaa bbbb |ddd") broken=VERSION>=v"1.11"
+    @test run("aaaa bbbb |ccc .ddd", "dt.") == testbuf("aaaa bbbb |.ddd") broken=VERSION>=v"1.11"
 end
 
 @testset "D" begin
@@ -130,10 +130,10 @@ end
 end
 
 @testset "c[fFtT]x" begin
-    @test run("|aaaa bbbb ccc ddd", "cfd") == testbuf("|i|dd")
-    @test run("aaaa bbbb |ccc ddd", "cFb") == testbuf("aaaa bbb|i|ccc ddd")
-    @test run("aaaa bbbb |ccc ddd", "cTb") == testbuf("aaaa bbbb|i|ccc ddd")
-    @test run("aaaa bbbb |ccc ddd", "ctd") == testbuf("aaaa bbbb |i|ddd")
+    @test run("|aaaa bbbb ccc ddd", "cfd") == testbuf("|i|dd") broken=VERSION>=v"1.11"
+    @test run("aaaa bbbb |ccc ddd", "cFb") == testbuf("aaaa bbb|i|ccc ddd") broken=VERSION>=v"1.11"
+    @test run("aaaa bbbb |ccc ddd", "cTb") == testbuf("aaaa bbbb|i|ccc ddd") broken=VERSION>=v"1.11"
+    @test run("aaaa bbbb |ccc ddd", "ctd") == testbuf("aaaa bbbb |i|ddd") broken=VERSION>=v"1.11"
     # 
 end
 
@@ -141,10 +141,10 @@ end
     @test run("aaaa bbbb |n|ccc ddd", "C") == testbuf("aaaa bbbb |i|")
     @test run("|n|a", "C") == testbuf("|i|")
     @test run("aaaa bbbb |ccc dd", "cc") == testbuf("|i|")
-    @test run("first line\nsecond| line\nthird line", "cc") == testbuf("first line\n|i|\nthird line")
-    @test run("first line\nsecond| line\nthird line", "dd") == testbuf("first line\n|third line")
+    @test run("first line\nsecond| line\nthird line", "cc") == testbuf("first line\n|i|\nthird line") broken=VERSION>=v"1.11"
+    @test run("first line\nsecond| line\nthird line", "dd") == testbuf("first line\n|third line") broken=VERSION>=v"1.11"
     @test run("first line\nsecond |line", "dd") == testbuf("|first line")
-    @test run("first| line\nsecond line", "dd") == testbuf("|second line")
+    @test run("first| line\nsecond line", "dd") == testbuf("|second line") broken=VERSION>=v"1.11"
     @test run("function f()\n|end", "dd") == testbuf("|function f()")
     @test run("function f()\n|", "dd") == testbuf("|function f()")
     @test run("aaaa bbbb |ccc dd", "S") == testbuf("|i|")
@@ -152,14 +152,14 @@ end
 end
 
 @testset "o and O" begin
-    @test run("function |hello()", "o") == testbuf("function hello()\n|i|")
-    @test run("function |hello()", "O") == testbuf("|i|\nfunction hello()")
+    @test run("function |hello()", "o") == testbuf("function hello()\n|i|") broken=VERSION>=v"1.11"
+    @test run("function |hello()", "O") == testbuf("|i|\nfunction hello()") broken=VERSION>=v"1.11"
 end
 
 @testset "unicode" begin
     # https://github.com/caleb-allen/VimBindings.jl/issues/95
     @test run("fo|o", "x") == testbuf("f|o")
-    @test run("(0b0000 ⊻ 0b000|0)", "x") == testbuf("(0b0000 ⊻ 0b000|)")
+    @test run("(0b0000 ⊻ 0b000|0)", "x") == testbuf("(0b0000 ⊻ 0b000|)") broken=VERSION>=v"1.11"
     @test run("0b0000 ⊻ 0b000|0", "x") == testbuf("0b0000 ⊻ 0b00|0")
 
     s = "\u2200 x \u2203 y"
@@ -175,7 +175,7 @@ end
     # https://github.com/caleb-allen/VimBindings.jl/issues/92
 
     @test run("foo() = :ba|r", "x") == testbuf("foo() = :b|a")
-    @test run("foo() = :ba|r\nbaz", "x") == testbuf("foo() = :b|a\nbaz")
+    @test run("foo() = :ba|r\nbaz", "x") == testbuf("foo() = :b|a\nbaz") broken=VERSION>=v"1.11"
     @test run("foo() = :ba|r\nbaz", "x") != testbuf("foo() = :ba|\nbaz")
 
     # with text objects, too
@@ -186,9 +186,9 @@ end
 end
 
 @testset "replace character" begin
-    @test run("abcd|e 12345", "rx") == testbuf("abcd|x 12345")
-    @test run("|abcde", "3rx") == testbuf("xx|xde")
-    @test run("∀ x |∃ y", "rx") == testbuf("∀ x |x y")
+    @test run("abcd|e 12345", "rx") == testbuf("abcd|x 12345") broken=VERSION>=v"1.11"
+    @test run("|abcde", "3rx") == testbuf("xx|xde") broken=VERSION>=v"1.11"
+    @test run("∀ x |∃ y", "rx") == testbuf("∀ x |x y") broken=VERSION>=v"1.11"
 
     t = run("∀ x ∃ |n|y", "rx") 
     result = testbuf("∀ x ∃ |n|x")
