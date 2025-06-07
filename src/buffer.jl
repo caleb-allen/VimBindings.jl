@@ -29,6 +29,7 @@ VimMode(vm::VimMode) = vm
     Defaults to normal mode.
 """
 function testbuf(s::AbstractString)::VimBuffer
+    # issue with testbuf!
     m = match(r"(.*?)\|(?:([ni])\|)?(.*)"s, s)
     if m === nothing
         throw(ArgumentError("could not construct VimBuffer with string \"$s\"\n   Expecting a string with a pipe `|` indicating cursor position"))
@@ -37,6 +38,7 @@ function testbuf(s::AbstractString)::VimBuffer
     buf = IOBuffer(; read=true, write=true, append=true)
     cursor_index = write(buf, a)
     after_cursor = write(buf, b)
+    @debug "creating testbuf" from=s start=a mode endd=b
     # @debug "creating testbuf" cursor_index after_cursor
 
     seek(buf, cursor_index)
