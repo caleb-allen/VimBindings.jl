@@ -78,6 +78,11 @@ function strike_key(c, s::LE.MIState)::StrikeKeyResult
     if c == "\e\e"
         empty!(KEY_STACK)
         return VimAction()
+    # begin bracketed paste
+    elseif c == "\e[200~"
+        empty!(KEY_STACK)
+        trigger_insert_mode(s)
+        return Fallback(cs)
     end
     append!(KEY_STACK, c)
 
