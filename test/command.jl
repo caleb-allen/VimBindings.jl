@@ -16,11 +16,13 @@ end
 
 function run(test_string::String, command)::VimBuffer
     buf = testbuf(test_string)
+    @debug "Running command against buffer" command buffer
     return run(buf, command)
 end
 
 # https://github.com/caleb-allen/VimBindings.jl/issues?q=is%3Aissue+is%3Aopen+label%3Abug
 @testset "bugs from github" begin
+    ENV["JULIA_DEBUG"] = "VimBindings"
     # https://github.com/caleb-allen/VimBindings.jl/issues/48
     @test run("b::|Float64", "ciw") == testbuf("b::|i|")
 
