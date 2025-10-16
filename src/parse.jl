@@ -1,5 +1,4 @@
 module Parse
-import DataStructures: OrderedDict
 using ..Commands
 using ..Motions
 using ..Util
