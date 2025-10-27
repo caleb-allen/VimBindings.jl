@@ -6,11 +6,36 @@ using ..Registers
 using ..Config
 
 using REPL
-using REPL.LineEdit
-const LE = LineEdit
+import REPL.LineEdit as LE
 import InteractiveUtils.clipboard
 
 export operator_fn, change, delete, move, yank, insert, cut, put
+
+#NOTE: copied from REPL.LineEdit
+function edit_splice!(buf::IOBuffer, r::Pair{Int,Int}, ins::String = "")
+    A, B = first(r), last(r)
+    A ≥ B && isempty(ins) && return ins
+    pos = position(buf) # n.b. position(), etc, are 0-indexed
+    adjust_pos = true
+    if A ≤ pos < B
+        seek(buf, A)
+    elseif B ≤ pos
+        seek(buf, pos - B + A)
+    else
+        adjust_pos = false
+    end
+    pos = position(buf)
+    seek(buf, A)
+    ret = read(buf, A >= B ? 0 : B - A)
+    trail = read(buf)
+    seek(buf, A)
+    write(buf, ins)
+    write(buf, trail)
+    truncate(buf, position(buf))
+    seek(buf, pos + (adjust_pos ? sizeof(ins) : 0))
+    return String(ret)
+end
+
 function operator_fn(c::Char)::Function
     operators = Dict(
         'c' => change,
@@ -27,7 +52,7 @@ function change(buf::IO, motion::Motion) #, motion_type :: MotionType)
     @debug "change operator" buf motion text left right max(motion) length(text)
     yank(buf, motion)
     move(buf, motion) #, motion_type)
-    LE.edit_splice!(buf, left => right)
+    edit_splice!(buf, left => right)
 end
 
 # also, when there is whitespace following a word,
@@ -64,7 +89,7 @@ function delete(buf::IO, motion::Motion) #, motion_type :: MotionType)
     @debug "delete operator" buf motion text left right move_cursor
     yank(buf, motion)
     move(buf, motion) #, motion_type)
-    LE.edit_splice!(buf, left => right)
+    edit_splice!(buf, left => right)
 
     if motion.motiontype == linewise
         move_cursor(buf)
@@ -109,7 +134,7 @@ end
 
 insert(buf::IO, pos::Int, c::Char) = insert(buf, pos, string(c))
 function insert(buf::IO, pos::Int, s::String)
-    LE.edit_splice!(buf, pos => pos, s)
+    edit_splice!(buf, pos => pos, s)
 end
 
 function cut(buf::IO, motion::Motion)::String
@@ -133,7 +158,7 @@ function put(buf::IO, reg::Char='"') # default unnamed register
             return
         end
         pos = position(buf)
-        LE.edit_splice!(buf, pos => pos, text)
+        edit_splice!(buf, pos => pos, text)
     else
         println(stdout)
         @warn """Can't 'put' text; Registers are not yet implemented.
@@ -154,11 +179,11 @@ function put(buf::IO, reg::Char='"') # default unnamed register
     end
 end
 
-function LE.edit_splice!(buf::VimBuffer, range::Pair{Int,Int}, text::AbstractString)
-    LE.edit_splice!(buf.buf, range, text)
+function edit_splice!(buf::VimBuffer, range::Pair{Int,Int}, text::AbstractString)
+    edit_splice!(buf.buf, range, text)
 end
 
-function LE.edit_splice!(buf::VimBuffer, range::Pair{Int,Int})
-    LE.edit_splice!(buf.buf, range)
+function edit_splice!(buf::VimBuffer, range::Pair{Int,Int})
+    edit_splice!(buf.buf, range)
 end
 end

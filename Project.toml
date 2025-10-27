@@ -1,11 +1,10 @@
 name = "VimBindings"
 uuid = "51b3953f-5e5d-4a6b-bd62-c64b6fa1518a"
 authors = ["Caleb Allen <caleb.e.allen@gmail.com> and contributors"]
-version = "0.3.15"
+version = "0.3.16"
 
 [deps]
 Combinatorics = "861a8166-3701-5b0c-9a16-15d98fcdc6aa"
-DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 InteractiveUtils = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
 Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
 LoggingExtras = "e6f89c97-d47a-5376-807f-9c37f3926c36"
@@ -17,7 +16,6 @@ Sockets = "6462fe0b-24de-5631-8697-dd941f90decc"
 
 [compat]
 Combinatorics = "1.0"
-DataStructures = "0.18.13"
 LoggingExtras = "0.4, 1"
 PrecompileTools = "1.1"
 Preferences = "1.4"

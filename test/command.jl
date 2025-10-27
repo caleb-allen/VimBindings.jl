@@ -193,7 +193,7 @@ end
     t = run("∀ x ∃ |n|y", "rx") 
     result = testbuf("∀ x ∃ |n|x")
     
-    @test_broken t == result
+    @test t == result
 
 end
 

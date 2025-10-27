@@ -13,7 +13,7 @@ using Base: AnyDict
 using REPL
 using REPL.LineEdit
 using LoggingExtras, Logging
-import REPL.LineEdit: KeyAlias, edit_splice!, buffer, refresh_line
+import REPL.LineEdit: KeyAlias, buffer, refresh_line
 import Base: AnyDict, show_unquoted
 using Sockets
 

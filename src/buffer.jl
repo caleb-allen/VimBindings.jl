@@ -34,7 +34,7 @@ function testbuf(s::AbstractString)::VimBuffer
         throw(ArgumentError("could not construct VimBuffer with string \"$s\"\n   Expecting a string with a pipe `|` indicating cursor position"))
     end
     (a, mode, b) = (m[1], m[2], m[3])
-    buf = IOBuffer(; read=true, write=true, append=true)
+    buf = IOBuffer(; read=true, write=true, append=false)
     cursor_index = write(buf, a)
     after_cursor = write(buf, b)
     # @debug "creating testbuf" cursor_index after_cursor
