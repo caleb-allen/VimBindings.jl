@@ -6,6 +6,7 @@ const LE = LineEdit
 using ..TextUtils
 using ..Util
 using ..Commands
+using ..Config
 
 export Motion, MotionType, simple_motions, complex_motions, partial_complex_motions, insert_motions, gen_motion,
     is_stationary, down, up, word_next, word_big_next, word_end, word_back,
@@ -405,6 +406,7 @@ const insert_motions = Dict{Char,Any}(
         end
     end
 )
+
 const simple_motions = Dict{Char,Function}(
     'h' => left,
     'l' => right,
@@ -429,6 +431,17 @@ const simple_motions = Dict{Char,Function}(
     'L' => nothing
     =#
 )
+
+for (key_str, replacement_str) in Config.remap()
+    key = only(key_str)
+    replacement = only(replacement_str)
+    @debug "Remapping key" key replacement action
+    key in keys(simple_motions) || error("Error in remap configuration: '$key' is not an implemented motion and cannot be replaced")
+    action = simple_motions[key]
+    delete!(simple_motions, key)
+    simple_motions[replacement] = action
+    @debug "Remapped key" key replacement action
+end
 
 const complex_motions = Dict{Regex,Any}(
     r"f(.)" => (buf, char::Union{Char,Int}) -> begin

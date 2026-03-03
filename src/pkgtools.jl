@@ -6,7 +6,7 @@ Tools for running or testing the package. This module is meant for code that is
 The end of this file contains precompilation code
 """
 module PkgTools
-import ..VimBuffer, ..parse_command, ..testbuf, ..execute, ..well_formed, ..partial_well_formed
+import ..VimBuffer, ..parse_command, ..testbuf, ..execute, ..well_formed, ..partial_well_formed, ..simple_motions
 import ..Changes: record, undo!, redo!, freeze, thaw!, reset!
 import ..TextUtils: junction_type, TextChar, is_word_start, is_whitespace_start,
     is_object_start, is_word_end, is_object_end, is_whitespace_end
@@ -16,10 +16,15 @@ const TEST_STRING = """abcdefghijklmnopqrstuvwxyz "' 0987654321 A B C D E F G H|
 
 
 function some_vim_commands()::Vector{String}
+    motion_keys = collect(filter(!=('0'), keys(simple_motions)))
+    pop!(motion_keys)
+    simple_commands = join(motion_keys, ' ')
+    simple_commands_with_repeat = join(map(c -> '3' * c, motion_keys), ' ')
+
     s = """
-        h j k l
-        3h 3j 3k 3l
-        w W e E b B ^ \$ 0
+        $simple_commands
+        $simple_commands_with_repeat
+        0
         dh daw cw ciw caW caw daW cW ct"
         fa Fa ta Ta a A i I o O x X C cc dd s S D
         u \x12
