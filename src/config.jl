@@ -5,6 +5,7 @@ User configuration of VimBindings.jl behavior
 module Config
 using Preferences
 import ..VimBindings as VB
+import Pkg
 
 
 # idea taken from PreferenceTools.jl
@@ -32,7 +33,10 @@ end
 const prefs = (
     :development_mode => false,
     :system_clipboard => false,
+    # values should be chars, but TOML-based prefs need strings
+    :remap => Dict(),
 )
+
 function pref_set_name(pref::Symbol)
     string(pref) * "!" |> Symbol
 end
